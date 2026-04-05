@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FitTracker - Ariel</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--sur:#13131a;--alt:#1a1a24;--bor:#2a2a38;--acc:#6366f1;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--coa:#a855f7;--dim:#94a3b8;--mu:#64748b}
+body{background:var(--bg);color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;min-height:100vh}
+input,textarea,select{background:var(--alt);border:1px solid var(--bor);color:#e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;width:100%;outline:none;font-family:inherit}
+input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+button{cursor:pointer;font-family:inherit}
+textarea{resize:vertical;min-height:50px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bor);border-radius:2px}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ─── SUPABASE ───────────────────────────────────────────────────────────────
+const sb = supabase.createClient(
+  'https://byrgpddpmpoffgfegmjk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5cmdwZGRwbXBvZmZnZmVnbWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMjY5NTcsImV4cCI6MjA5MDcwMjk1N30.m3zWaxjjGxDlUl6ne5zKddiE_Hp1YhRDujloV0ICJJA'
+);
+// Auto-auth: sin login, entra directo. Siempre usa ARIEL_ID para datos.
+const ARIEL_ID = '00000000-0000-4000-a000-000000000001';
+const autoAuth = async () => {
+  // Intentar sesión existente
+  const { data } = await sb.auth.getUser();
+  if (data?.user) return { ...data.user, id: ARIEL_ID };
+  // Si no hay sesión, intentar anónimo
+  try {
+    const { data: anonData } = await sb.auth.signInAnonymously();
+    if (anonData?.user) return { ...anonData.user, id: ARIEL_ID };
+  } catch(e) {}
+  // Fallback: usuario local sin auth
+  return { id: ARIEL_ID };
+};
+
+const saveEntreno = async (uid, fecha, dia, ejercicios, notas) => {
+  try {
+    const result = await sb.from('sesiones_entreno').upsert({ user_id:uid, fecha, dia_semana:dia, ejercicios, notas }, { onConflict:'user_id,fecha,dia_semana' });
+    if(result.error) throw result.error;
+    return { success: true, data: result.data };
+  } catch(err) {
+    return { success: false, error: err.message || 'Error al guardar entreno' };
+  }
+};
+const getEntreno = (uid, fecha, dia) =>
+  sb.from('sesiones_entreno').select('*').eq('user_id',uid).eq('fecha',fecha).eq('dia_semana',dia).single();
+const getHistorialEntreno = (uid) =>
+  sb.from('sesiones_entreno').select('fecha,dia_semana,notas').eq('user_id',uid).order('fecha',{ascending:false}).limit(30);
+
+// Mapeo UI → BD para nutricion
+// BD columns: id, user_id, fecha, ayuno_inicio, ayuno_fin, proteina, carbos, agua, comidas, notas, updated_at
+const nutriUIToDB = (uiData) => {
+  const db = {};
+  if(uiData.ayuno_ini !== undefined) db.ayuno_inicio = uiData.ayuno_ini;
+  if(uiData.ayuno_fin !== undefined) db.ayuno_fin = uiData.ayuno_fin;
+  if(uiData.prot !== undefined) db.proteina = uiData.prot ? parseFloat(uiData.prot) : null;
+  if(uiData.carbs !== undefined) db.carbos = uiData.carbs ? parseFloat(uiData.carbs) : null;
+  if(uiData.agua !== undefined) db.agua = uiData.agua ? parseFloat(uiData.agua) : null;
+  // Comidas: guardar como array JSON de objetos
+  const comidas = [
+    uiData.pre||'', uiData.intra||'', uiData.postInm||'', uiData.post60||'',
+    uiData.c1||'', uiData.c2||'', uiData.cena||'', uiData.suple||''
+  ];
+  db.comidas = comidas;
+  // Extras en notas como JSON
+  const extras = {};
+  if(uiData.hambre) extras.hambre = uiData.hambre;
+  if(uiData.digestion) extras.digestion = uiData.digestion;
+  db.notas = Object.keys(extras).length ? JSON.stringify(extras) : null;
+  return db;
+};
+const nutriDBToUI = (dbData) => {
+  if(!dbData) return {};
+  const ui = {};
+  ui.ayuno_ini = dbData.ayuno_inicio || '';
+  ui.ayuno_fin = dbData.ayuno_fin || '';
+  ui.prot = dbData.proteina != null ? String(dbData.proteina) : '';
+  ui.carbs = dbData.carbos != null ? String(dbData.carbos) : '';
+  ui.agua = dbData.agua != null ? String(dbData.agua) : '';
+  // Comidas: array → campos individuales
+  const c = dbData.comidas || [];
+  ui.pre = c[0]||''; ui.intra = c[1]||''; ui.postInm = c[2]||''; ui.post60 = c[3]||'';
+  ui.c1 = c[4]||''; ui.c2 = c[5]||''; ui.cena = c[6]||''; ui.suple = c[7]||'';
+  // Extras de notas
+  try { const n = JSON.parse(dbData.notas||'{}'); ui.hambre = n.hambre||''; ui.digestion = n.digestion||''; } catch { ui.hambre=''; ui.digestion=''; }
+  return ui;
+};
+const saveNutricion = async (uid, fecha, uiData) => {
+  try {
+    const dbData = nutriUIToDB(uiData);
+    const result = await sb.from('nutricion').upsert({ user_id:uid, fecha, ...dbData }, { onConflict:'user_id,fecha' });
+    if(result.error) throw result.error;
+    return { success: true, data: result.data };
+  } catch(err) {
+    return { success: false, error: err.message || 'Error al guardar nutricion' };
+  }
+};
+const getNutricion = async (uid, fecha) => {
+  const res = await sb.from('nutricion').select('*').eq('user_id',uid).eq('fecha',fecha).single();
+  if(res.data) res.data = nutriDBToUI(res.data);
+  return res;
+};
+
+const saveMedicion = (uid, data) =>
+  sb.from('mediciones').insert({ user_id:uid, ...data }).select();
+const getMediciones = (uid) =>
+  sb.from('mediciones').select('*').eq('user_id',uid).order('fecha',{ascending:false}).limit(50);
+const delMedicion = (id) => sb.from('mediciones').delete().eq('id',id);
+
+// ─── PROGRAMA ───────────────────────────────────────────────────────────────
+const DIAS = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+const TC = {alta:'#ef4444', media:'#f59e0b', baja:'#22c55e'};
+// Tipos de bloque: fuerza, tecnico, metcon, pump, aislamiento
+const BT = {fuerza:'#ef4444',tecnico:'#6366f1',metcon:'#f97316',pump:'#22c55e',aislamiento:'#a855f7',warmup:'#38bdf8'};
+// Esfuerzo percibido
+const EP = {
+  max:{label:'MAXIMO',color:'#ef4444',emoji:'\u{1F525}',desc:'Al limite, RPE 9-10'},
+  fuerte:{label:'FUERTE',color:'#f97316',emoji:'\u{1F4AA}',desc:'Exigente, RPE 7-8'},
+  medio:{label:'MEDIO',color:'#f59e0b',emoji:'\u{26A1}',desc:'Controlado, RPE 5-6'},
+  facil:{label:'FACIL',color:'#22c55e',emoji:'\u{1F30A}',desc:'Fluido, RPE 3-4'}
+};
+const PROG = {
+  1:{nombre:'Pecho + Espalda',tipo:'alta',carbos:'30-40 g',bloques:[
+    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press inclinado barra',musculo:'Pecho superior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Agarre prono ancho. Baja al tercio superior del pecho. Codos a 45 grados. No bloquees arriba.',precaucion:'Cuidar hombros: no bajar mas alla del pecho. Si hay dolor anterior, parar.'},
+      {nombre:'Jalon al pecho',musculo:'Dorsal',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre prono amplio. Inclina torso 15 deg atras. Lleva barra al esternon. Contrae dorsal.'}]},
+    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press plano mancuernas',musculo:'Pecho medio',sets:3,reps:'8-10',rir:'1',cadencia:'3-1-2',tecnica:'Baja con control hasta sentir estiramiento. Empuja juntando mancuernas arriba.',precaucion:'RIR 1 — cerca del fallo. Asegurar spotter o peso controlable.'},
+      {nombre:'Remo barra',musculo:'Dorsal medio',sets:3,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Torso 45 grados. Barra al ombligo. Codos pegados. Retrae escapulas al subir.',precaucion:'Lumbar neutra siempre. No redondear espalda baja.'}]},
+    {nombre:'Bloque C',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Aperturas mancuernas',musculo:'Pecho',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Brazos ligeramente flexionados. Abre hasta estiramiento profundo.',precaucion:'No abrir demasiado — proteger capsula del hombro.'},
+      {nombre:'Pullover mancuerna',musculo:'Dorsal/Serrato',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Tumbado transversal. Baja por detras de la cabeza. Contrae dorsal al subir.'}]}
+  ]},
+  2:{nombre:'Pierna Principal',tipo:'alta',carbos:'30-40 g',bloques:[
+    {nombre:'Bloque A',btipo:'warmup',esfuerzo:'medio',ejercicios:[
+      {nombre:'Extension de rodilla',musculo:'Cuadriceps',sets:3,reps:'12',rir:'2',cadencia:'3-1-2',tecnica:'Calentamiento. Extiende con control hasta casi bloquear rodilla.'},
+      {nombre:'Hack squat progresivo',musculo:'Cuadriceps',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies al ancho de hombros. Baja hasta 90 grados. Empuja con talones.',precaucion:'Rodillas no colapsan hacia adentro. Si dolor patelar, reducir ROM.'}]},
+    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'max',ejercicios:[
+      {nombre:'Sumo deadlift',musculo:'Cadena posterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies muy abiertos, puntas en diagonal. Cadera abajo al inicio. Empuja el suelo luego extiende cadera.',precaucion:'MAXIMO esfuerzo — cinturon recomendado. Lumbar neutra obligatoria. No tirar con espalda.'}]},
+    {nombre:'Bloque C',btipo:'tecnico',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Lunges mancuernas',musculo:'Gluteo/Cuadriceps',sets:2,reps:'10-12',rir:'2',cadencia:'2-0-2',tecnica:'Paso largo. Baja hasta casi tocar suelo. Rodilla delantera no supera punta del pie.',precaucion:'Equilibrio: si fatiga neural alta, apoyarse en rack.'}]},
+    {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Pantorrilla progresiva',musculo:'Gemelos',sets:4,reps:'12-15',rir:'1',cadencia:'2-1-2',tecnica:'Sube lento hasta punta maxima. Manten 1 segundo. Baja controlado.'}]}
+  ]},
+  3:{nombre:'Hombro + Brazos',tipo:'media',carbos:'25-35 g',bloques:[
+    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press militar barra',musculo:'Deltoides anterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'De pie o sentado. Empuja verticalmente sobre la cabeza. Core activo.',precaucion:'No arquear lumbar. Si hay pinzamiento, usar mancuernas con rotacion.'},
+      {nombre:'Curl barra',musculo:'Biceps',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos a los costados. Sube con supinacion. No balancees el torso.'}]},
+    {nombre:'Bloque B',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Elevaciones laterales',musculo:'Deltoides lateral',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion leve hacia adelante. Sube hasta la altura del hombro. Sin inercia.',precaucion:'No subir mas alla de la horizontal — riesgo impingement.'},
+      {nombre:'Extension triceps polea',musculo:'Triceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos junto al cuerpo. Extiende completamente. Baja lento.'}]},
+    {nombre:'Bloque C',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Posterior hombro polea',musculo:'Deltoides posterior',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Polea alta, agarre cruzado. Lleva la mano hacia atras abriendo el codo.'},
+      {nombre:'Curl martillo',musculo:'Biceps braquial',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Agarre neutro pulgar arriba. Sin supinacion.'}]}
+  ]},
+  4:{nombre:'CrossFit WOD',tipo:'alta',carbos:'30-40 g',bloques:[
+    {nombre:'WOD del dia',btipo:'metcon',esfuerzo:'max',ejercicios:[
+      {nombre:'CrossFit Programado',musculo:'Cuerpo completo',sets:1,reps:'WOD completo',rir:'-',cadencia:'-',tecnica:'Clase CrossFit 6:00-7:00 PM. WOD programado por el box. Incluye calentamiento, skill/strength y metcon. Registrar detalle del WOD en notas.',precaucion:'Esfuerzo MAXIMO — hidratacion constante. Escalar peso si tecnica falla. No ego-lift.'}]}
+  ]},
+  5:{nombre:'Hombro + Espalda',tipo:'media',carbos:'25-35 g',bloques:[
+    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press estricto barra',musculo:'Deltoides anterior + Triceps',sets:4,reps:'5',rir:'2',cadencia:'3-1-2',tecnica:'De pie. Empuja vertical sin inclinar el torso. Core activo, gluteos contraidos.',precaucion:'No arquear lumbar bajo carga pesada. Cinturon si >80% 1RM.'},
+      {nombre:'Elevacion lateral mancuernas',musculo:'Deltoides medio',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion 10 deg. Codos semiflex fijos. SIN inercia. Pinky arriba al final.'}]},
+    {nombre:'Bloque B',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Cruces polea posterior',musculo:'Deltoides posterior',sets:3,reps:'12',rir:'2',cadencia:'2-0-2',tecnica:'Poleas altas cruzadas. Torso inclinado 30-45 deg. Retrae la escapula al final.'}]},
+    {nombre:'Bloque C',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Jalon agarre neutro',musculo:'Dorsal ancho',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Palmas enfrentadas. Mango al esternon. Codos hacia abajo y atras. Contrae 1 seg.'},
+      {nombre:'Remo 3 puntos cadera',musculo:'Dorsal + Espalda media',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Columna neutra paralela al suelo. Tira el codo hacia atras hasta la cadera.',precaucion:'Lumbar neutra. No rotar torso al jalar.'}]},
+    {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Pullover mancuerna',musculo:'Dorsal + Serrato',sets:3,reps:'12',rir:'2',cadencia:'3-0-2',tecnica:'Tumbado transversal, cadera abajo. Baja por detras de la cabeza.'},
+      {nombre:'Extension codo mecate',musculo:'Triceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Polea alta, palmas enfrentadas. Codos fijos. Separa los extremos al extender.'}]}
+  ]},
+  6:{nombre:'CrossFit / Recuperacion',tipo:'baja',carbos:'0-15 g',bloques:[
+    {nombre:'Actividad',btipo:'metcon',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'CrossFit o Caminata',musculo:'Cuerpo completo',sets:1,reps:'30-60 min',rir:'-',cadencia:'-',tecnica:'CrossFit programado o caminata a ritmo tranquilo o movilidad articular.',precaucion:'Sabado post-semana: escuchar el cuerpo. Si fatiga acumulada >7, solo movilidad.'}]}
+  ]},
+  0:{nombre:'Descanso + pump dominical',tipo:'baja',carbos:'15-20 g',bloques:[
+    {nombre:'Activacion ligera',btipo:'pump',esfuerzo:'facil',ejercicios:[
+      {nombre:'Press hombro mancuernas',musculo:'Deltoides',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Intensidad moderada. Solo activar el SNC. No ir al fallo.'},
+      {nombre:'Jalon con banda',musculo:'Dorsal',sets:3,reps:'15',rir:'3',cadencia:'2-0-2',tecnica:'Movimiento controlado. Pump sin desgaste.'},
+      {nombre:'Curl mancuernas',musculo:'Biceps',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Ligero y controlado.'},
+      {nombre:'Extension triceps polea',musculo:'Triceps',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Peso ligero, rango completo. Solo pump.'}]}
+  ]}
+};
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+const hoy = () => new Date().toISOString().split('T')[0];
+const diaHoy = () => new Date().getDay();
+const fmtFecha = s => { if(!s) return ''; const [y,m,d] = s.split('-'); return d+'/'+m+'/'+y; };
+const G = { bg:'#0a0a0f',sur:'#13131a',alt:'#1a1a24',bor:'#2a2a38',acc:'#6366f1',ok:'#22c55e',warn:'#f59e0b',bad:'#ef4444',coa:'#a855f7',dim:'#94a3b8',mu:'#64748b' };
+
+const getRirColor = rir => {
+  const r = parseInt(rir);
+  if(!rir || rir==='-') return G.mu;
+  if(r <= 1) return '#ef4444';
+  if(r <= 2) return '#f97316';
+  if(r <= 3) return '#eab308';
+  return '#22c55e';
+};
+const getRirLabel = rir => {
+  const r = parseInt(rir);
+  if(!rir || rir==='-') return '';
+  if(r <= 1) return 'MAXIMO';
+  if(r <= 2) return 'ALTO';
+  if(r <= 3) return 'MEDIO';
+  return 'MODERADO';
+};
+
+// Auth eliminado — acceso directo sin clave
+
+// ─── UI HELPERS ──────────────────────────────────────────────────────────────
+const Inp = ({style, ...props}) => <input {...props} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:13,width:'100%',outline:'none',...style}} />;
+
+function Rating({label, value, onChange, color, small, onSave}) {
+  const v = parseInt(value) || 0;
+  const c = color || G.acc;
+  const handleClick = (n) => {
+    onChange(v===n?'':String(n));
+    if(onSave) setTimeout(() => onSave(), 100);
+  };
+  return (
+    <div style={{marginBottom:small?4:8}}>
+      <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+        <span style={{fontSize:small?9:11,color:G.mu}}>{label}</span>
+        <span style={{fontSize:small?11:13,fontWeight:700,fontFamily:'monospace',color:v?c:G.mu}}>{v||'-'}<span style={{fontSize:9,color:G.mu}}>/10</span></span>
+      </div>
+      <div style={{display:'flex',gap:2}}>
+        {[1,2,3,4,5,6,7,8,9,10].map(n => (
+          <button key={n} onClick={()=>handleClick(n)}
+            style={{flex:1,height:small?14:18,borderRadius:2,background:n<=v?c:G.alt,border:'none',opacity:n<=v?1:0.3}} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Sec({title, color, children}) {
+  return (
+    <div style={{background:G.sur,border:'1px solid '+(color||G.bor),borderRadius:12,padding:14,marginBottom:12}}>
+      {title && <div style={{fontSize:9,fontFamily:'monospace',letterSpacing:2,color:color||G.mu,marginBottom:10,fontWeight:700}}>{title}</div>}
+      {children}
+    </div>
+  );
+}
+
+// ─── SAVE STATUS COMPONENT ───────────────────────────────────────────────────
+function SaveStatus({status, message, onRetry}) {
+  if(!status) return null;
+
+  let bgColor = G.alt, textColor = G.mu, icon = '...';
+  if(status === 'saving') {
+    bgColor = G.acc + '22';
+    textColor = G.acc;
+    icon = '⟳';
+  } else if(status === 'saved') {
+    bgColor = G.ok + '22';
+    textColor = G.ok;
+    icon = '✓';
+  } else if(status === 'error') {
+    bgColor = G.bad + '22';
+    textColor = G.bad;
+    icon = '✗';
+  }
+
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:bgColor,borderRadius:6,fontSize:11,color:textColor,whiteSpace:'nowrap'}}>
+      <span style={status==='saving'?{animation:'spin 1s linear infinite'}:{}}>{icon}</span>
+      <span>{message}</span>
+      {status==='error' && onRetry && (
+        <button onClick={onRetry} style={{background:'none',color:textColor,border:'1px solid '+textColor,borderRadius:3,padding:'1px 6px',fontSize:10,marginLeft:4}}>Reintentar</button>
+      )}
+    </div>
+  );
+}
+
+// ─── TAB ENTRENO ─────────────────────────────────────────────────────────────
+function TabEntreno({user}) {
+  const [dia, setDia] = useState(diaHoy());
+  const [fecha, setFecha] = useState(hoy());
+  const [reg, setReg] = useState({});
+  const [meta, setMeta] = useState({inicio:'',fin:'',sueno:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',obs:'',coach:''});
+  const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const [saveMessage, setSaveMessage] = useState('');
+  const [vista, setVista] = useState('hoy');
+  const [historial, setHistorial] = useState([]);
+  const [loadHist, setLoadHist] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const saveDebounceRef = useRef(null);
+  const saveTimeoutRef = useRef(null);
+
+  const prog = PROG[dia] || PROG[1];
+
+  useEffect(() => {
+    setSaveStatus(null);
+    setLoading(true);
+    getEntreno(user.id, fecha, dia).then(({data}) => {
+      if(data) {
+        setReg(data.ejercicios || {});
+        try { const n = JSON.parse(data.notas||'{}'); setMeta(m=>({...m,...n})); } catch {}
+      } else {
+        setReg({});
+        setMeta({inicio:'',fin:'',sueno:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',obs:'',coach:''});
+      }
+      setLoading(false);
+    }).catch(err => {
+      console.error('Error loading entreno:', err);
+      setLoading(false);
+    });
+  }, [fecha, dia, user.id]);
+
+  const performSave = useCallback(async (r, m) => {
+    setSaveStatus('saving');
+    setSaveMessage('Guardando...');
+
+    try {
+      const result = await saveEntreno(user.id, fecha, dia, r, JSON.stringify(m));
+      if(result.success) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        setSaveStatus('saved');
+        setSaveMessage('Guardado ' + timeStr);
+
+        // Clear saved status after 3 seconds
+        if(saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+          setSaveStatus(null);
+          setSaveMessage('');
+        }, 3000);
+      } else {
+        setSaveStatus('error');
+        setSaveMessage('Error: ' + result.error);
+      }
+    } catch(err) {
+      setSaveStatus('error');
+      setSaveMessage('Error al guardar: ' + err.message);
+    }
+  }, [user.id, fecha, dia]);
+
+  const debouncedSave = useCallback((r, m) => {
+    if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+
+    setSaveStatus('saving');
+    setSaveMessage('Guardando en 500ms...');
+
+    saveDebounceRef.current = setTimeout(() => {
+      performSave(r, m);
+    }, 500);
+  }, [performSave]);
+
+  const forceManualSave = useCallback(async () => {
+    if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    await performSave(reg, meta);
+  }, [reg, meta, performSave]);
+
+  const updSet = (key, si, field, val) => {
+    const nr = {...reg, [key]: {...reg[key], [si]: {...(reg[key]?.[si]||{}), [field]:val}}};
+    setReg(nr);
+    debouncedSave(nr, meta);
+  };
+
+  const updEjMeta = (key, field, val) => {
+    const nr = {...reg, [key+'_m']: {...(reg[key+'_m']||{}), [field]:val}};
+    setReg(nr);
+
+    const vals = [];
+    (prog.bloques||[]).forEach((bl,bi) => {
+      (bl.ejercicios||[]).forEach((_,ei) => {
+        const v = (bi===0&&ei===0&&key==='b0_0'?val:null) || nr['b'+bi+'_'+ei+'_m']?.[field];
+        if(v) vals.push(parseInt(v));
+      });
+    });
+    let nm = meta;
+    if(vals.length > 0) {
+      const avg = String(Math.round(vals.reduce((a,b)=>a+b,0)/vals.length));
+      nm = {...meta, [field==='e'?'ePost':'fPost']: avg};
+      setMeta(nm);
+    }
+    debouncedSave(nr, nm);
+  };
+
+  const updMeta = (f, v) => {
+    const nm = {...meta, [f]:v};
+    setMeta(nm);
+    debouncedSave(reg, nm);
+  };
+
+  const duracion = () => {
+    if(!meta.inicio||!meta.fin) return null;
+    const [h1,m1] = meta.inicio.split(':').map(Number);
+    const [h2,m2] = meta.fin.split(':').map(Number);
+    let d = (h2*60+m2)-(h1*60+m1);
+    if(d<0) d+=1440;
+    return (d/60).toFixed(1);
+  };
+
+  const verHistorial = async () => {
+    setLoadHist(true);
+    const { data } = await getHistorialEntreno(user.id);
+    setHistorial(data || []);
+    setLoadHist(false);
+    setVista('historial');
+  };
+
+  const cargarSesion = async (f, d) => {
+    setFecha(f); setDia(d); setVista('hoy');
+  };
+
+  const imprimir = () => {
+    const bloqueHtml = (prog.bloques||[]).map(bl => {
+      const esBi = bl.ejercicios.length > 1;
+      return `<div style="margin-bottom:12px">
+        <div style="background:#333;color:#fff;padding:5px 10px;font-size:12px;font-weight:bold">${bl.nombre}${esBi?' (BISERIE)':''}</div>
+        ${bl.ejercicios.map((ej,ei) => {
+          const key = 'b'+prog.bloques.indexOf(bl)+'_'+ei;
+          const rc = getRirColor(ej.rir);
+          let rows = '';
+          for(let s=0;s<ej.sets;s++){
+            const sr = reg[key]?.[s]||{};
+            rows += `<tr><td>${s+1}</td><td>${sr.peso||''}</td><td>${sr.reps||''}</td><td>${sr.rir||''}</td><td>${sr.rpe||''}</td><td>${sr.notas||''}</td></tr>`;
+          }
+          return `<div style="margin:4px 0;border-left:3px solid ${rc};padding-left:8px">
+            <div style="font-weight:bold;font-size:13px">${ej.nombre} <span style="color:#888;font-size:11px">(${ej.musculo})</span> — ${ej.sets}x${ej.reps} RIR ${ej.rir}</div>
+            ${ej.tecnica?`<div style="font-size:10px;color:#666;font-style:italic;margin:2px 0">${ej.tecnica}</div>`:''}
+            <table border="1" style="width:100%;border-collapse:collapse;margin-top:4px;font-size:11px">
+              <tr style="background:#f0f0f0"><th>Set</th><th>Peso kg</th><th>Reps</th><th>RIR</th><th>RPE</th><th>Notas</th></tr>
+              ${rows}
+            </table></div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+
+    const w = window.open('','_blank');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${prog.nombre} - ${fmtFecha(fecha)}</title>
+    <style>body{font-family:sans-serif;padding:20px;color:#111;font-size:13px}h1{font-size:18px}@media print{button{display:none}}</style></head>
+    <body><button onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#333;color:#fff;border:none;border-radius:4px;cursor:pointer">Imprimir</button>
+    <h1>${prog.nombre} — ${fmtFecha(fecha)}</h1>
+    <p style="color:#888;font-size:12px;margin-bottom:12px">Tipo: ${(prog.tipo||'').toUpperCase()} | Carbos: ${prog.carbos} | Inicio: ${meta.inicio||'--'} | Fin: ${meta.fin||'--'} | ${duracion()?duracion()+'h':''}</p>
+    ${bloqueHtml}
+    ${meta.obs?`<div style="margin-top:12px"><b>Observaciones:</b><p>${meta.obs}</p></div>`:''}
+    ${meta.coach?`<div style="margin-top:8px"><b>Coach:</b><p style="color:#7c3aed">${meta.coach}</p></div>`:''}
+    </body></html>`);
+    w.document.close();
+  };
+
+  if(vista === 'historial') return (
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+        <div style={{fontSize:14,fontWeight:700}}>Historial de sesiones</div>
+        <button onClick={()=>setVista('hoy')} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:12}}>Volver</button>
+      </div>
+      {loadHist ? <div style={{color:G.mu,textAlign:'center',padding:20}}>Cargando...</div> :
+       historial.length === 0 ? <div style={{color:G.mu,padding:20,textAlign:'center'}}>Sin sesiones guardadas</div> :
+       historial.map((s,i) => {
+         const p = PROG[s.dia_semana];
+         let notas = {};
+         try { notas = JSON.parse(s.notas||'{}'); } catch {}
+         return (
+           <div key={i} onClick={()=>cargarSesion(s.fecha,s.dia_semana)} style={{background:G.sur,border:'1px solid '+G.bor,borderRadius:10,padding:12,marginBottom:8,cursor:'pointer'}}>
+             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+               <div>
+                 <div style={{fontWeight:600,fontSize:13}}>{p?.nombre || 'Dia '+s.dia_semana}</div>
+                 <div style={{fontSize:11,color:G.mu}}>{fmtFecha(s.fecha)}</div>
+               </div>
+               <div style={{textAlign:'right',fontSize:11,color:G.dim}}>
+                 {notas.ePost && <span>E:{notas.ePost}/10 </span>}
+                 {notas.pump && <span>P:{notas.pump}/10</span>}
+               </div>
+             </div>
+           </div>
+         );
+       })
+      }
+    </div>
+  );
+
+  const dur = duracion();
+
+  if(loading) {
+    return (
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:40,color:G.mu}}>
+        <span style={{animation:'spin 1s linear infinite'}}>⟳</span> Cargando sesion...
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Sec>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:12}}>
+          {[1,2,3,4,5,6,0].map(d => (
+            <button key={d} onClick={()=>setDia(d)} style={{background:dia===d?G.acc:G.alt,color:dia===d?'#fff':G.dim,border:'1px solid '+(dia===d?G.acc:G.bor),borderRadius:8,padding:'4px 10px',fontSize:10,fontWeight:600}}>
+              {DIAS[d]}
+            </button>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
+          <Inp type="date" value={fecha} onChange={e=>setFecha(e.target.value)} style={{width:145}} />
+          <div style={{flex:1,minWidth:120}}>
+            <div style={{fontWeight:700,fontSize:14}}>{prog.nombre}</div>
+            <div style={{display:'flex',gap:6,alignItems:'center',marginTop:3}}>
+              <span style={{background:(TC[prog.tipo]||G.mu)+'22',color:TC[prog.tipo]||G.mu,borderRadius:4,padding:'2px 8px',fontSize:9,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(prog.tipo||'').toUpperCase()}</span>
+              <span style={{fontSize:10,color:G.warn,fontFamily:'monospace'}}>{prog.carbos}</span>
+            </div>
+          </div>
+        </div>
+        <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
+          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
+          <button onClick={imprimir} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:11}}>Imprimir</button>
+          <button onClick={verHistorial} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:11}}>Historial</button>
+          <span style={{background:G.alt,color:G.coa,border:'1px solid '+G.coa,borderRadius:7,padding:'5px 10px',fontSize:11}}>Suplementos</span>
+        </div>
+      </Sec>
+
+      <Sec title="PRE-ENTRENO" color={G.acc}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Hora inicio</div>
+            <Inp type="time" value={meta.inicio} onChange={e=>updMeta('inicio',e.target.value)} />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Hora fin {dur&&<span style={{color:G.acc,fontFamily:'monospace'}}>({dur}h)</span>}</div>
+            <Inp type="time" value={meta.fin} onChange={e=>updMeta('fin',e.target.value)} />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Horas sueno</div>
+            <Inp type="number" min="0" max="12" step="0.5" value={meta.sueno} onChange={e=>updMeta('sueno',e.target.value)} placeholder="7.5" style={{textAlign:'center'}} />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Horas ayuno</div>
+            <Inp type="number" min="0" max="24" step="0.5" value={meta.ayuno} onChange={e=>updMeta('ayuno',e.target.value)} placeholder="12" style={{textAlign:'center'}} />
+          </div>
+        </div>
+        <Rating label="Energia pre" value={meta.ePre} onChange={v=>updMeta('ePre',v)} color={G.acc} onSave={forceManualSave} />
+        <Rating label="Fatiga pre" value={meta.fPre} onChange={v=>updMeta('fPre',v)} color={G.bad} onSave={forceManualSave} />
+        <Rating label="Hambre pre" value={meta.hPre} onChange={v=>updMeta('hPre',v)} color={G.warn} onSave={forceManualSave} />
+        <Rating label="Ansiedad pre" value={meta.aPre} onChange={v=>updMeta('aPre',v)} color={G.coa} onSave={forceManualSave} />
+      </Sec>
+
+      {(prog.bloques||[]).map((bloque, bi) => {
+        const esBi = bloque.ejercicios.length > 1;
+        const desc = bloque.ejercicios.length > 1 ? '60-90s' : (prog.tipo==='alta' ? '2-3 min' : '90s');
+        const bt = BT[bloque.btipo] || G.acc;
+        const ep = EP[bloque.esfuerzo] || EP.medio;
+        const hasPrecaucion = bloque.ejercicios.some(e => e.precaucion);
+        return (
+          <div key={bi} style={{background:G.sur,border:'1px solid '+bt+'55',borderRadius:12,overflow:'hidden',marginBottom:12}}>
+            <div style={{padding:'8px 14px',background:bt+'15',borderBottom:'2px solid '+bt+'44',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              <span style={{fontSize:10,fontFamily:'monospace',fontWeight:700,color:bt,letterSpacing:1}}>{bloque.nombre}</span>
+              <span style={{background:bt+'33',color:bt,borderRadius:4,padding:'2px 7px',fontSize:8,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(bloque.btipo||'').toUpperCase()}</span>
+              <span style={{background:ep.color+'22',color:ep.color,borderRadius:4,padding:'2px 7px',fontSize:8,fontFamily:'monospace',fontWeight:700}}>{ep.emoji} {ep.label}</span>
+              {esBi && <span style={{background:G.warn+'22',color:G.warn,borderRadius:3,padding:'2px 5px',fontSize:8,fontFamily:'monospace'}}>BISERIE</span>}
+              {hasPrecaucion && <span style={{background:'#ef444422',color:'#ef4444',borderRadius:3,padding:'2px 5px',fontSize:8,fontFamily:'monospace'}}>{'\u26A0\uFE0F'} OJO</span>}
+              <span style={{marginLeft:'auto',fontSize:8,color:G.mu}}>{ep.desc} | Desc: {desc}</span>
+            </div>
+            {bloque.ejercicios.map((ej, ei) => {
+              const key = 'b'+bi+'_'+ei;
+              const ejm = reg[key+'_m'] || {};
+              const rc = getRirColor(ej.rir);
+              const rl = getRirLabel(ej.rir);
+              return (
+                <div key={ei}>
+                  {ei > 0 && (
+                    <div style={{display:'flex',alignItems:'center',gap:6,padding:'3px 14px',background:G.warn+'11'}}>
+                      <div style={{flex:1,height:1,background:G.bor}}/><span style={{fontSize:8,color:G.warn,fontFamily:'monospace'}}>SEGUIDO</span><div style={{flex:1,height:1,background:G.bor}}/>
+                    </div>
+                  )}
+                  <div style={{padding:'12px 14px',borderLeft:'3px solid '+rc}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                      <div style={{flex:1}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                          <div style={{width:10,height:10,borderRadius:'50%',background:rc,flexShrink:0}}/>
+                          <span style={{fontWeight:700,fontSize:14}}>{ej.nombre}</span>
+                        </div>
+                        <div style={{fontSize:10,color:G.mu,marginLeft:16}}>{ej.musculo}</div>
+                      </div>
+                      <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
+                        <div style={{fontSize:14,fontWeight:700,fontFamily:'monospace',color:rc}}>{ej.sets}x{ej.reps}</div>
+                        <div style={{fontSize:9,color:G.mu}}>RIR {ej.rir} · {ej.cadencia}</div>
+                        {rl && <div style={{fontSize:8,background:rc+'22',color:rc,borderRadius:3,padding:'1px 5px',marginTop:2,fontFamily:'monospace'}}>{rl}</div>}
+                      </div>
+                    </div>
+                    {ej.tecnica && (
+                      <div style={{background:rc+'0d',border:'1px solid '+rc+'33',borderRadius:8,padding:'7px 10px',marginBottom:ej.precaucion?6:10,fontSize:11,color:G.dim,lineHeight:1.6}}>
+                        <span style={{fontSize:9,fontFamily:'monospace',color:rc,fontWeight:700}}>TECNICA: </span>{ej.tecnica}
+                      </div>
+                    )}
+                    {ej.precaucion && (
+                      <div style={{background:'#ef444412',border:'1px solid #ef444444',borderRadius:8,padding:'7px 10px',marginBottom:10,fontSize:11,color:'#fca5a5',lineHeight:1.5,display:'flex',gap:6,alignItems:'flex-start'}}>
+                        <span style={{fontSize:13,flexShrink:0}}>{'\u26A0\uFE0F'}</span>
+                        <div><span style={{fontSize:9,fontFamily:'monospace',color:'#ef4444',fontWeight:700}}>PRECAUCION: </span>{ej.precaucion}</div>
+                      </div>
+                    )}
+                    <div style={{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}}>
+                      {['#','PESO kg','REPS','CADENCIA','RIR','RPE','NOTAS'].map(h => (
+                        <span key={h} style={{fontSize:7,color:G.mu,textAlign:'center',fontFamily:'monospace'}}>{h}</span>
+                      ))}
+                    </div>
+                    {Array.from({length:ej.sets}).map((_,si) => {
+                      const s = reg[key]?.[si] || {};
+                      return (
+                        <div key={si} style={{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}}>
+                          <div style={{fontSize:9,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}>{si+1}</div>
+                          <Inp value={s.peso||''} onChange={e=>updSet(key,si,'peso',e.target.value)} placeholder="—" style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
+                          <Inp value={s.reps||''} onChange={e=>updSet(key,si,'reps',e.target.value)} placeholder={ej.reps} style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
+                          <Inp value={s.cadencia||''} onChange={e=>updSet(key,si,'cadencia',e.target.value)} placeholder={ej.cadencia} style={{textAlign:'center',padding:'5px 2px',fontSize:10}} />
+                          <Inp value={s.rir||''} onChange={e=>updSet(key,si,'rir',e.target.value)} placeholder={ej.rir} style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
+                          <Inp value={s.rpe||''} onChange={e=>updSet(key,si,'rpe',e.target.value)} placeholder="8" style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
+                          <Inp value={s.notas||''} onChange={e=>updSet(key,si,'notas',e.target.value)} placeholder="..." style={{textAlign:'center',padding:'5px 2px',fontSize:10}} />
+                        </div>
+                      );
+                    })}
+                    <div style={{marginTop:10,padding:'8px 10px',background:G.bg,borderRadius:8,border:'1px solid '+G.bor}}>
+                      <div style={{fontSize:8,color:G.mu,fontFamily:'monospace',marginBottom:6}}>AL TERMINAR ESTE EJERCICIO</div>
+                      <Rating label="Energia (auto POST)" value={ejm.e||''} onChange={v=>updEjMeta(key,'e',v)} color={G.acc} small onSave={forceManualSave} />
+                      <Rating label="Fatiga (auto POST)" value={ejm.f||''} onChange={v=>updEjMeta(key,'f',v)} color={G.bad} small onSave={forceManualSave} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
+      <Sec title="POST-ENTRENO" color={G.ok}>
+        <div style={{fontSize:9,color:G.ok,marginBottom:10,fontFamily:'monospace'}}>Energia y Fatiga se calculan con promedio de ejercicios</div>
+        <Rating label="Energia post (auto)" value={meta.ePost} onChange={v=>updMeta('ePost',v)} color={G.acc} onSave={forceManualSave} />
+        <Rating label="Pump" value={meta.pump} onChange={v=>updMeta('pump',v)} color={G.coa} onSave={forceManualSave} />
+        <Rating label="Fatiga post (auto)" value={meta.fPost} onChange={v=>updMeta('fPost',v)} color={G.bad} onSave={forceManualSave} />
+        <Rating label="Hambre post" value={meta.hPost} onChange={v=>updMeta('hPost',v)} color={G.warn} onSave={forceManualSave} />
+        <Rating label="Ansiedad post" value={meta.aPost} onChange={v=>updMeta('aPost',v)} color={G.coa} onSave={forceManualSave} />
+      </Sec>
+
+      <Sec title="OBSERVACIONES Y COACH" color={G.coa}>
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:10,color:G.mu,marginBottom:4}}>Observaciones del dia</div>
+          <textarea value={meta.obs} onChange={e=>updMeta('obs',e.target.value)} placeholder="Como fue la sesion?" style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'8px 10px',fontSize:13,width:'100%',outline:'none',minHeight:55}} />
+        </div>
+        <div>
+          <div style={{fontSize:10,color:G.coa,marginBottom:4,fontWeight:700}}>Decision del Coach</div>
+          <textarea value={meta.coach} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes para la proxima sesion..." style={{background:G.alt,border:'1px solid '+G.coa,color:'#e2e8f0',borderRadius:8,padding:'8px 10px',fontSize:13,width:'100%',outline:'none',minHeight:45}} />
+        </div>
+      </Sec>
+    </div>
+  );
+}
+
+// ─── TAB NUTRICION ────────────────────────────────────────────────────────────
+function TabNutricion({user}) {
+  const [fecha, setFecha] = useState(hoy());
+  const [data, setData] = useState({});
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [saveMessage, setSaveMessage] = useState('');
+  const saveDebounceRef = useRef(null);
+  const saveTimeoutRef = useRef(null);
+  const dia = new Date(fecha+'T12:00').getDay();
+  const prog = PROG[dia] || PROG[1];
+
+  useEffect(() => {
+    setSaveStatus(null);
+    getNutricion(user.id, fecha).then(({data:d}) => setData(d || {}));
+  }, [fecha, user.id]);
+
+  const performSave = useCallback(async (nd) => {
+    setSaveStatus('saving');
+    setSaveMessage('Guardando...');
+
+    try {
+      const result = await saveNutricion(user.id, fecha, nd);
+      if(result.success) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        setSaveStatus('saved');
+        setSaveMessage('Guardado ' + timeStr);
+
+        if(saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+          setSaveStatus(null);
+          setSaveMessage('');
+        }, 3000);
+      } else {
+        setSaveStatus('error');
+        setSaveMessage('Error: ' + result.error);
+      }
+    } catch(err) {
+      setSaveStatus('error');
+      setSaveMessage('Error al guardar: ' + err.message);
+    }
+  }, [user.id, fecha]);
+
+  const upd = (f, v) => {
+    const nd = {...data, [f]:v};
+    setData(nd);
+    if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+
+    setSaveStatus('saving');
+    setSaveMessage('Guardando en 500ms...');
+
+    saveDebounceRef.current = setTimeout(() => {
+      performSave(nd);
+    }, 500);
+  };
+
+  const forceManualSave = useCallback(async () => {
+    if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    await performSave(data);
+  }, [data, performSave]);
+
+  const calcAyuno = () => {
+    if(!data.ayuno_ini || !data.ayuno_fin) return null;
+    const [h1,m1] = data.ayuno_ini.split(':').map(Number);
+    const [h2,m2] = data.ayuno_fin.split(':').map(Number);
+    let d = (h2*60+m2)-(h1*60+m1);
+    if(d<0) d+=1440;
+    return (d/60).toFixed(1);
+  };
+  const hrs = calcAyuno();
+
+  // Metas diarias
+  const METAS = { prot: 180, carbs: 40, grasa: 130, agua: 3.5, kcal: 2200 };
+
+  // Parsear macros de cada comida: "texto | P:20g C:0 G:5g"
+  const parseMacros = (txt) => {
+    if(!txt) return { p:0, c:0, g:0 };
+    const pm = txt.match(/P:~?(\d+)/i); const cm = txt.match(/C:~?(\d+)/i); const gm = txt.match(/G:~?(\d+)/i);
+    return { p: pm?parseInt(pm[1]):0, c: cm?parseInt(cm[1]):0, g: gm?parseInt(gm[1]):0 };
+  };
+
+  // Calcular totales de todas las comidas
+  const campos = [
+    ['Pre-entreno','pre','EAA, colageno... | P:20g C:0 G:0'],
+    ['Intra-entreno','intra','Agua + sal... | P:0 C:0 G:0'],
+    ['Post inmediato','postInm','Proteina... | P:40g C:2g G:1g'],
+    ['Post 30-60 min','post60','Comida... | P:30g C:3g G:25g'],
+    ['Comida 2','c1','Desc... | P:20g C:5g G:8g'],
+    ['Comida 3','c2','Desc... | P:25g C:7g G:33g'],
+    ['Cena','cena','Desc... | P:50g C:2g G:20g'],
+    ['Suplementos','suple','Creatina, vitaminas...']
+  ];
+
+  const totales = campos.reduce((acc, [,field]) => {
+    const m = parseMacros(data[field]||'');
+    return { p: acc.p+m.p, c: acc.c+m.c, g: acc.g+m.g };
+  }, { p:0, c:0, g:0 });
+  totales.kcal = totales.p*4 + totales.c*4 + totales.g*9;
+
+  const pctP = Math.min(100, Math.round(totales.p/METAS.prot*100));
+  const pctC = Math.min(100, Math.round(totales.c/METAS.carbs*100));
+  const pctG = Math.min(100, Math.round(totales.g/METAS.grasa*100));
+  const pctK = Math.min(100, Math.round(totales.kcal/METAS.kcal*100));
+  const aguaPct = Math.min(100, Math.round(parseFloat(data.agua||0)/METAS.agua*100));
+
+  const BarMacro = ({label, current, target, pct, color, unit}) => (
+    <div style={{marginBottom:8}}>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:10,marginBottom:3}}>
+        <span style={{color:G.dim}}>{label}</span>
+        <span style={{fontFamily:'monospace',color:pct>=100?G.ok:color}}>
+          <b>{current}</b>/{target}{unit} <span style={{fontSize:9,color:G.mu}}>({pct}%)</span>
+        </span>
+      </div>
+      <div style={{height:6,background:G.alt,borderRadius:3,overflow:'hidden'}}>
+        <div style={{height:'100%',width:pct+'%',background:pct>=90?G.ok:pct>=60?color:G.bad,borderRadius:3,transition:'width 0.3s'}}/>
+      </div>
+      {target-current>0 && <div style={{fontSize:9,color:G.mu,marginTop:2,textAlign:'right'}}>Faltan {target-current}{unit}</div>}
+    </div>
+  );
+
+  return (
+    <div>
+      <Sec>
+        <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
+          <Inp type="date" value={fecha} onChange={e=>setFecha(e.target.value)} style={{width:145}} />
+          <span style={{fontSize:12,color:G.mu}}>{prog.nombre}</span>
+          <span style={{marginLeft:'auto',fontSize:11,color:G.warn}}>Carbos: {prog.carbos}</span>
+        </div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
+        </div>
+        <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
+      </Sec>
+
+      <Sec title="MACROS DEL DIA" color={G.acc}>
+        <div style={{padding:'10px 12px',background:G.alt,borderRadius:10,marginBottom:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <span style={{fontSize:18,fontWeight:700,fontFamily:'monospace',color:pctK>=90?G.ok:G.acc}}>{totales.kcal}</span>
+            <span style={{fontSize:11,color:G.mu}}>/ {METAS.kcal} kcal ({pctK}%)</span>
+          </div>
+          <BarMacro label="Proteina" current={totales.p} target={METAS.prot} pct={pctP} color={G.acc} unit="g" />
+          <BarMacro label="Carbos netos" current={totales.c} target={METAS.carbs} pct={pctC} color={G.warn} unit="g" />
+          <BarMacro label="Grasa" current={totales.g} target={METAS.grasa} pct={pctG} color={G.coa} unit="g" />
+          <BarMacro label="Agua" current={parseFloat(data.agua||0)} target={METAS.agua} pct={aguaPct} color='#38bdf8' unit="L" />
+        </div>
+        {(() => {
+          const alertas = [];
+          const carbMax = parseInt(prog.carbos) || 40;
+          if(totales.c > carbMax) alertas.push({tipo:'bad',msg:'\u26A0\uFE0F CARBOS EXCEDIDOS: '+totales.c+'g / max '+carbMax+'g \u2014 cuidar cetosis',icon:'\u{1F6AB}'});
+          else if(totales.c > carbMax*0.85) alertas.push({tipo:'warn',msg:'\u26A1 Carbos al limite: '+totales.c+'g de '+carbMax+'g \u2014 vigilar proximas comidas',icon:'\u26A1'});
+          if(totales.g > METAS.grasa*1.1) alertas.push({tipo:'warn',msg:'\u26A0\uFE0F GRASA alta: '+totales.g+'g / meta '+METAS.grasa+'g \u2014 moderar grasas restantes',icon:'\u{1F9C8}'});
+          if(pctP < 50 && new Date().getHours() >= 16) alertas.push({tipo:'bad',msg:'\u{1F969} PROTEINA baja ('+totales.p+'g/'+METAS.prot+'g) \u2014 priorizar prote en comidas restantes',icon:'\u{1F969}'});
+          else if(pctP < 70 && new Date().getHours() >= 20) alertas.push({tipo:'bad',msg:'\u{1F969} DEFICIT PROTEINA critico: '+totales.p+'g de '+METAS.prot+'g \u2014 falta '+(METAS.prot-totales.p)+'g antes de dormir',icon:'\u{1F969}'});
+          if(parseFloat(data.agua||0) < 2 && new Date().getHours() >= 14) alertas.push({tipo:'warn',msg:'\u{1F4A7} AGUA baja: '+(data.agua||0)+'L \u2014 objetivo '+METAS.agua+'L, tomar mas',icon:'\u{1F4A7}'});
+          if(totales.kcal > METAS.kcal*1.1) alertas.push({tipo:'warn',msg:'\u{1F525} CALORIAS excedidas: '+totales.kcal+' / '+METAS.kcal+' kcal',icon:'\u{1F525}'});
+          if(totales.kcal < METAS.kcal*0.6 && new Date().getHours() >= 18) alertas.push({tipo:'warn',msg:'\u26A1 DEFICIT calorico alto: '+totales.kcal+'/'+METAS.kcal+' kcal \u2014 asegurar cena completa',icon:'\u26A1'});
+          if(alertas.length === 0 && pctP >= 80 && pctK >= 70) alertas.push({tipo:'ok',msg:'\u2705 Macros en rango \u2014 vas bien, sigue asi',icon:'\u2705'});
+          return alertas.length > 0 && (
+            <div style={{marginTop:10}}>
+              {alertas.map((a,i) => (
+                <div key={i} style={{background:a.tipo==='bad'?'#ef444418':a.tipo==='warn'?'#f59e0b18':'#22c55e18',border:'1px solid '+(a.tipo==='bad'?'#ef444444':a.tipo==='warn'?'#f59e0b44':'#22c55e44'),borderRadius:8,padding:'8px 12px',marginBottom:6,fontSize:11,color:a.tipo==='bad'?'#fca5a5':a.tipo==='warn'?'#fde68a':'#86efac',display:'flex',gap:8,alignItems:'center'}}>
+                  <span style={{fontSize:14,flexShrink:0}}>{a.icon}</span>
+                  <span>{a.msg}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </Sec>
+
+      <Sec title="AYUNO" color={G.ok}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:8}}>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Ultima comida</div>
+            <Inp type="time" value={data.ayuno_ini||''} onChange={e=>upd('ayuno_ini',e.target.value)} />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Primera comida</div>
+            <Inp type="time" value={data.ayuno_fin||''} onChange={e=>upd('ayuno_fin',e.target.value)} />
+          </div>
+        </div>
+        {hrs && (
+          <div style={{padding:'8px 12px',background:G.alt,borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontSize:13,color:G.mu}}>Duracion ayuno</span>
+            <span style={{fontSize:22,fontWeight:700,fontFamily:'monospace',color:parseFloat(hrs)>=12?G.ok:G.warn}}>{hrs}h</span>
+          </div>
+        )}
+      </Sec>
+
+      <Sec title="COMIDAS">
+        {campos.map(([label, field, ph]) => {
+          const m = parseMacros(data[field]||'');
+          const hasMacros = m.p>0||m.c>0||m.g>0;
+          return (
+            <div key={field} style={{marginBottom:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                <div style={{fontSize:10,color:G.mu}}>{label}</div>
+                {hasMacros && (
+                  <div style={{fontSize:9,fontFamily:'monospace',color:G.dim}}>
+                    <span style={{color:G.acc}}>P:{m.p}g</span>{' '}
+                    <span style={{color:G.warn}}>C:{m.c}g</span>{' '}
+                    <span style={{color:G.coa}}>G:{m.g}g</span>{' '}
+                    <span style={{color:G.mu}}>({m.p*4+m.c*4+m.g*9}kcal)</span>
+                  </div>
+                )}
+              </div>
+              <Inp value={data[field]||''} onChange={e=>upd(field,e.target.value)} placeholder={ph} />
+            </div>
+          );
+        })}
+      </Sec>
+
+      <Sec title="AGUA + BIENESTAR">
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Agua (litros)</div>
+          <Inp type="number" step="0.5" value={data.agua||''} onChange={e=>upd('agua',e.target.value)} placeholder="3.5" style={{textAlign:'center'}} />
+        </div>
+        <Rating label="Hambre general" value={data.hambre||''} onChange={v=>upd('hambre',v)} color={G.warn} />
+        <div style={{marginTop:8}}>
+          <div style={{fontSize:10,color:G.mu,marginBottom:4}}>Digestion</div>
+          <select value={data.digestion||''} onChange={e=>upd('digestion',e.target.value)} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:13,width:'100%',outline:'none'}}>
+            <option value="">—</option>
+            <option>Excelente</option>
+            <option>Buena</option>
+            <option>Regular</option>
+            <option>Mala</option>
+          </select>
+        </div>
+      </Sec>
+    </div>
+  );
+}
+
+// ─── TAB PROGRESO ─────────────────────────────────────────────────────────────
+function TabProgreso({user}) {
+  const [hist, setHist] = useState([]);
+  const [form, setForm] = useState({fecha:hoy(), peso:'', cintura:'', notas:''});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getMediciones(user.id).then(({data}) => { if(data) setHist(data); setLoading(false); });
+  }, [user.id]);
+
+  const guardar = async () => {
+    if(!form.peso && !form.cintura) return;
+    const { data } = await saveMedicion(user.id, form);
+    if(data?.[0]) setHist(h => [data[0], ...h]);
+    setForm({fecha:hoy(), peso:'', cintura:'', notas:''});
+  };
+
+  const borrar = async id => {
+    await delMedicion(id);
+    setHist(h => h.filter(m => m.id !== id));
+  };
+
+  const ult = hist.slice(0,8);
+  const tP = ult.length >= 2 ? (parseFloat(ult[0].peso)-parseFloat(ult[ult.length-1].peso)).toFixed(1) : null;
+  const tC = ult.length >= 2 ? (parseFloat(ult[0].cintura)-parseFloat(ult[ult.length-1].cintura)).toFixed(1) : null;
+
+  return (
+    <div>
+      {hist.length >= 2 && (
+        <Sec title="TENDENCIA">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            {[['Peso',tP,'kg'],['Cintura',tC,'cm']].map(([l,v,u]) => (
+              <div key={l} style={{padding:12,background:G.alt,borderRadius:8,textAlign:'center'}}>
+                <div style={{fontSize:10,color:G.mu,marginBottom:4}}>{l}</div>
+                <div style={{fontSize:22,fontWeight:700,fontFamily:'monospace',color:v!==null?(parseFloat(v)<=0?G.ok:G.warn):G.mu}}>
+                  {v!==null ? (parseFloat(v)>0?'+':'')+v+' '+u : '--'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Sec>
+      )}
+
+      <Sec title="NUEVA MEDICION">
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Fecha</div>
+            <Inp type="date" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})} />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Peso kg</div>
+            <Inp type="number" step="0.1" value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} placeholder="75.5" />
+          </div>
+          <div>
+            <div style={{fontSize:10,color:G.mu,marginBottom:3}}>Cintura cm</div>
+            <Inp type="number" step="0.1" value={form.cintura} onChange={e=>setForm({...form,cintura:e.target.value})} placeholder="82" />
+          </div>
+        </div>
+        <Inp value={form.notas} onChange={e=>setForm({...form,notas:e.target.value})} placeholder="Condicion (en ayunas, post-entreno...)" style={{marginBottom:10}} />
+        <button onClick={guardar} style={{background:G.acc,color:'#fff',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:500,border:'none'}}>
+          Guardar medicion
+        </button>
+      </Sec>
+
+      {!loading && hist.length > 0 && (
+        <Sec title="HISTORIAL">
+          {hist.map((m,i) => (
+            <div key={m.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:G.alt,borderRadius:8,marginBottom:5,flexWrap:'wrap'}}>
+              {i===0 && <span style={{background:G.acc+'22',color:G.acc,borderRadius:3,padding:'1px 6px',fontSize:8,fontFamily:'monospace'}}>ULTIMO</span>}
+              <span style={{fontSize:11,color:G.mu,fontFamily:'monospace'}}>{fmtFecha(m.fecha)}</span>
+              {m.peso && <span style={{fontSize:14,fontWeight:700}}>{m.peso} kg</span>}
+              {m.cintura && <span style={{fontSize:14,fontWeight:700,color:G.warn}}>{m.cintura} cm</span>}
+              {m.notas && <span style={{fontSize:11,color:G.mu,flex:1}}>{m.notas}</span>}
+              <button onClick={()=>borrar(m.id)} style={{background:'none',color:G.mu,fontSize:18,marginLeft:'auto',border:'none'}}>x</button>
+            </div>
+          ))}
+        </Sec>
+      )}
+    </div>
+  );
+}
+
+// ─── APP ─────────────────────────────────────────────────────────────────────
+const TABS = [
+  {id:'entreno', label:'ENTRENO', icon:'H'},
+  {id:'nutri', label:'NUTRICION', icon:'N'},
+  {id:'progreso', label:'PROGRESO', icon:'P'}
+];
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [tab, setTab] = useState('entreno');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    autoAuth().then(u => { setUser(u); setLoading(false); });
+  }, []);
+
+  if(loading) return (
+    <div style={{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:12}}>
+      Cargando...
+    </div>
+  );
+
+  if(!user) return (
+    <div style={{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:12}}>
+      Iniciando FitTracker...
+    </div>
+  );
+
+  return (
+    <div style={{background:G.bg,minHeight:'100vh',maxWidth:640,margin:'0 auto'}}>
+      <div style={{background:G.sur,borderBottom:'1px solid '+G.bor,padding:'10px 16px 0',position:'sticky',top:0,zIndex:10}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <div style={{fontFamily:'monospace',fontSize:12,fontWeight:700,letterSpacing:3,color:G.acc}}>FITTRACKER</div>
+          <div style={{fontSize:9,color:G.ok,fontFamily:'monospace'}}>Ariel</div>
+        </div>
+        <div style={{display:'flex',gap:2}}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{background:'none',color:tab===t.id?G.acc:G.mu,borderBottom:'2px solid '+(tab===t.id?G.acc:'transparent'),padding:'5px 14px',fontSize:9,fontWeight:700,fontFamily:'monospace',letterSpacing:1,border:'none',cursor:'pointer'}}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{padding:14}}>
+        {tab==='entreno' && <TabEntreno user={user} />}
+        {tab==='nutri' && <TabNutricion user={user} />}
+        {tab==='progreso' && <TabProgreso user={user} />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
