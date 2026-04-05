@@ -93,7 +93,8 @@ const nutriDBToUI = (dbData) => {
   const c = dbData.comidas || [];
   ui.pre = c[0]||''; ui.intra = c[1]||''; ui.postInm = c[2]||''; ui.post60 = c[3]||'';
   ui.c1 = c[4]||''; ui.c2 = c[5]||''; ui.cena = c[6]||''; ui.suple = c[7]||'';
-  // Extras de notas
+  // Extras de notas — preservar notas raw para plan data
+  ui._notasRaw = dbData.notas || '{}';
   try { const n = JSON.parse(dbData.notas||'{}'); ui.hambre = n.hambre||''; ui.digestion = n.digestion||''; } catch { ui.hambre=''; ui.digestion=''; }
   return ui;
 };
@@ -131,47 +132,82 @@ const EP = {
   medio:{label:'MEDIO',color:'#f59e0b',emoji:'\u{26A1}',desc:'Controlado, RPE 5-6'},
   facil:{label:'FACIL',color:'#22c55e',emoji:'\u{1F30A}',desc:'Fluido, RPE 3-4'}
 };
+// ─── PERIODIZACION 4 SEMANAS ─────────────────────────────────────────────────
+// Semana 1: BASE (volumen moderado, intensidad moderada, RIR 3)
+// Semana 2: CARGA (volumen alto +1 set, intensidad moderada-alta, RIR 2)
+// Semana 3: INTENSIFICACION (volumen moderado, intensidad alta, RIR 1)
+// Semana 4: DESCARGA (volumen bajo -1 set, intensidad baja, RIR 4+)
+const PERIODO = {
+  1:{nombre:'BASE',color:'#6366f1',emoji:'\u{1F3D7}',desc:'Volumen moderado. Construir base.',setMod:0,rirMod:1},
+  2:{nombre:'CARGA',color:'#f97316',emoji:'\u{1F525}',desc:'Volumen alto. Empujar limites.',setMod:1,rirMod:0},
+  3:{nombre:'INTENSIFICACION',color:'#ef4444',emoji:'\u{26A1}',desc:'Intensidad alta. Cerca del fallo.',setMod:0,rirMod:-1},
+  4:{nombre:'DESCARGA',color:'#22c55e',emoji:'\u{1F33F}',desc:'Recuperar. Volumen y carga baja.',setMod:-1,rirMod:2}
+};
+// Calcular semana del periodo basado en fecha (semanas desde epoch mod 4 + 1)
+const getSemPeriodo = (fecha) => {
+  const d = new Date(fecha+'T12:00:00');
+  const epoch = new Date('2026-04-06T12:00:00'); // Lun 6 Abr 2026 = inicio Semana 1
+  const diffWeeks = Math.floor((d - epoch) / (7*24*60*60*1000));
+  return ((diffWeeks % 4) + 4) % 4 + 1; // 1-4
+};
+
+// Frecuencia 2x/semana por grupo muscular:
+// Pecho: Lun(1) + Mie(3) | Espalda: Lun(1) + Vie(5) | Pierna: Mar(2) + Jue(4)
+// Hombro: Mie(3) + Vie(5) | Brazos: Mie+Vie (accesorio) + Sab(6) foco
+// Caminata 20 min zona 2: TODOS los dias
 const PROG = {
-  1:{nombre:'Pecho + Espalda',tipo:'alta',carbos:'30-40 g',bloques:[
+  1:{nombre:'Pecho + Espalda',tipo:'alta',carbos:'30-40 g',cardio:'Caminata 20 min zona 2',bloques:[
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Press inclinado barra',musculo:'Pecho superior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Agarre prono ancho. Baja al tercio superior del pecho. Codos a 45 grados. No bloquees arriba.',precaucion:'Cuidar hombros: no bajar mas alla del pecho. Si hay dolor anterior, parar.'},
       {nombre:'Jalon al pecho',musculo:'Dorsal',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre prono amplio. Inclina torso 15 deg atras. Lleva barra al esternon. Contrae dorsal.'}]},
     {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Press plano mancuernas',musculo:'Pecho medio',sets:3,reps:'8-10',rir:'1',cadencia:'3-1-2',tecnica:'Baja con control hasta sentir estiramiento. Empuja juntando mancuernas arriba.',precaucion:'RIR 1 — cerca del fallo. Asegurar spotter o peso controlable.'},
+      {nombre:'Press plano mancuernas',musculo:'Pecho medio',sets:3,reps:'8-10',rir:'1',cadencia:'3-1-2',tecnica:'Baja con control hasta sentir estiramiento. Empuja juntando mancuernas arriba.',precaucion:'RIR 1 \u2014 cerca del fallo. Asegurar spotter o peso controlable.'},
       {nombre:'Remo barra',musculo:'Dorsal medio',sets:3,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Torso 45 grados. Barra al ombligo. Codos pegados. Retrae escapulas al subir.',precaucion:'Lumbar neutra siempre. No redondear espalda baja.'}]},
     {nombre:'Bloque C',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Aperturas mancuernas',musculo:'Pecho',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Brazos ligeramente flexionados. Abre hasta estiramiento profundo.',precaucion:'No abrir demasiado — proteger capsula del hombro.'},
+      {nombre:'Aperturas mancuernas',musculo:'Pecho',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Brazos ligeramente flexionados. Abre hasta estiramiento profundo.',precaucion:'No abrir demasiado \u2014 proteger capsula del hombro.'},
       {nombre:'Pullover mancuerna',musculo:'Dorsal/Serrato',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Tumbado transversal. Baja por detras de la cabeza. Contrae dorsal al subir.'}]}
   ]},
-  2:{nombre:'Pierna Principal',tipo:'alta',carbos:'30-40 g',bloques:[
+  2:{nombre:'Pierna AD + Gl\u00FAteo',tipo:'alta',carbos:'30-40 g',cardio:'Caminata 20 min zona 2',bloques:[
     {nombre:'Bloque A',btipo:'warmup',esfuerzo:'medio',ejercicios:[
-      {nombre:'Extension de rodilla',musculo:'Cuadriceps',sets:3,reps:'12',rir:'2',cadencia:'3-1-2',tecnica:'Calentamiento. Extiende con control hasta casi bloquear rodilla.'},
-      {nombre:'Hack squat progresivo',musculo:'Cuadriceps',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies al ancho de hombros. Baja hasta 90 grados. Empuja con talones.',precaucion:'Rodillas no colapsan hacia adentro. Si dolor patelar, reducir ROM.'}]},
-    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'max',ejercicios:[
-      {nombre:'Sumo deadlift',musculo:'Cadena posterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies muy abiertos, puntas en diagonal. Cadera abajo al inicio. Empuja el suelo luego extiende cadera.',precaucion:'MAXIMO esfuerzo — cinturon recomendado. Lumbar neutra obligatoria. No tirar con espalda.'}]},
-    {nombre:'Bloque C',btipo:'tecnico',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Lunges mancuernas',musculo:'Gluteo/Cuadriceps',sets:2,reps:'10-12',rir:'2',cadencia:'2-0-2',tecnica:'Paso largo. Baja hasta casi tocar suelo. Rodilla delantera no supera punta del pie.',precaucion:'Equilibrio: si fatiga neural alta, apoyarse en rack.'}]},
+      {nombre:'Extension de rodilla',musculo:'Cuadriceps',sets:3,reps:'12',rir:'2',cadencia:'3-1-2',tecnica:'Calentamiento. Extiende con control hasta casi bloquear rodilla.'}]},
+    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Hack squat progresivo',musculo:'Cuadriceps',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies al ancho de hombros. Baja hasta 90 grados. Empuja con talones.',precaucion:'Rodillas no colapsan hacia adentro. Si dolor patelar, reducir ROM.'},
+      {nombre:'Prensa inclinada',musculo:'Cuadriceps + Gl\u00FAteo',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Pies arriba en plataforma para enfasis en gluteo. Baja controlado hasta 90 deg.'}]},
+    {nombre:'Bloque C',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Sentadilla b\u00FAlgara',musculo:'Gl\u00FAteo + Cuadriceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Pie trasero elevado. Torso ligeramente inclinado para enfasis en gluteo. Rodilla delantera no pasa punta del pie.',precaucion:'Equilibrio: si fatiga neural alta, apoyarse en rack.'},
+      {nombre:'Hip thrust barra',musculo:'Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'2-2-2',tecnica:'Espalda alta en banca. Aprieta gluteo arriba 2 seg. No hiperextender lumbar.'}]},
     {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Pantorrilla progresiva',musculo:'Gemelos',sets:4,reps:'12-15',rir:'1',cadencia:'2-1-2',tecnica:'Sube lento hasta punta maxima. Manten 1 segundo. Baja controlado.'}]}
+      {nombre:'Pantorrilla en prensa',musculo:'Gemelos',sets:4,reps:'12-15',rir:'1',cadencia:'2-1-2',tecnica:'Sube lento hasta punta maxima. Manten 1 segundo. Baja controlado.'}]}
   ]},
-  3:{nombre:'Hombro + Brazos',tipo:'media',carbos:'25-35 g',bloques:[
+  3:{nombre:'Hombro + Pecho',tipo:'media',carbos:'25-35 g',cardio:'Caminata 20 min zona 2',bloques:[
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Press militar barra',musculo:'Deltoides anterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'De pie o sentado. Empuja verticalmente sobre la cabeza. Core activo.',precaucion:'No arquear lumbar. Si hay pinzamiento, usar mancuernas con rotacion.'},
-      {nombre:'Curl barra',musculo:'Biceps',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos a los costados. Sube con supinacion. No balancees el torso.'}]},
-    {nombre:'Bloque B',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Elevaciones laterales',musculo:'Deltoides lateral',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion leve hacia adelante. Sube hasta la altura del hombro. Sin inercia.',precaucion:'No subir mas alla de la horizontal — riesgo impingement.'},
-      {nombre:'Extension triceps polea',musculo:'Triceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos junto al cuerpo. Extiende completamente. Baja lento.'}]},
+      {nombre:'Elevaciones laterales',musculo:'Deltoides lateral',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion leve hacia adelante. Sube hasta la altura del hombro. Sin inercia.',precaucion:'No subir mas alla de la horizontal \u2014 riesgo impingement.'}]},
+    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press inclinado mancuernas',musculo:'Pecho superior',sets:3,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Angulo 30-45 deg. Baja con control. Empuja juntando arriba. Segundo estimulo pecho semanal.'},
+      {nombre:'Cruces polea baja',musculo:'Pecho medio-superior',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Poleas bajas. Cruza manos al frente a la altura del pecho. Contrae y aprieta.'}]},
     {nombre:'Bloque C',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Posterior hombro polea',musculo:'Deltoides posterior',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Polea alta, agarre cruzado. Lleva la mano hacia atras abriendo el codo.'},
-      {nombre:'Curl martillo',musculo:'Biceps braquial',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Agarre neutro pulgar arriba. Sin supinacion.'}]}
+      {nombre:'Posterior hombro polea',musculo:'Deltoides posterior',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Polea alta, agarre cruzado. Lleva la mano hacia atras abriendo el codo.'}]},
+    {nombre:'Brazo (accesorio)',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Curl barra',musculo:'B\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos a los costados. Sube con supinacion. No balancees el torso.'},
+      {nombre:'Extension triceps polea',musculo:'Tr\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos junto al cuerpo. Extiende completamente. Baja lento.'}]}
   ]},
-  4:{nombre:'CrossFit WOD',tipo:'alta',carbos:'30-40 g',bloques:[
-    {nombre:'WOD del dia',btipo:'metcon',esfuerzo:'max',ejercicios:[
-      {nombre:'CrossFit Programado',musculo:'Cuerpo completo',sets:1,reps:'WOD completo',rir:'-',cadencia:'-',tecnica:'Clase CrossFit 6:00-7:00 PM. WOD programado por el box. Incluye calentamiento, skill/strength y metcon. Registrar detalle del WOD en notas.',precaucion:'Esfuerzo MAXIMO — hidratacion constante. Escalar peso si tecnica falla. No ego-lift.'}]}
+  4:{nombre:'Pierna AT + Gl\u00FAteo',tipo:'alta',carbos:'30-40 g',cardio:'Caminata 20 min zona 2',cf_opcional:true,bloques:[
+    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'max',ejercicios:[
+      {nombre:'Sumo deadlift',musculo:'Cadena posterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies muy abiertos, puntas en diagonal. Cadera abajo al inicio. Empuja el suelo luego extiende cadera.',precaucion:'MAXIMO esfuerzo \u2014 cinturon recomendado. Lumbar neutra obligatoria. No tirar con espalda.'}]},
+    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Curl femoral acostado',musculo:'Isquiotibiales',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Aprieta gluteo contra el pad. Contrae hasta el tope. Baja controlado.'},
+      {nombre:'Hip thrust barra',musculo:'Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'2-2-2',tecnica:'Espalda alta en banca. Aprieta gluteo arriba 2 seg. No hiperextender lumbar.'}]},
+    {nombre:'Bloque C',btipo:'tecnico',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Peso muerto rumano',musculo:'Isquiotibiales + Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Rodillas semi-flex fijas. Baja barra pegada a piernas. Siente estiramiento en isquios. Empuja cadera al frente al subir.',precaucion:'Lumbar neutra siempre. No redondear. Si sientes lumbar, reduce ROM.'}]},
+    {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Pantorrilla de pie',musculo:'Gemelos',sets:4,reps:'12-15',rir:'1',cadencia:'2-1-2',tecnica:'Sube lento hasta punta maxima. Manten 1 segundo. Baja controlado.'}]},
+    {nombre:'CrossFit (opcional)',btipo:'metcon',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'CrossFit WOD PM',musculo:'Cuerpo completo',sets:1,reps:'WOD completo',rir:'-',cadencia:'-',tecnica:'OPCIONAL: Clase CrossFit 6:00-7:00 PM. Si pierna quedo muy cargada, omitir o escalar. Registrar detalle del WOD en notas.',precaucion:'Solo si recuperacion permite. Escalar peso si la pierna esta fatigada.'}]}
   ]},
-  5:{nombre:'Hombro + Espalda',tipo:'media',carbos:'25-35 g',bloques:[
+  5:{nombre:'Hombro + Espalda',tipo:'media',carbos:'25-35 g',cardio:'Caminata 20 min zona 2',bloques:[
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Press estricto barra',musculo:'Deltoides anterior + Triceps',sets:4,reps:'5',rir:'2',cadencia:'3-1-2',tecnica:'De pie. Empuja vertical sin inclinar el torso. Core activo, gluteos contraidos.',precaucion:'No arquear lumbar bajo carga pesada. Cinturon si >80% 1RM.'},
+      {nombre:'Press estricto barra',musculo:'Deltoides anterior + Tr\u00EDceps',sets:4,reps:'5',rir:'2',cadencia:'3-1-2',tecnica:'De pie. Empuja vertical sin inclinar el torso. Core activo, gluteos contraidos.',precaucion:'No arquear lumbar bajo carga pesada. Cinturon si >80% 1RM.'},
       {nombre:'Elevacion lateral mancuernas',musculo:'Deltoides medio',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion 10 deg. Codos semiflex fijos. SIN inercia. Pinky arriba al final.'}]},
     {nombre:'Bloque B',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
       {nombre:'Cruces polea posterior',musculo:'Deltoides posterior',sets:3,reps:'12',rir:'2',cadencia:'2-0-2',tecnica:'Poleas altas cruzadas. Torso inclinado 30-45 deg. Retrae la escapula al final.'}]},
@@ -179,20 +215,113 @@ const PROG = {
       {nombre:'Jalon agarre neutro',musculo:'Dorsal ancho',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Palmas enfrentadas. Mango al esternon. Codos hacia abajo y atras. Contrae 1 seg.'},
       {nombre:'Remo 3 puntos cadera',musculo:'Dorsal + Espalda media',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Columna neutra paralela al suelo. Tira el codo hacia atras hasta la cadera.',precaucion:'Lumbar neutra. No rotar torso al jalar.'}]},
     {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Pullover mancuerna',musculo:'Dorsal + Serrato',sets:3,reps:'12',rir:'2',cadencia:'3-0-2',tecnica:'Tumbado transversal, cadera abajo. Baja por detras de la cabeza.'},
-      {nombre:'Extension codo mecate',musculo:'Triceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Polea alta, palmas enfrentadas. Codos fijos. Separa los extremos al extender.'}]}
+      {nombre:'Pullover mancuerna',musculo:'Dorsal + Serrato',sets:3,reps:'12',rir:'2',cadencia:'3-0-2',tecnica:'Tumbado transversal, cadera abajo. Baja por detras de la cabeza.'}]},
+    {nombre:'Brazo (accesorio)',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Curl martillo',musculo:'B\u00EDceps braquial',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Agarre neutro pulgar arriba. Sin supinacion.'},
+      {nombre:'Extension codo mecate',musculo:'Tr\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Polea alta, palmas enfrentadas. Codos fijos. Separa los extremos al extender.'}]}
   ]},
-  6:{nombre:'CrossFit / Recuperacion',tipo:'baja',carbos:'0-15 g',bloques:[
-    {nombre:'Actividad',btipo:'metcon',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'CrossFit o Caminata',musculo:'Cuerpo completo',sets:1,reps:'30-60 min',rir:'-',cadencia:'-',tecnica:'CrossFit programado o caminata a ritmo tranquilo o movilidad articular.',precaucion:'Sabado post-semana: escuchar el cuerpo. Si fatiga acumulada >7, solo movilidad.'}]}
+  6:{nombre:'Brazos + Pendientes',tipo:'media',carbos:'20-30 g',cardio:'Caminata 20 min zona 2',cf_opcional:true,bloques:[
+    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Curl barra EZ',musculo:'B\u00EDceps',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre supino en EZ. Codos fijos. Contrae al maximo arriba.'},
+      {nombre:'Press cerrado barra',musculo:'Tr\u00EDceps + Pecho',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre ancho de hombros. Baja al pecho bajo. Codos pegados al cuerpo.'}]},
+    {nombre:'Bloque B',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Curl concentrado',musculo:'B\u00EDceps pico',sets:3,reps:'12',rir:'2',cadencia:'3-0-2',tecnica:'Sentado. Codo apoyado en muslo. Supinacion completa. Contrae al maximo.'},
+      {nombre:'Patada triceps mancuerna',musculo:'Tr\u00EDceps largo',sets:3,reps:'12',rir:'2',cadencia:'2-1-2',tecnica:'Torso paralelo. Extiende completamente atras. Aprieta 1 seg.'}]},
+    {nombre:'Bloque C \u2014 Pendientes',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Ejercicio pendiente 1',musculo:'Segun faltante de la semana',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Revisa que grupo muscular quedo sin completar esta semana. Priorizar el mas rezagado.'},
+      {nombre:'Ejercicio pendiente 2',musculo:'Segun faltante de la semana',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Segundo ejercicio de compensacion. Si la semana fue completa, omitir y hacer CrossFit.'}]},
+    {nombre:'CrossFit (opcional)',btipo:'metcon',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'CrossFit WOD',musculo:'Cuerpo completo',sets:1,reps:'WOD completo',rir:'-',cadencia:'-',tecnica:'Si semana quedo completa y cargas bien hechas, CrossFit completo con WOD. Si no, pesas con pendientes. Registrar en notas.',precaucion:'Escuchar cuerpo. Si fatiga acumulada >7, solo movilidad.'}]}
   ]},
-  0:{nombre:'Descanso + pump dominical',tipo:'baja',carbos:'15-20 g',bloques:[
-    {nombre:'Activacion ligera',btipo:'pump',esfuerzo:'facil',ejercicios:[
+  0:{nombre:'Pump / Descanso',tipo:'baja',carbos:'15-20 g',cardio:'Caminata suave 20-30 min opcional',bloques:[
+    {nombre:'Activacion ligera (opcional)',btipo:'pump',esfuerzo:'facil',ejercicios:[
       {nombre:'Press hombro mancuernas',musculo:'Deltoides',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Intensidad moderada. Solo activar el SNC. No ir al fallo.'},
       {nombre:'Jalon con banda',musculo:'Dorsal',sets:3,reps:'15',rir:'3',cadencia:'2-0-2',tecnica:'Movimiento controlado. Pump sin desgaste.'},
-      {nombre:'Curl mancuernas',musculo:'Biceps',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Ligero y controlado.'},
-      {nombre:'Extension triceps polea',musculo:'Triceps',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Peso ligero, rango completo. Solo pump.'}]}
+      {nombre:'Curl mancuernas',musculo:'B\u00EDceps',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Ligero y controlado.'},
+      {nombre:'Extension triceps polea',musculo:'Tr\u00EDceps',sets:3,reps:'12',rir:'3',cadencia:'2-0-2',tecnica:'Peso ligero, rango completo. Solo pump. Preparacion para lunes.'}]}
   ]}
+};
+
+// ─── PLAN NUTRICIONAL DIARIO ─────────────────────────────────────────────────
+// Mapeo dia de semana → tipo de plan nutricional
+const getDayType = (dia) => {
+  if(dia===1||dia===2||dia===4) return 'alta'; // Pecho+Espalda, Pierna AD, Pierna AT
+  if(dia===3||dia===5) return 'media'; // Hombro+Pecho, Hombro+Espalda
+  if(dia===6) return 'media_baja'; // Brazos + CF opcional
+  return 'descanso'; // domingo
+};
+
+const SUPLEMENTOS = {
+  AM: [
+    {id:'eaa',nombre:'EAA 10g',timing:'Pre-entreno en ayunas',emoji:'\u{1F4CA}'},
+    {id:'colageno',nombre:'Col\u00E1geno Multi',timing:'Con EAA',emoji:'\u{1F9B4}'},
+    {id:'ashwa',nombre:'Ashwagandha KSM-66 600mg',timing:'Con caf\u00E9',emoji:'\u{1F33F}'},
+    {id:'cafe',nombre:'Caf\u00E9 negro',timing:'5:30-6:00 AM',emoji:'\u{2615}'}
+  ],
+  POST: [
+    {id:'creatina',nombre:'Creatina 5g',timing:'Post inmediato',emoji:'\u{26A1}'},
+    {id:'proteina',nombre:'Prote\u00EDna (Carnivor/Whey)',timing:'Post inmediato',emoji:'\u{1F4AA}'},
+    {id:'glutamina',nombre:'Glutamina 5g',timing:'Post inmediato con prote\u00EDna',emoji:'\u{1F9EA}'}
+  ],
+  PM: [
+    {id:'magnesio',nombre:'Magnesio Bisglicinato',timing:'30-45 min antes de dormir',emoji:'\u{1F31C}'},
+    {id:'omega3',nombre:'Omega-3 EPA+DHA 2-3g',timing:'Con cena o pre-sue\u00F1o',emoji:'\u{1F41F}'},
+    {id:'k2',nombre:'K2 MK-7 100mcg',timing:'Con Omega-3',emoji:'\u{1F48A}'}
+  ]
+};
+
+const PLANES = {
+  alta: {
+    label:'D\u00CDA ALTA (Lun/Mar)',color:'#ef4444',
+    comidas:[
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['EAA 10g + Col\u00E1geno + Ashwagandha','Caf\u00E9 negro'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'intra',hora:'Durante entreno',label:'Intra-entreno',items:['Agua 750ml + sal de mar + electrolitos'],macros:'P:0 C:0 G:0',kcal:0},
+      {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g','Miel 15g (carbo estrat\u00E9gico)'],macros:'P:40g C:15g G:1g',kcal:229},
+      {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['4 huevos + aguacate + espinaca','O: 200g carne + vegetales'],macros:'P:30g C:3g G:25g',kcal:357},
+      {id:'c2',hora:'~12:00 PM',label:'Comida 2',items:['200g carne res/pollo + 1 taza vegetales','Aceite oliva/manteca'],macros:'P:40g C:5g G:15g',kcal:315},
+      {id:'snack',hora:'~3:00 PM',label:'Snack',items:['Nueces/almendras 30g','O: queso + jam\u00F3n'],macros:'P:5g C:2g G:15g',kcal:163},
+      {id:'cena',hora:'~6:00 PM',label:'Cena',items:['200g pechuga/tilapia + manteca + queso crema','Vegetales opcionales'],macros:'P:45g C:3g G:20g',kcal:372},
+      {id:'ayuno',hora:'~7:00-7:30 PM',label:'Inicio ayuno 12h+',items:['Cerrar ventana alimentaria'],macros:'',kcal:0}
+    ],
+    resumen:{prot:180,carbs:28,grasa:76,kcal:1516,nota:'+ grasas seg\u00FAn hambre hasta ~2200 kcal'}
+  },
+  media: {
+    label:'D\u00CDA MEDIA (Mi\u00E9/Vie)',color:'#f59e0b',
+    comidas:[
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['EAA 10g + Col\u00E1geno + Ashwagandha','Caf\u00E9 negro'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'intra',hora:'Durante entreno',label:'Intra-entreno',items:['Agua 750ml + sal'],macros:'P:0 C:0 G:0',kcal:0},
+      {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g','SIN carbo estrat\u00E9gico'],macros:'P:40g C:2g G:1g',kcal:177},
+      {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o','O: 150g carne + ensalada'],macros:'P:25g C:3g G:18g',kcal:274},
+      {id:'c2',hora:'~12:00 PM',label:'Comida 2',items:['200g pollo/res + vegetales','Aceite moderado'],macros:'P:40g C:5g G:10g',kcal:270},
+      {id:'snack',hora:'~3:00 PM',label:'Snack',items:['Queso + jam\u00F3n 50g','O: pu\u00F1o almendras'],macros:'P:10g C:1g G:12g',kcal:156},
+      {id:'cena',hora:'~6:00 PM',label:'Cena',items:['200g pechuga/tilapia','Vegetales + poco aceite'],macros:'P:45g C:3g G:8g',kcal:264},
+      {id:'ayuno',hora:'~7:00 PM',label:'Inicio ayuno 12h+',items:['Cerrar ventana'],macros:'',kcal:0}
+    ],
+    resumen:{prot:180,carbs:14,grasa:49,kcal:1221,nota:'Menos grasa que d\u00EDa alta, priorizar prote'}
+  },
+  media_baja: {
+    label:'BRAZOS / CF OPCIONAL (S\u00E1b)',color:'#a855f7',
+    comidas:[
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['EAA 10g + Col\u00E1geno','Caf\u00E9 negro + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g'],macros:'P:40g C:2g G:1g',kcal:177},
+      {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o + vegetales'],macros:'P:25g C:3g G:18g',kcal:274},
+      {id:'c2',hora:'~12:00 PM',label:'Comida 2',items:['200g carne + ensalada'],macros:'P:40g C:4g G:12g',kcal:284},
+      {id:'cena',hora:'~6:00 PM',label:'Cena',items:['200g pechuga/tilapia + vegetales ligeros'],macros:'P:45g C:3g G:6g',kcal:246},
+      {id:'ayuno',hora:'~6:30-7:00 PM',label:'Ayuno temprano',items:['Cerrar ventana para ayuno extendido dominical'],macros:'',kcal:0}
+    ],
+    resumen:{prot:170,carbs:12,grasa:37,kcal:1061,nota:'Brazos + pendientes. Si CF completo, a\u00F1adir snack pre-WOD'}
+  },
+  descanso: {
+    label:'DESCANSO (Dom)',color:'#94a3b8',
+    comidas:[
+      {id:'c1',hora:'~1:00-2:00 PM',label:'Primera comida (romper ayuno)',items:['4 huevos + aguacate + espinaca','O: carne + vegetales'],macros:'P:35g C:4g G:25g',kcal:381},
+      {id:'c2',hora:'~4:00 PM',label:'Comida 2',items:['200g carne + ensalada + aceite'],macros:'P:40g C:5g G:15g',kcal:315},
+      {id:'cena',hora:'~6:30 PM',label:'Cena',items:['200g pechuga/tilapia + poco aceite','Vegetales'],macros:'P:45g C:3g G:8g',kcal:264},
+      {id:'suple_pm',hora:'Pre-sue\u00F1o',label:'Suplementos PM',items:['Magnesio + Omega-3 + K2'],macros:'P:0 C:0 G:2g',kcal:18},
+      {id:'ayuno',hora:'~7:00 PM',label:'Ayuno extendido 16-18h',items:['Ayuno largo hasta lunes ~1 PM si posible'],macros:'',kcal:0}
+    ],
+    resumen:{prot:120,carbs:12,grasa:50,kcal:978,nota:'M\u00EDnimo, ayuno extendido 16-18h, recuperaci\u00F3n'}
+  }
 };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -551,15 +680,20 @@ function TabEntreno({user}) {
     <div>
       <Sec>
         <NavSemana fecha={fecha} setFecha={setFecha} dia={dia} setDia={setDia} />
+        {(() => { const sem = PERIODO[getSemPeriodo(fecha)]; return (
         <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
           <div style={{flex:1,minWidth:120}}>
             <div style={{fontWeight:700,fontSize:14}}>{prog.nombre} <span style={{fontSize:11,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></div>
-            <div style={{display:'flex',gap:6,alignItems:'center',marginTop:3}}>
+            <div style={{display:'flex',gap:6,alignItems:'center',marginTop:3,flexWrap:'wrap'}}>
               <span style={{background:(TC[prog.tipo]||G.mu)+'22',color:TC[prog.tipo]||G.mu,borderRadius:4,padding:'2px 8px',fontSize:9,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(prog.tipo||'').toUpperCase()}</span>
+              <span style={{background:sem.color+'22',color:sem.color,borderRadius:4,padding:'2px 8px',fontSize:9,fontFamily:'monospace',fontWeight:700}}>{sem.emoji} S{getSemPeriodo(fecha)}: {sem.nombre}</span>
               <span style={{fontSize:10,color:G.warn,fontFamily:'monospace'}}>{prog.carbos}</span>
             </div>
+            {prog.cardio && <div style={{fontSize:10,color:'#38bdf8',marginTop:4}}>{'\u{1F6B6}'} {prog.cardio}</div>}
+            {prog.cf_opcional && <div style={{fontSize:10,color:G.warn,marginTop:2}}>{'\u{1F3CB}'} CrossFit opcional (seg\u00FAn fatiga)</div>}
           </div>
         </div>
+        ); })()}
         <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
         <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
           <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
@@ -703,21 +837,201 @@ function TabEntreno({user}) {
   );
 }
 
+// ─── PLAN DEL DIA COMPONENTS ──────────────────────────────────────────────────
+function SupChecklist({timing, label, color, checked, onChange}) {
+  const items = SUPLEMENTOS[timing] || [];
+  return React.createElement('div', {style:{background:G.sur,border:'1px solid '+color+'44',borderRadius:12,padding:14,marginBottom:12}},
+    React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+      React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:color,fontWeight:700}}, label),
+      React.createElement('span', {style:{fontSize:9,color:G.mu,fontFamily:'monospace'}},
+        items.filter(s => (checked||[]).includes(s.id)).length + '/' + items.length
+      )
+    ),
+    items.map(sup =>
+      React.createElement('div', {key:sup.id, onClick:()=>{
+        const cur = checked||[];
+        const next = cur.includes(sup.id) ? cur.filter(x=>x!==sup.id) : [...cur, sup.id];
+        onChange(next);
+      }, style:{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:(checked||[]).includes(sup.id)?color+'15':G.alt,border:'1px solid '+((checked||[]).includes(sup.id)?color+'55':G.bor),borderRadius:10,marginBottom:6,cursor:'pointer',transition:'all 0.2s'}},
+        React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+((checked||[]).includes(sup.id)?color:G.bor),background:(checked||[]).includes(sup.id)?color:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14,color:'#fff',transition:'all 0.2s'}},
+          (checked||[]).includes(sup.id) ? '\u2713' : ''
+        ),
+        React.createElement('div', {style:{flex:1}},
+          React.createElement('div', {style:{fontSize:13,fontWeight:600,color:(checked||[]).includes(sup.id)?'#e2e8f0':G.dim}}, sup.emoji + ' ' + sup.nombre),
+          React.createElement('div', {style:{fontSize:10,color:G.mu,marginTop:2}}, sup.timing)
+        )
+      )
+    )
+  );
+}
+
+function PlanMealBlock({comida, isChecked, onCheck, override, onOverride, showEdit, onToggleEdit}) {
+  if(!comida.macros && comida.id==='ayuno') {
+    return React.createElement('div', {style:{background:'#22c55e11',border:'1px dashed #22c55e44',borderRadius:10,padding:'12px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:10}},
+      React.createElement('span', {style:{fontSize:18}}, '\u{1F54A}'),
+      React.createElement('div', null,
+        React.createElement('div', {style:{fontSize:12,fontWeight:700,color:G.ok}}, comida.label),
+        React.createElement('div', {style:{fontSize:10,color:G.mu}}, comida.hora + ' \u2014 ' + comida.items[0])
+      )
+    );
+  }
+  return React.createElement('div', {style:{background:isChecked?G.ok+'11':G.sur,border:'1px solid '+(isChecked?G.ok+'44':G.bor),borderRadius:12,marginBottom:8,overflow:'hidden',transition:'all 0.2s'}},
+    React.createElement('div', {onClick:onCheck, style:{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 14px',cursor:'pointer'}},
+      React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isChecked?G.ok:G.bor),background:isChecked?G.ok:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14,color:'#fff',marginTop:2,transition:'all 0.2s'}},
+        isChecked ? '\u2713' : ''
+      ),
+      React.createElement('div', {style:{flex:1}},
+        React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}},
+          React.createElement('span', {style:{fontSize:12,fontWeight:700,color:isChecked?G.ok:'#e2e8f0',textDecoration:isChecked?'line-through':'none'}}, comida.label),
+          React.createElement('span', {style:{fontSize:9,color:G.mu,fontFamily:'monospace'}}, comida.hora)
+        ),
+        comida.items.map((item,i) =>
+          React.createElement('div', {key:i, style:{fontSize:11,color:isChecked?G.mu:G.dim,marginBottom:2,paddingLeft:2}}, '\u2022 ' + item)
+        ),
+        comida.macros && React.createElement('div', {style:{marginTop:6,fontSize:10,fontFamily:'monospace',color:G.dim,display:'flex',gap:8}},
+          React.createElement('span', {style:{color:G.acc}}, comida.macros.split(' ').find(x=>x.startsWith('P:'))||''),
+          React.createElement('span', {style:{color:G.warn}}, comida.macros.split(' ').find(x=>x.startsWith('C:'))||''),
+          React.createElement('span', {style:{color:G.coa}}, comida.macros.split(' ').find(x=>x.startsWith('G:'))||''),
+          comida.kcal>0 && React.createElement('span', {style:{color:G.mu}}, comida.kcal+'kcal')
+        )
+      )
+    ),
+    React.createElement('div', {style:{borderTop:'1px solid '+G.bor,padding:'6px 14px',display:'flex',gap:8,alignItems:'center'}},
+      React.createElement('button', {onClick:onToggleEdit, style:{background:'none',border:'none',color:G.acc,fontSize:10,cursor:'pointer',padding:'2px 4px'}}, showEdit ? '\u{25B2} Cerrar' : '\u{270F}\u{FE0F} Editar real'),
+      override && React.createElement('span', {style:{fontSize:9,color:G.warn,fontFamily:'monospace'}}, '\u{1F4DD} Editado')
+    ),
+    showEdit && React.createElement('div', {style:{padding:'8px 14px 12px',borderTop:'1px solid '+G.bor,background:G.alt}},
+      React.createElement('div', {style:{fontSize:9,color:G.mu,marginBottom:4}}, '\u00BFComiste algo diferente? Escribe aqu\u00ED con macros (ej: P:30g C:5g G:10g)'),
+      React.createElement('input', {value:override||'', onChange:e=>onOverride(e.target.value), placeholder:'Ej: 3 huevos + aguacate | P:25g C:2g G:20g', style:{background:G.bg,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'8px 10px',fontSize:12,width:'100%',outline:'none'}})
+    )
+  );
+}
+
+function PlanDelDia({fecha, dia, planData, onUpdate}) {
+  const tipo = getDayType(dia);
+  const plan = PLANES[tipo];
+  if(!plan) return null;
+
+  const checkedSupAM = planData.sup_am || [];
+  const checkedSupPOST = planData.sup_post || [];
+  const checkedSupPM = planData.sup_pm || [];
+  const checkedMeals = planData.meals_checked || [];
+  const overrides = planData.overrides || {};
+  const [editingMeal, setEditingMeal] = useState(null);
+
+  const toggleMeal = (mealId) => {
+    const cur = planData.meals_checked || [];
+    const next = cur.includes(mealId) ? cur.filter(x=>x!==mealId) : [...cur, mealId];
+    onUpdate({...planData, meals_checked:next});
+  };
+
+  const setOverride = (mealId, val) => {
+    const ov = {...(planData.overrides||{}), [mealId]:val};
+    if(!val) delete ov[mealId];
+    onUpdate({...planData, overrides:ov});
+  };
+
+  // Progress calc
+  const totalSups = SUPLEMENTOS.AM.length + SUPLEMENTOS.POST.length + SUPLEMENTOS.PM.length;
+  const doneSups = checkedSupAM.length + checkedSupPOST.length + checkedSupPM.length;
+  const totalMeals = plan.comidas.filter(c=>c.id!=='ayuno').length;
+  const doneMeals = checkedMeals.filter(id => plan.comidas.some(c=>c.id===id&&c.id!=='ayuno')).length;
+  const totalItems = totalSups + totalMeals;
+  const doneItems = doneSups + doneMeals;
+  const pctDone = totalItems > 0 ? Math.round(doneItems/totalItems*100) : 0;
+
+  return React.createElement('div', null,
+    // Header con progreso
+    React.createElement(Sec, {color:plan.color},
+      React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+        React.createElement('div', null,
+          React.createElement('div', {style:{fontSize:14,fontWeight:700,color:plan.color}}, '\u{1F4CB} ' + plan.label),
+          React.createElement('div', {style:{fontSize:10,color:G.mu,marginTop:2}}, 'Meta: ~' + plan.resumen.prot + 'g prot | ~' + plan.resumen.carbs + 'g carbs | ~' + plan.resumen.kcal + ' kcal')
+        ),
+        React.createElement('div', {style:{textAlign:'right'}},
+          React.createElement('div', {style:{fontSize:22,fontWeight:700,fontFamily:'monospace',color:pctDone>=80?G.ok:pctDone>=50?G.warn:G.dim}}, pctDone + '%'),
+          React.createElement('div', {style:{fontSize:9,color:G.mu}}, doneItems + '/' + totalItems + ' items')
+        )
+      ),
+      React.createElement('div', {style:{height:6,background:G.alt,borderRadius:3,overflow:'hidden'}},
+        React.createElement('div', {style:{height:'100%',width:pctDone+'%',background:pctDone>=80?G.ok:pctDone>=50?G.warn:G.acc,borderRadius:3,transition:'width 0.3s'}})
+      ),
+      plan.resumen.nota && React.createElement('div', {style:{fontSize:10,color:G.mu,marginTop:8,fontStyle:'italic'}}, '\u{1F4A1} ' + plan.resumen.nota)
+    ),
+
+    // Suplementos AM (solo si hay entreno AM)
+    (tipo!=='crossfit' && tipo!=='descanso') && React.createElement(SupChecklist, {
+      timing:'AM', label:'SUPLEMENTOS AM \u{2600}\u{FE0F}', color:G.acc,
+      checked:checkedSupAM,
+      onChange:(v)=>onUpdate({...planData, sup_am:v})
+    }),
+
+    // Comidas del plan
+    React.createElement('div', {style:{marginBottom:12}},
+      React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.warn,fontWeight:700,marginBottom:10,paddingLeft:4}}, 'COMIDAS DEL D\u00CDA \u{1F372}'),
+      plan.comidas.map(comida =>
+        React.createElement(PlanMealBlock, {
+          key:comida.id,
+          comida:comida,
+          isChecked:checkedMeals.includes(comida.id),
+          onCheck:()=>toggleMeal(comida.id),
+          override:overrides[comida.id]||'',
+          onOverride:(v)=>setOverride(comida.id,v),
+          showEdit:editingMeal===comida.id,
+          onToggleEdit:()=>setEditingMeal(editingMeal===comida.id?null:comida.id)
+        })
+      )
+    ),
+
+    // Suplementos POST (solo si hay entreno)
+    (tipo!=='descanso') && React.createElement(SupChecklist, {
+      timing:'POST', label:'SUPLEMENTOS POST \u{1F4AA}', color:G.ok,
+      checked:checkedSupPOST,
+      onChange:(v)=>onUpdate({...planData, sup_post:v})
+    }),
+
+    // CrossFit tiene suplementos AM reubicados
+    (tipo==='crossfit') && React.createElement(SupChecklist, {
+      timing:'AM', label:'SUPLEMENTOS PRE-WOD \u{26A1}', color:G.warn,
+      checked:checkedSupAM,
+      onChange:(v)=>onUpdate({...planData, sup_am:v})
+    }),
+
+    // Suplementos PM siempre
+    React.createElement(SupChecklist, {
+      timing:'PM', label:'SUPLEMENTOS PM \u{1F31C}', color:G.coa,
+      checked:checkedSupPM,
+      onChange:(v)=>onUpdate({...planData, sup_pm:v})
+    })
+  );
+}
+
 // ─── TAB NUTRICION ────────────────────────────────────────────────────────────
 function TabNutricion({user}) {
   const [fecha, setFecha] = useState(hoy());
   const [dia, setDia] = useState(diaHoy());
   const [data, setData] = useState({});
+  const [vista, setVista] = useState('plan');
+  const [planData, setPlanData] = useState({});
   const [saveStatus, setSaveStatus] = useState(null);
   const [saveMessage, setSaveMessage] = useState('');
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
+  const planSaveRef = useRef(null);
   const prog = PROG[dia] || PROG[1];
 
   useEffect(() => {
     setSaveStatus(null);
     setDia(new Date(fecha+'T12:00').getDay());
-    getNutricion(user.id, fecha).then(({data:d}) => setData(d || {}));
+    getNutricion(user.id, fecha).then(({data:d}) => {
+      setData(d || {});
+      // Load plan data from raw notas JSON
+      try {
+        const raw = (d && d._notasRaw) ? d._notasRaw : '{}';
+        const n = JSON.parse(raw);
+        setPlanData(n.plan || {});
+      } catch { setPlanData({}); }
+    });
   }, [fecha, user.id]);
 
   const performSave = useCallback(async (nd) => {
@@ -764,6 +1078,27 @@ function TabNutricion({user}) {
     if(saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     await performSave(data);
   }, [data, performSave]);
+
+  const updatePlanData = useCallback((newPlan) => {
+    setPlanData(newPlan);
+    // Save plan data merged into notas field
+    if(planSaveRef.current) clearTimeout(planSaveRef.current);
+    planSaveRef.current = setTimeout(async () => {
+      try {
+        const existingNotas = {};
+        try { Object.assign(existingNotas, JSON.parse(data._notasRaw || '{}')); } catch {}
+        existingNotas.plan = newPlan;
+        // Preserve hambre/digestion at top level
+        if(data.hambre) existingNotas.hambre = data.hambre;
+        if(data.digestion) existingNotas.digestion = data.digestion;
+        const nd = {...data, notas: JSON.stringify(existingNotas)};
+        // Also save the notas field directly via upsert
+        const dbData = nutriUIToDB(nd);
+        dbData.notas = JSON.stringify(existingNotas);
+        await sb.from('nutricion').upsert({ user_id:user.id, fecha, ...dbData }, { onConflict:'user_id,fecha' });
+      } catch(e) { console.error('Plan save error:', e); }
+    }, 600);
+  }, [data, user.id, fecha]);
 
   const calcAyuno = () => {
     if(!data.ayuno_ini || !data.ayuno_fin) return null;
@@ -832,12 +1167,27 @@ function TabNutricion({user}) {
           <span style={{fontSize:13,fontWeight:700}}>{prog.nombre} <span style={{fontSize:11,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></span>
           <span style={{marginLeft:'auto',fontSize:11,color:G.warn}}>Carbos: {prog.carbos}</span>
         </div>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
+        {/* TOGGLE PLAN / REGISTRO */}
+        <div style={{display:'flex',gap:0,marginBottom:10,background:G.alt,borderRadius:10,padding:3,border:'1px solid '+G.bor}}>
+          {[['plan','PLAN DEL D\u00CDA','\u{1F4CB}'],['actual','REGISTRO ACTUAL','\u{1F4DD}']].map(([v,l,ic]) => (
+            <button key={v} onClick={()=>setVista(v)} style={{flex:1,background:vista===v?G.acc:'transparent',color:vista===v?'#fff':G.dim,border:'none',borderRadius:8,padding:'8px 10px',fontSize:11,fontWeight:700,fontFamily:'monospace',letterSpacing:0.5,cursor:'pointer',transition:'all 0.2s'}}>
+              {ic} {l}
+            </button>
+          ))}
         </div>
+        {vista==='actual' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
+        </div>}
         <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
       </Sec>
 
+      {/* ─── VISTA: PLAN DEL DIA ─── */}
+      {vista==='plan' && (
+        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} />
+      )}
+
+      {/* ─── VISTA: REGISTRO ACTUAL ─── */}
+      {vista==='actual' && <>
       <Sec title="MACROS DEL DIA" color={G.acc}>
         <div style={{padding:'10px 12px',background:G.alt,borderRadius:10,marginBottom:10}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
@@ -933,6 +1283,7 @@ function TabNutricion({user}) {
           </select>
         </div>
       </Sec>
+      </>}
     </div>
   );
 }
