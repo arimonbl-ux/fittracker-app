@@ -199,6 +199,58 @@ const PROG = {
 const hoy = () => new Date().toISOString().split('T')[0];
 const diaHoy = () => new Date().getDay();
 const fmtFecha = s => { if(!s) return ''; const [y,m,d] = s.split('-'); return d+'/'+m+'/'+y; };
+// Dado una fecha base y un dia de semana (0=Dom..6=Sab), calcula la fecha de ese dia en la misma semana (Lun-Dom)
+const getWeekDate = (baseFecha, targetDia) => {
+  const d = new Date(baseFecha + 'T12:00:00');
+  const currentDia = d.getDay();
+  // Calcular offset: semana Lun(1)-Dom(0)
+  const currentMondayOffset = currentDia === 0 ? -6 : 1 - currentDia;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + currentMondayOffset);
+  // Target offset from monday
+  const targetOffset = targetDia === 0 ? 6 : targetDia - 1;
+  const target = new Date(monday);
+  target.setDate(monday.getDate() + targetOffset);
+  return target.toISOString().split('T')[0];
+};
+// Mover una semana entera desde una fecha
+const shiftWeek = (fecha, delta) => {
+  const d = new Date(fecha + 'T12:00:00');
+  d.setDate(d.getDate() + (delta * 7));
+  return d.toISOString().split('T')[0];
+};
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const fmtSemana = (fecha) => {
+  const d = new Date(fecha + 'T12:00:00');
+  const dia = d.getDay();
+  const mondayOff = dia === 0 ? -6 : 1 - dia;
+  const mon = new Date(d); mon.setDate(d.getDate() + mondayOff);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return mon.getDate() + ' ' + MESES_CORTOS[mon.getMonth()] + ' - ' + sun.getDate() + ' ' + MESES_CORTOS[sun.getMonth()];
+};
+// Componente reutilizable de navegacion semanal
+const NavSemana = ({fecha, setFecha, dia, setDia}) => {
+  const estaHoy = fecha === hoy();
+  const cambiarDia = (d) => { setDia(d); setFecha(getWeekDate(fecha, d)); };
+  return React.createElement('div', {style:{marginBottom:12}},
+    React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+      React.createElement('button', {onClick:()=>{const nf=shiftWeek(fecha,-1);setFecha(nf);setDia(new Date(nf+'T12:00').getDay());}, style:{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'4px 10px',fontSize:11}}, '\u{25C0} Sem ant'),
+      React.createElement('span', {style:{fontSize:11,color:estaHoy?G.acc:G.dim,fontWeight:600}}, fmtSemana(fecha)),
+      React.createElement('button', {onClick:()=>{const nf=shiftWeek(fecha,1);setFecha(nf);setDia(new Date(nf+'T12:00').getDay());}, style:{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'4px 10px',fontSize:11}}, 'Sem sig \u{25B6}')
+    ),
+    React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap'}},
+      [1,2,3,4,5,6,0].map(d => {
+        const f = getWeekDate(fecha, d);
+        const esHoy = f === hoy();
+        const esSel = dia === d;
+        return React.createElement('button', {key:d, onClick:()=>cambiarDia(d), style:{background:esSel?G.acc:G.alt,color:esSel?'#fff':esHoy?G.acc:G.dim,border:'1px solid '+(esSel?G.acc:esHoy?G.acc:G.bor),borderRadius:8,padding:'4px 8px',fontSize:10,fontWeight:600,flex:1,minWidth:38,textAlign:'center'}},
+          DIAS[d] + ' ' + new Date(f+'T12:00').getDate()
+        );
+      })
+    ),
+    !estaHoy && React.createElement('button', {onClick:()=>{setFecha(hoy());setDia(diaHoy());}, style:{marginTop:6,background:'transparent',color:G.acc,border:'1px solid '+G.acc,borderRadius:7,padding:'3px 10px',fontSize:10,width:'100%'}}, 'Ir a hoy')
+  );
+};
 const G = { bg:'#0a0a0f',sur:'#13131a',alt:'#1a1a24',bor:'#2a2a38',acc:'#6366f1',ok:'#22c55e',warn:'#f59e0b',bad:'#ef4444',coa:'#a855f7',dim:'#94a3b8',mu:'#64748b' };
 
 const getRirColor = rir => {
@@ -498,17 +550,10 @@ function TabEntreno({user}) {
   return (
     <div>
       <Sec>
-        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:12}}>
-          {[1,2,3,4,5,6,0].map(d => (
-            <button key={d} onClick={()=>setDia(d)} style={{background:dia===d?G.acc:G.alt,color:dia===d?'#fff':G.dim,border:'1px solid '+(dia===d?G.acc:G.bor),borderRadius:8,padding:'4px 10px',fontSize:10,fontWeight:600}}>
-              {DIAS[d]}
-            </button>
-          ))}
-        </div>
+        <NavSemana fecha={fecha} setFecha={setFecha} dia={dia} setDia={setDia} />
         <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
-          <Inp type="date" value={fecha} onChange={e=>setFecha(e.target.value)} style={{width:145}} />
           <div style={{flex:1,minWidth:120}}>
-            <div style={{fontWeight:700,fontSize:14}}>{prog.nombre}</div>
+            <div style={{fontWeight:700,fontSize:14}}>{prog.nombre} <span style={{fontSize:11,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></div>
             <div style={{display:'flex',gap:6,alignItems:'center',marginTop:3}}>
               <span style={{background:(TC[prog.tipo]||G.mu)+'22',color:TC[prog.tipo]||G.mu,borderRadius:4,padding:'2px 8px',fontSize:9,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(prog.tipo||'').toUpperCase()}</span>
               <span style={{fontSize:10,color:G.warn,fontFamily:'monospace'}}>{prog.carbos}</span>
@@ -661,16 +706,17 @@ function TabEntreno({user}) {
 // ─── TAB NUTRICION ────────────────────────────────────────────────────────────
 function TabNutricion({user}) {
   const [fecha, setFecha] = useState(hoy());
+  const [dia, setDia] = useState(diaHoy());
   const [data, setData] = useState({});
   const [saveStatus, setSaveStatus] = useState(null);
   const [saveMessage, setSaveMessage] = useState('');
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
-  const dia = new Date(fecha+'T12:00').getDay();
   const prog = PROG[dia] || PROG[1];
 
   useEffect(() => {
     setSaveStatus(null);
+    setDia(new Date(fecha+'T12:00').getDay());
     getNutricion(user.id, fecha).then(({data:d}) => setData(d || {}));
   }, [fecha, user.id]);
 
@@ -781,9 +827,9 @@ function TabNutricion({user}) {
   return (
     <div>
       <Sec>
+        <NavSemana fecha={fecha} setFecha={setFecha} dia={dia} setDia={setDia} />
         <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
-          <Inp type="date" value={fecha} onChange={e=>setFecha(e.target.value)} style={{width:145}} />
-          <span style={{fontSize:12,color:G.mu}}>{prog.nombre}</span>
+          <span style={{fontSize:13,fontWeight:700}}>{prog.nombre} <span style={{fontSize:11,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></span>
           <span style={{marginLeft:'auto',fontSize:11,color:G.warn}}>Carbos: {prog.carbos}</span>
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
