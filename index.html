@@ -383,6 +383,114 @@ const NavSemana = ({fecha, setFecha, dia, setDia}) => {
 };
 const G = { bg:'#111128',sur:'#1e1e40',alt:'#2d2d58',bor:'#4a4a80',acc:'#a5b4fc',ok:'#6ee7b7',warn:'#fcd34d',bad:'#fca5a5',coa:'#d8b4fe',dim:'#e2e8f0',mu:'#a0aec0' };
 
+// ─── OBSERVACIONES PREDEFINIDAS ──────────────────────────────────────────────
+const OBS_OPTIONS = [
+  {id:'excelente',label:'Excelente',emoji:'\u{1F525}',desc:'Fluj\u00E9, todo sali\u00F3 bien, gran pump'},
+  {id:'buena_fatiga',label:'Buena con fatiga',emoji:'\u{1F4AA}',desc:'Rend\u00ED pero llegue cansado'},
+  {id:'regular',label:'Regular',emoji:'\u{26A1}',desc:'Falt\u00F3 energ\u00EDa o concentraci\u00F3n'},
+  {id:'pesada',label:'Muy pesada',emoji:'\u{1F6A8}',desc:'Necesito descargar, cuerpo al l\u00EDmite'},
+  {id:'dolor',label:'Dolor/molestia',emoji:'\u{26A0}\u{FE0F}',desc:'Algo no se sinti\u00F3 bien, revisar'},
+  {id:'incompleta',label:'Incompleta',emoji:'\u{23F0}',desc:'No pude terminar la rutina'},
+  {id:'tecnica',label:'T\u00E9cnica imprecisa',emoji:'\u{1F3AF}',desc:'Fatiga afect\u00F3 la forma'},
+  {id:'mejor',label:'Mejor de lo esperado',emoji:'\u{2B50}',desc:'Super\u00E9 mis expectativas hoy'},
+  {id:'insomnio',label:'Afectado por sue\u00F1o',emoji:'\u{1F634}',desc:'Mal sue\u00F1o, baj\u00F3 rendimiento'},
+  {id:'otro',label:'Otro',emoji:'\u{270F}\u{FE0F}',desc:'Escribir nota personalizada'}
+];
+
+// ─── MOTOR DE COACH AUTOMATICO ──────────────────────────────────────────────
+const autoCoachAnalysis = (meta, prog, periodo) => {
+  const tips = [];
+  const ePre = parseInt(meta.ePre)||0;
+  const ePost = parseInt(meta.ePost)||0;
+  const fPre = parseInt(meta.fPre)||0;
+  const fPost = parseInt(meta.fPost)||0;
+  const pump = parseInt(meta.pump)||0;
+  const sueno = parseFloat(meta.sueno)||0;
+  const hPre = parseInt(meta.hPre)||0;
+  const aPre = parseInt(meta.aPre)||0;
+  const obs = meta.obs||'';
+
+  // Sue\u00F1o
+  if(sueno > 0 && sueno < 6) tips.push('\u{1F6A8} Sue\u00F1o cr\u00EDtico ('+sueno+'h). Priorizar magnesio PM, evitar caf\u00E9 post 12PM. Ma\u00F1ana considerar descarga.');
+  else if(sueno > 0 && sueno < 7) tips.push('\u{26A0}\u{FE0F} Sue\u00F1o bajo ('+sueno+'h). Vigilar fatiga acumulada. Ashwagandha y magnesio esta noche.');
+
+  // Energ\u00EDa y fatiga
+  if(ePre > 0 && ePre <= 4) tips.push('\u{1F50B} Energ\u00EDa pre muy baja. Revisar calidad de sue\u00F1o, carbos del d\u00EDa anterior, hidrataci\u00F3n.');
+  if(fPost > 7) tips.push('\u{1F4A4} Fatiga post alta ('+fPost+'/10). Ma\u00F1ana ser\u00E1 d\u00EDa de menor volumen. Glutamina + prote\u00EDna inmediata.');
+  if(ePost > 0 && ePost <= 3 && fPost > 6) tips.push('\u{26A1} Sesion drenante. Aumentar carbos peri-entreno ma\u00F1ana (+10g). Considerar descarga si persiste.');
+  if(pump >= 8) tips.push('\u{1F4AA} Gran pump ('+pump+'/10). Buena conexi\u00F3n mente-m\u00FAsculo. Mantener este rango de repeticiones.');
+
+  // Ansiedad
+  if(aPre > 6) tips.push('\u{1F9E0} Ansiedad alta pre-entreno. Recordar: respiraci\u00F3n 4-7-8 antes de dormir. Ashwagandha constante.');
+
+  // Hambre
+  if(hPre > 7) tips.push('\u{1F37D}\u{FE0F} Hambre excesiva pre. Ajustar cena de ayer: m\u00E1s prote\u00EDna + grasa antes de cerrar ventana.');
+
+  // Observaciones espec\u00EDficas
+  if(obs.includes('dolor') || obs.includes('molestia')) tips.push('\u{1F3E5} Reportaste dolor/molestia. Reducir carga 20% en esa zona m\u00EDnimo 2 d\u00EDas. Si persiste, evaluar.');
+  if(obs.includes('pesada') || obs.includes('l\u00EDmite')) tips.push('\u{1F33F} Sesi\u00F3n al l\u00EDmite. Si es semana 2-3 del per\u00EDodo, es normal. Si es semana 1 o acumulas 3 d\u00EDas as\u00ED, adelantar descarga.');
+  if(obs.includes('Incompleta')) tips.push('\u{1F504} Sesi\u00F3n incompleta. Completar lo pendiente el s\u00E1bado en bloque Pendientes.');
+  if(obs.includes('insomnio') || obs.includes('sue\u00F1o')) tips.push('\u{1F31C} Afectado por sue\u00F1o. Esta noche: magnesio 400mg + apagar pantallas 1h antes. Sin caf\u00E9 despu\u00E9s de medio d\u00EDa.');
+
+  // Periorizaci\u00F3n
+  if(periodo) {
+    if(periodo === 3 && fPost > 7) tips.push('\u{1F4CA} Semana intensificaci\u00F3n + fatiga alta = respuesta normal. Semana que viene es DESCARGA.');
+    if(periodo === 4) tips.push('\u{1F33F} Semana descarga: hoy fue buen d\u00EDa para reducir volumen. Mantener t\u00E9cnica, bajar carga.');
+  }
+
+  // Si todo va bien
+  if(tips.length === 0 && ePost >= 5 && fPost <= 5 && pump >= 5) {
+    tips.push('\u{2705} Sesi\u00F3n s\u00F3lida. Mantener plan. Buen balance energ\u00EDa/fatiga.');
+  } else if(tips.length === 0) {
+    tips.push('\u{1F4CB} Completa las escalas de energ\u00EDa, fatiga y pump para recibir recomendaciones del coach.');
+  }
+
+  // ─── FRASES MOTIVACIONALES (cuando la sesi\u00F3n fue buena) ───
+  const MOTIVACION = [
+    'La disciplina supera a la motivaci\u00F3n. Hoy lo demostraste.',
+    'Cada repetici\u00F3n es una promesa que te cumples a vos mismo.',
+    'El hierro no miente. Tu esfuerzo queda registrado.',
+    'No entrenas para hoy. Entrenas para el Ariel de 60 a\u00F1os que te va a agradecer.',
+    'La consistencia vence al talento. Otra sesi\u00F3n m\u00E1s en el banco.',
+    'El dolor es temporal. El resultado es permanente.',
+    'Tu cuerpo puede. Es tu mente la que necesita convencerse.',
+    'A los 49 la mayor\u00EDa para. Vos aceler\u00E1s.',
+    'No es sobre ser el m\u00E1s fuerte. Es sobre ser m\u00E1s fuerte que ayer.',
+    'El gym es el \u00FAnico lugar donde fracasar (al fallo) es progresar.',
+    'Mientras otros duermen, vos ya est\u00E1s construyendo.',
+    'La mejor versi\u00F3n de vos se forja a las 6AM.',
+    'Ex-triatleta, CrossFitter, lifter. No hay l\u00EDmite que te detenga.',
+    'El sue\u00F1o se recupera, las ganas no se compran. Y vos tens ambas.',
+    'Cada d\u00EDa que entren\u00E1s, le gan\u00E1s un d\u00EDa al envejecimiento.'
+  ];
+  const MEDITACION = [
+    'Respira. 4 segundos dentro, 7 sostener, 8 soltar. Tu sistema nervioso te lo agradece.',
+    'Hoy enfocate en una sola cosa: estar presente en cada repetici\u00F3n.',
+    'El cuerpo es el templo. La comida es la ofrenda. Elige bien.',
+    'No compitas con nadie. Tu \u00FAnica competencia es quien eras ayer.',
+    'La fuerza exterior empieza con la calma interior.',
+    'Tu mente es un m\u00FAsculo m\u00E1s. Entrenala con el mismo rigor.',
+    'Gratitud: tienes salud, tienes fuerza, tienes prop\u00F3sito. Eso vale m\u00E1s que cualquier PR.',
+    'El proceso es el premio. No esperes al resultado para celebrar.',
+    'Cuando el cuerpo dice basta, preguntale a la mente si es verdad.',
+    'La keto no es una dieta, es una decisi\u00F3n de claridad mental. Hoy tu cerebro est\u00E1 limpio.',
+    'Cada noche que duermes bien, reconstruyes lo que el d\u00EDa destruy\u00F3.',
+    'La paciencia es la forma m\u00E1s subestimada de fuerza.',
+    'Entrenas para vivir mejor, no para vivir entrenando.',
+    'Tu hijo te observa. Cada sesi\u00F3n es una lecci\u00F3n silenciosa de disciplina.',
+    'El silencio de las 6AM es tu ventaja competitiva.'
+  ];
+  // Usar fecha como seed para que cambie cada d\u00EDa
+  const seed = new Date().toISOString().split('T')[0].split('-').reduce((a,b)=>a+parseInt(b),0);
+  const buenoSesion = (ePost >= 6 && fPost <= 6) || pump >= 7 || obs.includes('Excelente') || obs.includes('Mejor');
+  if(buenoSesion) {
+    tips.push('\u{1F525} ' + MOTIVACION[seed % MOTIVACION.length]);
+  }
+  tips.push('\u{1F9D8} ' + MEDITACION[(seed + 7) % MEDITACION.length]);
+
+  return tips;
+};
+
 const getRirColor = rir => {
   const r = parseInt(rir);
   if(!rir || rir==='-') return G.mu;
@@ -824,15 +932,55 @@ function TabEntreno({user}) {
         <Rating label="Ansiedad post" value={meta.aPost} onChange={v=>updMeta('aPost',v)} color={G.coa} onSave={forceManualSave} />
       </Sec>
 
-      <Sec title="OBSERVACIONES Y COACH" color={G.coa}>
-        <div style={{marginBottom:10}}>
-          <div style={{fontSize:11,color:G.mu,marginBottom:4}}>Observaciones del dia</div>
-          <textarea value={meta.obs} onChange={e=>updMeta('obs',e.target.value)} placeholder="Como fue la sesion?" style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'8px 10px',fontSize:13,width:'100%',outline:'none',minHeight:55}} />
+      <Sec title={'\u{1F4CB} C\u00D3MO FUE LA SESI\u00D3N'} color={G.coa}>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+          {OBS_OPTIONS.map(opt => {
+            const sel = (meta.obs||'').includes(opt.label);
+            return (
+              <button key={opt.id} onClick={()=>{
+                if(opt.id==='otro') { updMeta('obs', (meta.obs||'') + (meta.obs?' | ':'') + 'Otro: '); return; }
+                const cur = meta.obs||'';
+                if(sel) { updMeta('obs', cur.replace(opt.label,'').replace(/\s*\|\s*\|\s*/g,' | ').replace(/^\s*\|\s*/,'').replace(/\s*\|\s*$/,'').trim()); }
+                else { updMeta('obs', cur ? cur + ' | ' + opt.label : opt.label); }
+              }} style={{background:sel?G.coa+'33':G.alt,border:'1px solid '+(sel?G.coa:G.bor),borderRadius:12,padding:'10px 14px',fontSize:13,color:sel?G.coa:G.dim,fontWeight:sel?700:400,display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:90,transition:'all 0.2s'}}>
+                <span style={{fontSize:20}}>{opt.emoji}</span>
+                <span style={{fontSize:11,fontWeight:600}}>{opt.label}</span>
+                <span style={{fontSize:10,color:G.mu,textAlign:'center'}}>{opt.desc}</span>
+              </button>
+            );
+          })}
         </div>
-        <div>
-          <div style={{fontSize:10,color:G.coa,marginBottom:4,fontWeight:700}}>Decision del Coach</div>
-          <textarea value={meta.coach} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes para la proxima sesion..." style={{background:G.alt,border:'1px solid '+G.coa,color:'#e2e8f0',borderRadius:8,padding:'8px 10px',fontSize:13,width:'100%',outline:'none',minHeight:45}} />
-        </div>
+        {(meta.obs||'').includes('Otro:') && (
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:G.mu,marginBottom:4}}>Nota personalizada</div>
+            <textarea value={meta.obs_custom||''} onChange={e=>updMeta('obs_custom',e.target.value)} placeholder="Escribi lo que sentiste..." style={{background:G.alt,border:'1px solid '+G.bor,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',minHeight:50}} />
+          </div>
+        )}
+        {meta.obs && (
+          <div style={{background:G.alt,borderRadius:10,padding:'10px 14px',marginBottom:12,fontSize:12,color:G.dim}}>
+            <span style={{color:G.mu,fontSize:10,fontFamily:'monospace'}}>RESUMEN: </span>{meta.obs}{meta.obs_custom ? ' \u2014 ' + meta.obs_custom : ''}
+          </div>
+        )}
+      </Sec>
+
+      <Sec title={'\u{1F9E0} DECISI\u00D3N DEL COACH'} color={G.acc}>
+        {(() => {
+          const sem = getSemPeriodo(fecha);
+          const tips = autoCoachAnalysis(meta, prog, sem);
+          return (
+            <div>
+              {tips.map((tip, i) => (
+                <div key={i} style={{background:G.alt,border:'1px solid '+G.bor,borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:13,color:G.dim,lineHeight:1.6}}>
+                  {tip}
+                </div>
+              ))}
+              <div style={{marginTop:10}}>
+                <div style={{fontSize:11,color:G.mu,marginBottom:4}}>Nota adicional del coach (manual)</div>
+                <textarea value={meta.coach||''} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes manuales, observaciones especiales..." style={{background:G.alt,border:'1px solid '+G.acc,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',minHeight:45}} />
+              </div>
+            </div>
+          );
+        })()}
       </Sec>
     </div>
   );
