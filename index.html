@@ -1,4 +1,4 @@
-  <!DOCTYPE html> 
+<!DOCTYPE html> 
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -1515,11 +1515,12 @@ function TabNutricion({user, cfg}) {
         // Preserve hambre/digestion at top level
         if(data.hambre) existingNotas.hambre = data.hambre;
         if(data.digestion) existingNotas.digestion = data.digestion;
-        const nd = {...data, _notasRaw: JSON.stringify(existingNotas), notas: JSON.stringify(existingNotas)};
+        
         // Also save the notas field directly via upsert
-        const dbData = nutriUIToDB(nd);
-        dbData.notas = JSON.stringify(existingNotas);
-        const result = await sb.from('nutricion').upsert({ user_id:user.id, fecha, ...dbData }, { onConflict:'user_id,fecha' });
+        
+        
+        // Only upsert notas field
+        const result = await sb.from('nutricion').upsert({ user_id:user.id, fecha, notas: JSON.stringify(existingNotas) }, { onConflict:'user_id,fecha' });
         if(result.error) throw result.error;
         // Update _notasRaw so future saves preserve plan
         setData(prev => ({...prev, _notasRaw: JSON.stringify(existingNotas)}));
