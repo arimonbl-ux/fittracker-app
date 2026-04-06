@@ -76,8 +76,9 @@ const nutriUIToDB = (uiData) => {
     uiData.c1||'', uiData.c2||'', uiData.cena||'', uiData.suple||''
   ];
   db.comidas = comidas;
-  // Extras en notas como JSON
+  // Extras en notas como JSON — preservar plan data existente
   const extras = {};
+  try { const existing = JSON.parse(uiData._notasRaw || '{}'); if(existing.plan) extras.plan = existing.plan; } catch {}
   if(uiData.hambre) extras.hambre = uiData.hambre;
   if(uiData.digestion) extras.digestion = uiData.digestion;
   db.notas = Object.keys(extras).length ? JSON.stringify(extras) : null;
@@ -1397,7 +1398,33 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
       checked:checkedSupPM,
       onChange:(v)=>onUpdate({...planData, sup_pm:v}),
       suplementos:cfg.suplementos
-    })
+    }),
+
+    // ─── RESUMEN CONSUMIDO HOY ───
+    (() => {
+      const pM = (txt) => { if(!txt) return {p:0,c:0,g:0,k:0}; const pm=txt.match(/P:~?(\d+)/i); const cm=txt.match(/C:~?(\d+)/i); const gm=txt.match(/G:~?(\d+)/i); return {p:pm?parseInt(pm[1]):0,c:cm?parseInt(cm[1]):0,g:gm?parseInt(gm[1]):0}; };
+      const checked = plan.comidas.filter(c => checkedMeals.includes(c.id) && c.id!=='ayuno');
+      const overridden = checked.map(c => overrides[c.id] ? pM(overrides[c.id]) : pM(c.macros));
+      const tot = overridden.reduce((a,m) => ({p:a.p+m.p,c:a.c+m.c,g:a.g+m.g}), {p:0,c:0,g:0});
+      tot.k = tot.p*4+tot.c*4+tot.g*9;
+      const METAS = cfg.metas;
+      if(doneItems===0) return null;
+      return React.createElement(Sec, {color:G.ok},
+        React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}}, '\u{2705} CONSUMIDO HOY'),
+        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center'}},
+          [{l:'Prote\u00EDna',v:tot.p,m:METAS.prot,u:'g',c:G.acc},{l:'Carbos',v:tot.c,m:METAS.carbs,u:'g',c:G.warn},{l:'Grasa',v:tot.g,m:METAS.grasa,u:'g',c:G.coa},{l:'Kcal',v:tot.k,m:METAS.kcal,u:'',c:G.dim}].map(x =>
+            React.createElement('div', {key:x.l,style:{background:G.alt,borderRadius:8,padding:'8px 4px'}},
+              React.createElement('div', {style:{fontSize:18,fontWeight:700,fontFamily:'monospace',color:x.v>=x.m*0.9?G.ok:x.c}}, x.v),
+              React.createElement('div', {style:{fontSize:9,color:G.mu,marginTop:2}}, x.l),
+              React.createElement('div', {style:{fontSize:9,color:G.mu}}, '/' + x.m + x.u)
+            )
+          )
+        ),
+        React.createElement('div', {style:{marginTop:8,fontSize:11,color:G.mu,textAlign:'center'}},
+          checked.length + ' comida' + (checked.length>1?'s':'') + ' + ' + doneSups + ' suplementos registrados'
+        )
+      );
+    })()
   );
 }
 
@@ -1476,6 +1503,8 @@ function TabNutricion({user, cfg}) {
 
   const updatePlanData = useCallback((newPlan) => {
     setPlanData(newPlan);
+    setSaveStatus('saving');
+    setSaveMessage('Guardando...');
     // Save plan data merged into notas field
     if(planSaveRef.current) clearTimeout(planSaveRef.current);
     planSaveRef.current = setTimeout(async () => {
@@ -1486,12 +1515,24 @@ function TabNutricion({user, cfg}) {
         // Preserve hambre/digestion at top level
         if(data.hambre) existingNotas.hambre = data.hambre;
         if(data.digestion) existingNotas.digestion = data.digestion;
-        const nd = {...data, notas: JSON.stringify(existingNotas)};
+        const nd = {...data, _notasRaw: JSON.stringify(existingNotas), notas: JSON.stringify(existingNotas)};
         // Also save the notas field directly via upsert
         const dbData = nutriUIToDB(nd);
         dbData.notas = JSON.stringify(existingNotas);
-        await sb.from('nutricion').upsert({ user_id:user.id, fecha, ...dbData }, { onConflict:'user_id,fecha' });
-      } catch(e) { console.error('Plan save error:', e); }
+        const result = await sb.from('nutricion').upsert({ user_id:user.id, fecha, ...dbData }, { onConflict:'user_id,fecha' });
+        if(result.error) throw result.error;
+        // Update _notasRaw so future saves preserve plan
+        setData(prev => ({...prev, _notasRaw: JSON.stringify(existingNotas)}));
+        const timeStr = new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        setSaveStatus('saved');
+        setSaveMessage('Guardado ' + timeStr);
+        if(saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => { setSaveStatus(null); setSaveMessage(''); }, 3000);
+      } catch(e) {
+        console.error('Plan save error:', e);
+        setSaveStatus('error');
+        setSaveMessage('Error al guardar plan');
+      }
     }, 600);
   }, [data, user.id, fecha]);
 
@@ -1570,9 +1611,10 @@ function TabNutricion({user, cfg}) {
             </button>
           ))}
         </div>
-        {vista==='actual' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
-        </div>}
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {vista==='actual' && <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>}
+          {vista==='plan' && saveStatus==='saved' && <span style={{fontSize:11,color:G.ok,display:'flex',alignItems:'center',gap:4}}>{'\u2705'} Registro guardado</span>}
+        </div>
         <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
       </Sec>
 
