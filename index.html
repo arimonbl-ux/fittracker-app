@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FitTracker - Ariel</title>
+<title>FitTracker Pro</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -33,17 +33,18 @@ const sb = supabase.createClient(
 );
 // Auto-auth: sin login, entra directo. Siempre usa ARIEL_ID para datos.
 const ARIEL_ID = '00000000-0000-4000-a000-000000000001';
-const autoAuth = async () => {
+const MELISSA_ID = '00000000-0000-4000-a000-000000000002';
+const autoAuth = async (userId) => {
   // Intentar sesión existente
   const { data } = await sb.auth.getUser();
-  if (data?.user) return { ...data.user, id: ARIEL_ID };
+  if (data?.user) return { ...data.user, id: userId };
   // Si no hay sesión, intentar anónimo
   try {
     const { data: anonData } = await sb.auth.signInAnonymously();
-    if (anonData?.user) return { ...anonData.user, id: ARIEL_ID };
+    if (anonData?.user) return { ...anonData.user, id: userId };
   } catch(e) {}
   // Fallback: usuario local sin auth
-  return { id: ARIEL_ID };
+  return { id: userId };
 };
 
 const saveEntreno = async (uid, fecha, dia, ejercicios, notas) => {
@@ -243,6 +244,97 @@ const PROG = {
   ]}
 };
 
+const PROG_M = {
+  1:{nombre:'Tren Superior',tipo:'media',carbos:'15-20 g',cardio:'Caminadora 10 min zona 2 warmup + 10 min cooldown',bloques:[
+    {nombre:'Warmup',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Caminadora zona 2',musculo:'Cardio',sets:1,reps:'10 min',rir:'-',cadencia:'-',tecnica:'Velocidad 5-6 km/h. Ritmo que permita hablar. Activar cuerpo.',video:'https://www.youtube.com/results?search_query=caminadora+calentamiento+zona+2+principiante'}
+    ]},
+    {nombre:'Bloque A - Pecho + Espalda',btipo:'fuerza',esfuerzo:'medio',ejercicios:[
+      {nombre:'Press pecho m\u00E1quina biomecanica',musculo:'Pecho',sets:3,reps:'12-15',rir:'3',cadencia:'3-1-2',tecnica:'Sentada con espalda pegada al respaldo. Empuja al frente con control. No bloquear codos arriba. Bajar lento.',video:'https://www.youtube.com/results?search_query=press+pecho+maquina+mujer+principiante'},
+      {nombre:'Jal\u00F3n polea al pecho',musculo:'Dorsal',sets:3,reps:'12-15',rir:'3',cadencia:'3-1-2',tecnica:'Agarre amplio, palmas al frente. Inclina torso 10 grados atras. Lleva barra al pecho. Aprieta escapulas.',video:'https://www.youtube.com/results?search_query=jalon+polea+pecho+mujer+principiante'}
+    ]},
+    {nombre:'Bloque B - Hombros + Brazos',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Press hombro mancuernas sentada',musculo:'Deltoides',sets:3,reps:'12-15',rir:'3',cadencia:'3-1-2',tecnica:'Sentada en banca a 90 grados. Mancuernas a la altura de orejas. Empuja arriba sin chocar. Baja controlado.',video:'https://www.youtube.com/results?search_query=press+hombro+mancuernas+sentada+mujer'},
+      {nombre:'Curl mancuernas alterno',musculo:'B\u00EDceps',sets:2,reps:'12',rir:'3',cadencia:'3-1-2',tecnica:'De pie, codos pegados al cuerpo. Sube una mancuerna a la vez girando la palma. Baja lento.',video:'https://www.youtube.com/results?search_query=curl+biceps+mancuernas+mujer+principiante'},
+      {nombre:'Extension triceps mancuerna',musculo:'Tr\u00EDceps',sets:2,reps:'12',rir:'3',cadencia:'3-1-2',tecnica:'Sentada, una mancuerna con ambas manos detras de la cabeza. Extiende arriba. Codos apuntan al frente.',video:'https://www.youtube.com/results?search_query=extension+triceps+mancuerna+mujer+principiante'}
+    ]}
+  ]},
+  2:{nombre:'Caminata + Stretching',tipo:'baja',carbos:'10-15 g',cardio:'Caminata 30 min zona 2',bloques:[
+    {nombre:'Cardio Zona 2',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Caminata 30 min',musculo:'Cardio / Quema grasa',sets:1,reps:'30 min',rir:'-',cadencia:'-',tecnica:'Exterior o caminadora. Paso firme donde puedas hablar pero con esfuerzo leve. FC 110-130 bpm. Zona 2 = quema grasa optima.',video:'https://www.youtube.com/results?search_query=caminata+zona+2+quemar+grasa+30+minutos'}
+    ]},
+    {nombre:'Stretching completo',btipo:'pump',esfuerzo:'facil',ejercicios:[
+      {nombre:'Estiramiento tren superior',musculo:'Pecho, espalda, hombros',sets:1,reps:'5 min',rir:'-',cadencia:'30s c/u',tecnica:'Estirar pecho en puerta, espalda con brazos al frente, hombros cruzando brazo. 30 seg cada posicion.',video:'https://www.youtube.com/results?search_query=estiramiento+tren+superior+principiante+mujer'},
+      {nombre:'Estiramiento tren inferior',musculo:'Cuadriceps, isquios, cadera',sets:1,reps:'5 min',rir:'-',cadencia:'30s c/u',tecnica:'Estiramiento de cuadriceps de pie, isquios sentada, apertura de cadera (mariposa). 30 seg cada posicion.',video:'https://www.youtube.com/results?search_query=estiramiento+piernas+cadera+principiante+mujer'},
+      {nombre:'Respiracion 4-7-8 anti-ansiedad',musculo:'Sistema nervioso',sets:3,reps:'4 ciclos',rir:'-',cadencia:'Inhala 4s, sostener 7s, exhala 8s',tecnica:'Sentada comoda. Inhala por nariz 4 seg, sostener 7 seg, exhalar por boca 8 seg. Reduce cortisol y ansiedad. 3 rondas.',video:'https://www.youtube.com/results?search_query=respiracion+4+7+8+anti+ansiedad+espanol'}
+    ]}
+  ]},
+  3:{nombre:'Tren Inferior',tipo:'alta',carbos:'15-20 g',cardio:'Caminata 10 min warmup + 10 min cooldown',bloques:[
+    {nombre:'Warmup',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Caminadora o el\u00EDptica warmup',musculo:'Cardio',sets:1,reps:'10 min',rir:'-',cadencia:'-',tecnica:'Activar piernas con ritmo suave. Preparar articulaciones.',video:'https://www.youtube.com/results?search_query=calentamiento+eliptica+principiante'}
+    ]},
+    {nombre:'Bloque A - Cuadriceps',btipo:'fuerza',esfuerzo:'medio',ejercicios:[
+      {nombre:'Sentadilla con mancuernas',musculo:'Cu\u00E1driceps + Gl\u00FAteo',sets:3,reps:'12-15',rir:'3',cadencia:'3-1-2',tecnica:'Pies al ancho de hombros. Mancuernas a los lados. Baja como sentandote en una silla. Rodillas no pasan puntas. Espalda recta.',video:'https://www.youtube.com/results?search_query=sentadilla+mancuernas+mujer+principiante+forma+correcta'},
+      {nombre:'Extension de rodilla m\u00E1quina',musculo:'Cu\u00E1driceps',sets:3,reps:'12-15',rir:'3',cadencia:'3-1-2',tecnica:'Sentada. Extiende piernas hasta casi bloquear. Baja con control 3 seg. No dejar caer.',video:'https://www.youtube.com/results?search_query=extension+rodilla+maquina+mujer+tecnica'}
+    ]},
+    {nombre:'Bloque B - Posterior + Gl\u00FAteo',btipo:'fuerza',esfuerzo:'medio',ejercicios:[
+      {nombre:'Peso muerto rumano mancuernas',musculo:'Isquiotibiales + Gl\u00FAteo',sets:3,reps:'12',rir:'3',cadencia:'3-1-2',tecnica:'De pie, mancuernas al frente de muslos. Inclina torso hacia adelante con rodillas semiflexionadas. Siente estiramiento atras del muslo. Vuelve apretando gluteo.',video:'https://www.youtube.com/results?search_query=peso+muerto+rumano+mancuernas+mujer+principiante',precaucion:'Espalda SIEMPRE recta. Si sientes lumbar, reduce rango de movimiento.'},
+      {nombre:'Curl pierna m\u00E1quina',musculo:'Isquiotibiales',sets:3,reps:'12-15',rir:'3',cadencia:'3-1-2',tecnica:'Boca abajo en la maquina. Contrae llevando talones al gluteo. Baja con control.',video:'https://www.youtube.com/results?search_query=curl+pierna+maquina+acostada+mujer'}
+    ]},
+    {nombre:'Bloque C - Gl\u00FAteo + Pantorrilla',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Puente de gl\u00FAteo (Hip Thrust suelo)',musculo:'Gl\u00FAteo',sets:3,reps:'15-20',rir:'2',cadencia:'2-2-2',tecnica:'Acostada boca arriba, rodillas flexionadas. Sube cadera apretando gluteo 2 seg arriba. Puedes poner disco o mancuerna en cadera para progresion.',video:'https://www.youtube.com/results?search_query=puente+gluteo+hip+thrust+suelo+mujer+principiante'},
+      {nombre:'Elevacion de pantorrilla de pie',musculo:'Gemelos',sets:3,reps:'15-20',rir:'2',cadencia:'2-1-2',tecnica:'De pie en escalon o disco. Sube hasta la punta. Manten 1 seg. Baja lento. Puedes sostener mancuerna.',video:'https://www.youtube.com/results?search_query=elevacion+pantorrilla+de+pie+mujer'}
+    ]}
+  ]},
+  4:{nombre:'Cardio + Core',tipo:'baja',carbos:'10-15 g',cardio:'El\u00EDptica o bicicleta 20-25 min zona 2',bloques:[
+    {nombre:'Cardio LISS',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'El\u00EDptica o bicicleta estacionaria',musculo:'Cardio / Quema grasa',sets:1,reps:'20-25 min',rir:'-',cadencia:'-',tecnica:'Resistencia baja-moderada. Mantener FC en zona 2 (110-130 bpm). Ritmo constante. Quemar grasa sin elevar cortisol.',video:'https://www.youtube.com/results?search_query=eliptica+zona+2+quemar+grasa+principiante'}
+    ]},
+    {nombre:'Core anti-extension',btipo:'tecnico',esfuerzo:'medio',ejercicios:[
+      {nombre:'Plancha frontal',musculo:'Core completo',sets:3,reps:'20-30 seg',rir:'2',cadencia:'Mantener',tecnica:'Antebrazos y puntas de pies. Cuerpo recto como tabla. Gluteo y abdomen apretados. NO dejar caer la cadera.',video:'https://www.youtube.com/results?search_query=plancha+frontal+correcta+mujer+principiante'},
+      {nombre:'Bicicleta abdominal',musculo:'Oblicuos + Recto',sets:3,reps:'12 c/lado',rir:'2',cadencia:'2-0-2',tecnica:'Boca arriba, manos en cabeza. Lleva codo a rodilla opuesta alternando. Movimiento lento y controlado.',video:'https://www.youtube.com/results?search_query=bicicleta+abdominal+mujer+principiante'},
+      {nombre:'Superman',musculo:'Espalda baja + Gl\u00FAteo',sets:3,reps:'12',rir:'3',cadencia:'2-1-2',tecnica:'Boca abajo, brazos extendidos al frente. Levanta brazos y piernas simultaneamente. Manten 1 seg arriba.',video:'https://www.youtube.com/results?search_query=superman+ejercicio+espalda+baja+mujer'}
+    ]},
+    {nombre:'Stretching + Respiraci\u00F3n',btipo:'pump',esfuerzo:'facil',ejercicios:[
+      {nombre:'Respiracion diafragmatica',musculo:'Sistema nervioso',sets:3,reps:'5 ciclos',rir:'-',cadencia:'Inhala 4s, exhala 6s',tecnica:'Acostada boca arriba, manos en abdomen. Infla el abdomen al inhalar. Exhala lento. Reduce cortisol post-ejercicio.',video:'https://www.youtube.com/results?search_query=respiracion+diafragmatica+reducir+cortisol+espanol'}
+    ]}
+  ]},
+  5:{nombre:'Full Body',tipo:'alta',carbos:'15-20 g',cardio:'Caminadora 10 min warmup + 10 min cooldown',bloques:[
+    {nombre:'Warmup',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Caminadora 10 min',musculo:'Cardio',sets:1,reps:'10 min',rir:'-',cadencia:'-',tecnica:'Paso rapido o inclinacion leve. Activar todo el cuerpo.'}
+    ]},
+    {nombre:'Bloque A - Pierna + Gl\u00FAteo',btipo:'fuerza',esfuerzo:'medio',ejercicios:[
+      {nombre:'Sentadilla b\u00FAlgara mancuernas',musculo:'Cu\u00E1driceps + Gl\u00FAteo',sets:3,reps:'10 c/pierna',rir:'3',cadencia:'3-1-2',tecnica:'Pie trasero en banca o caja. Mancuernas a los lados. Baja hasta que rodilla delantera llegue a 90 grados. Empuja con talon.',video:'https://www.youtube.com/results?search_query=sentadilla+bulgara+mancuernas+mujer+principiante',precaucion:'Si pierdes equilibrio, reduce peso o hazlo sin peso al inicio.'},
+      {nombre:'Kettlebell swing',musculo:'Cadena posterior + Cardio',sets:3,reps:'15',rir:'3',cadencia:'Explosivo',tecnica:'Pies mas que ancho de hombros. Kettlebell entre piernas. Empuja cadera al frente con fuerza. Brazos guian, NO jalan. La fuerza viene de la cadera.',video:'https://www.youtube.com/results?search_query=kettlebell+swing+mujer+principiante+tecnica+correcta'}
+    ]},
+    {nombre:'Bloque B - Empuje + Jal\u00F3n',btipo:'fuerza',esfuerzo:'medio',ejercicios:[
+      {nombre:'Press inclinado banca mancuernas',musculo:'Pecho superior',sets:3,reps:'12',rir:'3',cadencia:'3-1-2',tecnica:'Banca a 30-45 grados. Mancuernas desde los hombros. Empuja arriba juntando. Baja controlado.',video:'https://www.youtube.com/results?search_query=press+inclinado+mancuernas+mujer+principiante'},
+      {nombre:'Remo mancuerna un brazo',musculo:'Dorsal + Espalda media',sets:3,reps:'12 c/lado',rir:'3',cadencia:'3-1-2',tecnica:'Rodilla y mano en banca. Otro brazo con mancuerna colgando. Jala codo hacia atras hasta la cadera. Aprieta espalda.',video:'https://www.youtube.com/results?search_query=remo+mancuerna+un+brazo+mujer+principiante'}
+    ]},
+    {nombre:'Bloque C - Finisher',btipo:'metcon',esfuerzo:'medio',ejercicios:[
+      {nombre:'Bola medicinal slams',musculo:'Cuerpo completo',sets:3,reps:'10',rir:'3',cadencia:'Explosivo',tecnica:'Levanta la bola por encima de la cabeza. Lanza con fuerza al suelo. Agarrala en el rebote. Ritmo controlado.',video:'https://www.youtube.com/results?search_query=bola+medicinal+slam+mujer+principiante'}
+    ]}
+  ]},
+  6:{nombre:'Yoga + Caminata',tipo:'baja',carbos:'10-15 g',cardio:'Caminata 30 min zona 2',bloques:[
+    {nombre:'Caminata zona 2',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Caminata exterior 30 min',musculo:'Cardio / Quema grasa / Mental',sets:1,reps:'30 min',rir:'-',cadencia:'-',tecnica:'Al aire libre si es posible. Luz solar ayuda a regular cortisol. Paso firme. Puede ser con musica relajante o podcast.',video:'https://www.youtube.com/results?search_query=caminata+al+aire+libre+bajar+cortisol'}
+    ]},
+    {nombre:'Yoga para principiantes',btipo:'tecnico',esfuerzo:'facil',ejercicios:[
+      {nombre:'Saludo al sol (Sun Salutation)',musculo:'Cuerpo completo + Flexibilidad',sets:3,reps:'5 rondas',rir:'-',cadencia:'Fluido con respiracion',tecnica:'Secuencia: de pie \u2192 flexion \u2192 plancha \u2192 cobra \u2192 perro boca abajo \u2192 de pie. Sigue el video. Respira profundo en cada postura.',video:'https://www.youtube.com/results?search_query=saludo+al+sol+yoga+principiante+espanol'},
+      {nombre:'Postura del ni\u00F1o (Child Pose)',musculo:'Espalda + Relajaci\u00F3n',sets:1,reps:'1-2 min',rir:'-',cadencia:'Respirar profundo',tecnica:'Rodillas al suelo, sientate en talones, brazos estirados al frente. Frente al suelo. Respira profundo. Postura de descanso y calma.',video:'https://www.youtube.com/results?search_query=postura+del+nino+yoga+principiante'},
+      {nombre:'Perro boca abajo (Down Dog)',musculo:'Isquios + Hombros + Espalda',sets:1,reps:'30-60 seg',rir:'-',cadencia:'Mantener respirando',tecnica:'Manos y pies en el suelo, cadera arriba formando V invertida. Empuja talones al suelo. Estira espalda.',video:'https://www.youtube.com/results?search_query=perro+boca+abajo+yoga+principiante+espanol'},
+      {nombre:'Postura del guerrero I y II',musculo:'Piernas + Cadera + Equilibrio',sets:1,reps:'30 seg c/lado c/u',rir:'-',cadencia:'Mantener respirando',tecnica:'Guerrero I: pierna al frente a 90\u00B0, brazos arriba. Guerrero II: brazos abiertos a los lados, mirada al frente. Abre caderas.',video:'https://www.youtube.com/results?search_query=guerrero+1+2+yoga+principiante+espanol'},
+      {nombre:'Savasana (relajaci\u00F3n final)',musculo:'Sistema nervioso / Anti-ansiedad',sets:1,reps:'5 min',rir:'-',cadencia:'Respiracion natural',tecnica:'Acostada boca arriba, brazos a los lados, ojos cerrados. Suelta todo el cuerpo. Escanea de pies a cabeza relajando cada musculo. 5 minutos minimo.',video:'https://www.youtube.com/results?search_query=savasana+relajacion+final+yoga+espanol'}
+    ]}
+  ]},
+  0:{nombre:'Descanso Activo',tipo:'descanso',carbos:'10-15 g',cardio:'Caminata suave 20 min opcional',bloques:[
+    {nombre:'Recuperaci\u00F3n activa',btipo:'pump',esfuerzo:'facil',ejercicios:[
+      {nombre:'Caminata suave',musculo:'Recuperaci\u00F3n',sets:1,reps:'20 min opcional',rir:'-',cadencia:'-',tecnica:'Solo si el cuerpo lo pide. Paso tranquilo. Ideal al aire libre para bajar cortisol y mejorar estado de animo.'},
+      {nombre:'Stretching libre',musculo:'Flexibilidad',sets:1,reps:'10-15 min',rir:'-',cadencia:'30s por postura',tecnica:'Estira lo que sientas mas tenso. Sin forzar. Respiracion profunda en cada posicion.',video:'https://www.youtube.com/results?search_query=estiramiento+completo+dia+descanso+mujer'}
+    ]}
+  ]}
+};
+
 // ─── PLAN NUTRICIONAL DIARIO ─────────────────────────────────────────────────
 // Mapeo dia de semana → tipo de plan nutricional
 const getDayType = (dia) => {
@@ -250,6 +342,13 @@ const getDayType = (dia) => {
   if(dia===3||dia===5) return 'media'; // Hombro+Pecho, Hombro+Espalda
   if(dia===6) return 'media_baja'; // Brazos + CF opcional
   return 'descanso'; // domingo
+};
+
+const getDayType_M = (dia) => {
+  if(dia===1||dia===3||dia===5) return 'entreno';
+  if(dia===4) return 'cardio';
+  if(dia===2||dia===6) return 'ligero';
+  return 'descanso';
 };
 
 const SUPLEMENTOS = {
@@ -268,6 +367,22 @@ const SUPLEMENTOS = {
     {id:'magnesio',nombre:'Magnesio Bisglicinato',timing:'30-45 min antes de dormir',emoji:'\u{1F31C}'},
     {id:'omega3',nombre:'Omega-3 EPA+DHA 2-3g',timing:'Con cena o pre-sue\u00F1o',emoji:'\u{1F41F}'},
     {id:'k2',nombre:'K2 MK-7 100mcg',timing:'Con Omega-3',emoji:'\u{1F48A}'}
+  ]
+};
+
+const SUPLEMENTOS_M = {
+  AM: [
+    {id:'lteanina',nombre:'L-Teanina 200mg',timing:'Con caf\u00E9 (calma sin jitters)',emoji:'\u{1F33F}'},
+    {id:'cafe',nombre:'Caf\u00E9 negro o verde',timing:'6:00-7:00 AM',emoji:'\u{2615}'},
+    {id:'omega3',nombre:'Omega-3 EPA+DHA 2g',timing:'Con primera comida',emoji:'\u{1F41F}'}
+  ],
+  POST: [
+    {id:'proteina',nombre:'Prote\u00EDna Whey/Plant 25g',timing:'Post-entreno inmediato',emoji:'\u{1F4AA}'},
+    {id:'colageno',nombre:'Col\u00E1geno 10g',timing:'Con prote\u00EDna post',emoji:'\u{1F9B4}'}
+  ],
+  PM: [
+    {id:'magnesio',nombre:'Magnesio Bisglicinato 400mg',timing:'30-45 min antes de dormir',emoji:'\u{1F31C}'},
+    {id:'ashwa',nombre:'Ashwagandha KSM-66 300mg',timing:'Con magnesio antes de dormir',emoji:'\u{1F33F}'}
   ]
 };
 
@@ -322,6 +437,54 @@ const PLANES = {
       {id:'ayuno',hora:'~7:00 PM',label:'Ayuno extendido 16-18h',items:['Ayuno largo hasta lunes ~1 PM si posible'],macros:'',kcal:0}
     ],
     resumen:{prot:120,carbs:12,grasa:50,kcal:978,nota:'M\u00EDnimo, ayuno extendido 16-18h, recuperaci\u00F3n'}
+  }
+};
+
+const PLANES_M = {
+  entreno: {
+    label:'D\u00CDA ENTRENO (Lun/Mi\u00E9/Vie)',color:'#ef4444',
+    comidas:[
+      {id:'pre',hora:'6:30 AM',label:'Pre-entreno',items:['Caf\u00E9 negro + L-Teanina','Omega-3 con agua'],macros:'P:0 C:0 G:2g',kcal:18},
+      {id:'post',hora:'Post-entreno',label:'Post-entreno',items:['Prote\u00EDna 25g + Col\u00E1geno 10g','Agua 500ml'],macros:'P:30g C:2g G:1g',kcal:137},
+      {id:'c1',hora:'~9:00 AM',label:'Comida 1',items:['3 huevos revueltos + espinaca','Aguacate peque\u00F1o (50g)'],macros:'P:25g C:3g G:22g',kcal:314},
+      {id:'c2',hora:'~1:00 PM',label:'Comida 2',items:['150g pollo/pescado + ensalada verde','Aceite oliva 1 cda'],macros:'P:35g C:4g G:15g',kcal:291},
+      {id:'snack',hora:'~4:00 PM',label:'Snack',items:['Queso crema 30g + apio/pepino','O: pu\u00F1o almendras 20g'],macros:'P:8g C:2g G:15g',kcal:175},
+      {id:'cena',hora:'~6:30 PM',label:'Cena',items:['150g carne/pescado + vegetales al vapor','Aceite coco 1 cdta'],macros:'P:30g C:3g G:12g',kcal:244},
+      {id:'ayuno',hora:'~7:00 PM',label:'Inicio ayuno 12h+',items:['Cerrar ventana alimentaria'],macros:'',kcal:0}
+    ],
+    resumen:{prot:128,carbs:14,grasa:67,kcal:1179,nota:'D\u00EDa entreno: priorizar prote\u00EDna post + hidrataci\u00F3n. Ajustar grasa seg\u00FAn hambre hasta ~1300 kcal'}
+  },
+  cardio: {
+    label:'D\u00CDA CARDIO + CORE (Jue)',color:'#f59e0b',
+    comidas:[
+      {id:'pre',hora:'6:30 AM',label:'Pre-cardio',items:['Caf\u00E9 negro + L-Teanina'],macros:'P:0 C:0 G:0',kcal:5},
+      {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o','Vegetales verdes'],macros:'P:22g C:3g G:18g',kcal:266},
+      {id:'c2',hora:'~1:00 PM',label:'Comida 2',items:['150g pollo + ensalada','Aceite oliva moderado'],macros:'P:30g C:3g G:10g',kcal:222},
+      {id:'snack',hora:'~4:00 PM',label:'Snack',items:['Queso + jam\u00F3n pavo 50g'],macros:'P:10g C:1g G:8g',kcal:120},
+      {id:'cena',hora:'~6:30 PM',label:'Cena',items:['150g pescado + vegetales'],macros:'P:28g C:3g G:6g',kcal:178},
+      {id:'ayuno',hora:'~7:00 PM',label:'Inicio ayuno 12h+',items:['Cerrar ventana'],macros:'',kcal:0}
+    ],
+    resumen:{prot:90,carbs:10,grasa:42,kcal:791,nota:'Cardio + core: ingesta moderada, priorizar grasas buenas'}
+  },
+  ligero: {
+    label:'D\u00CDA LIGERO / YOGA (Mar/S\u00E1b)',color:'#a855f7',
+    comidas:[
+      {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['2 huevos + vegetales salteados','Caf\u00E9 + L-Teanina'],macros:'P:15g C:3g G:12g',kcal:180},
+      {id:'c2',hora:'~1:00 PM',label:'Comida 2',items:['Ensalada con at\u00FAn/pollo 120g','Aceite oliva + lim\u00F3n'],macros:'P:25g C:3g G:10g',kcal:202},
+      {id:'cena',hora:'~6:00 PM',label:'Cena',items:['120g pescado/pollo + vegetales al vapor'],macros:'P:25g C:3g G:6g',kcal:166},
+      {id:'ayuno',hora:'~6:30 PM',label:'Ayuno temprano',items:['Cerrar ventana para ayuno extendido'],macros:'',kcal:0}
+    ],
+    resumen:{prot:65,carbs:9,grasa:28,kcal:548,nota:'D\u00EDa ligero: ayuno m\u00E1s extendido, menor ingesta total'}
+  },
+  descanso: {
+    label:'DESCANSO (Dom)',color:'#94a3b8',
+    comidas:[
+      {id:'c1',hora:'~10:00 AM',label:'Brunch (romper ayuno)',items:['3 huevos + aguacate + vegetales'],macros:'P:22g C:4g G:20g',kcal:288},
+      {id:'c2',hora:'~2:00 PM',label:'Comida 2',items:['150g carne/pollo + ensalada'],macros:'P:30g C:3g G:10g',kcal:222},
+      {id:'cena',hora:'~6:00 PM',label:'Cena ligera',items:['Sopa de vegetales + prote\u00EDna'],macros:'P:20g C:5g G:6g',kcal:158},
+      {id:'ayuno',hora:'~6:30 PM',label:'Ayuno extendido 14-16h',items:['Cerrar temprano para ayuno largo'],macros:'',kcal:0}
+    ],
+    resumen:{prot:72,carbs:12,grasa:36,kcal:668,nota:'Descanso: recuperar, ayuno extendido 14-16h, hidratarse bien'}
   }
 };
 
@@ -397,8 +560,116 @@ const OBS_OPTIONS = [
   {id:'otro',label:'Otro',emoji:'\u{270F}\u{FE0F}',desc:'Escribir nota personalizada'}
 ];
 
+const OBS_OPTIONS_M = [
+  {id:'excelente',label:'Excelente',emoji:'\u{1F31F}',desc:'Me sent\u00ED bien, termin\u00E9 con energ\u00EDa'},
+  {id:'buena',label:'Buena',emoji:'\u{1F4AA}',desc:'Complet\u00E9 todo, buen esfuerzo'},
+  {id:'regular',label:'Regular',emoji:'\u{26A1}',desc:'Me cost\u00F3 pero lo hice'},
+  {id:'cansada',label:'Muy cansada',emoji:'\u{1F62A}',desc:'El cuerpo estaba pesado hoy'},
+  {id:'ansiedad',label:'Con ansiedad',emoji:'\u{1F4AD}',desc:'Mente acelerada, dif\u00EDcil concentrarme'},
+  {id:'dolor',label:'Dolor/molestia',emoji:'\u{26A0}\u{FE0F}',desc:'Algo no se sinti\u00F3 bien'},
+  {id:'motivada',label:'Muy motivada',emoji:'\u{2B50}',desc:'Hoy fue un gran d\u00EDa, quiero m\u00E1s'},
+  {id:'estres',label:'Afectada por estr\u00E9s',emoji:'\u{1F616}',desc:'D\u00EDa dif\u00EDcil emocionalmente'},
+  {id:'mejor',label:'Mejor que ayer',emoji:'\u{1F680}',desc:'Noto que estoy progresando'},
+  {id:'otro',label:'Otro',emoji:'\u{270F}\u{FE0F}',desc:'Escribir nota personalizada'}
+];
+
+const MOTIVACION_A = [
+  'La disciplina supera a la motivaci\u00F3n. Hoy lo demostraste.',
+  'Cada repetici\u00F3n es una promesa que te cumples a vos mismo.',
+  'El hierro no miente. Tu esfuerzo queda registrado.',
+  'No entrenas para hoy. Entrenas para el Ariel de 60 a\u00F1os que te va a agradecer.',
+  'La consistencia vence al talento. Otra sesi\u00F3n m\u00E1s en el banco.',
+  'El dolor es temporal. El resultado es permanente.',
+  'Tu cuerpo puede. Es tu mente la que necesita convencerse.',
+  'A los 49 la mayor\u00EDa para. Vos aceler\u00E1s.',
+  'No es sobre ser el m\u00E1s fuerte. Es sobre ser m\u00E1s fuerte que ayer.',
+  'El gym es el \u00FAnico lugar donde fracasar (al fallo) es progresar.',
+  'Mientras otros duermen, vos ya est\u00E1s construyendo.',
+  'La mejor versi\u00F3n de vos se forja a las 6AM.',
+  'Ex-triatleta, CrossFitter, lifter. No hay l\u00EDmite que te detenga.',
+  'El sue\u00F1o se recupera, las ganas no se compran. Y vos tens ambas.',
+  'Cada d\u00EDa que entren\u00E1s, le gan\u00E1s un d\u00EDa al envejecimiento.'
+];
+const MEDITACION_A = [
+  'Respira. 4 segundos dentro, 7 sostener, 8 soltar. Tu sistema nervioso te lo agradece.',
+  'Hoy enfocate en una sola cosa: estar presente en cada repetici\u00F3n.',
+  'El cuerpo es el templo. La comida es la ofrenda. Elige bien.',
+  'No compitas con nadie. Tu \u00FAnica competencia es quien eras ayer.',
+  'La fuerza exterior empieza con la calma interior.',
+  'Tu mente es un m\u00FAsculo m\u00E1s. Entrenala con el mismo rigor.',
+  'Gratitud: tienes salud, tienes fuerza, tienes prop\u00F3sito. Eso vale m\u00E1s que cualquier PR.',
+  'El proceso es el premio. No esperes al resultado para celebrar.',
+  'Cuando el cuerpo dice basta, preguntale a la mente si es verdad.',
+  'La keto no es una dieta, es una decisi\u00F3n de claridad mental. Hoy tu cerebro est\u00E1 limpio.',
+  'Cada noche que duermes bien, reconstruyes lo que el d\u00EDa destruy\u00F3.',
+  'La paciencia es la forma m\u00E1s subestimada de fuerza.',
+  'Entrenas para vivir mejor, no para vivir entrenando.',
+  'Tu hijo te observa. Cada sesi\u00F3n es una lecci\u00F3n silenciosa de disciplina.',
+  'El silencio de las 6AM es tu ventaja competitiva.'
+];
+
+const MOTIVACION_M = [
+  'Cada paso que das es una victoria sobre el estr\u00E9s de ayer.',
+  'Tu cuerpo es m\u00E1s fuerte de lo que crees. Hoy lo demostraste.',
+  'No se trata de ser perfecta. Se trata de ser constante.',
+  'La mujer que entrena hoy es la que se siente poderosa ma\u00F1ana.',
+  'Tu autoestima se construye con cada repetici\u00F3n.',
+  'El cortisol baja, la confianza sube. Sigue as\u00ED.',
+  'Elegiste tu salud sobre la comodidad. Eso es valor.',
+  'Cada d\u00EDa que entrenas, le demuestras a tu mente qui\u00E9n manda.',
+  'No compitas con nadie. Tu progreso es tuyo y es real.',
+  'El hierro no juzga. Solo te hace m\u00E1s fuerte.',
+  'Tu hijo te ve. Est\u00E1s siendo el ejemplo.',
+  'A los 45 no se para. A los 45 se transforma.',
+  'El gimnasio del s\u00F3tano es tu santuario. Cada visita cuenta.',
+  'Hoy no solo entrenaste m\u00FAsculo. Entrenaste resiliencia.',
+  'La mejor inversi\u00F3n es la que haces en ti misma.'
+];
+const MEDITACION_M = [
+  'Respira profundo. Inhala calma, exhala lo que no puedes controlar.',
+  'Tu valor no depende de tu peso ni de c\u00F3mo te veas. Depende de qui\u00E9n eres.',
+  'Hoy es un d\u00EDa nuevo. Perm\u00EDtete empezar sin cargas de ayer.',
+  'La ansiedad es solo tu cuerpo prepar\u00E1ndose. Redirige esa energ\u00EDa.',
+  'Mereces sentirte bien en tu piel. Y est\u00E1s trabajando por ello.',
+  'No necesitas la aprobaci\u00F3n de nadie. T\u00FA sabes lo lejos que has llegado.',
+  'El movimiento es medicina. Cada paso, cada repetici\u00F3n, te sana.',
+  'Suelta el control. A veces progresar es simplemente no rendirse.',
+  'Conf\u00EDa en el proceso. Los resultados vienen cuando dejas de forzarlos.',
+  'Tu cuerpo se est\u00E1 transformando por dentro aunque a\u00FAn no lo veas todo por fuera.',
+  'La paciencia es poder. Y t\u00FA tienes m\u00E1s del que imaginas.',
+  'Agradece: tienes salud, tienes fuerza, tienes prop\u00F3sito.',
+  'El estr\u00E9s de ayer se qued\u00F3 en ayer. Hoy eliges paz.',
+  'Tu mente es un m\u00FAsculo m\u00E1s. Entr\u00E9nala con compasi\u00F3n.',
+  'Esta noche descansa profundo. Lo mereces.'
+];
+
+const USER_CFG = {
+  [ARIEL_ID]: {
+    nombre:'Ariel',
+    prog:PROG,
+    getDayType:getDayType,
+    suplementos:SUPLEMENTOS,
+    planes:PLANES,
+    metas:{prot:180,carbs:40,grasa:130,agua:3.5,kcal:2200},
+    obsOptions:OBS_OPTIONS,
+    motivacion:MOTIVACION_A,
+    meditacion:MEDITACION_A
+  },
+  [MELISSA_ID]: {
+    nombre:'Melissa',
+    prog:PROG_M,
+    getDayType:getDayType_M,
+    suplementos:SUPLEMENTOS_M,
+    planes:PLANES_M,
+    metas:{prot:100,carbs:20,grasa:85,agua:2.5,kcal:1300},
+    obsOptions:OBS_OPTIONS_M,
+    motivacion:MOTIVACION_M,
+    meditacion:MEDITACION_M
+  }
+};
+
 // ─── MOTOR DE COACH AUTOMATICO ──────────────────────────────────────────────
-const autoCoachAnalysis = (meta, prog, periodo) => {
+const autoCoachAnalysis = (meta, prog, periodo, motivArr, meditArr) => {
   const tips = [];
   const ePre = parseInt(meta.ePre)||0;
   const ePost = parseInt(meta.ePost)||0;
@@ -446,47 +717,13 @@ const autoCoachAnalysis = (meta, prog, periodo) => {
   }
 
   // ─── FRASES MOTIVACIONALES (cuando la sesi\u00F3n fue buena) ───
-  const MOTIVACION = [
-    'La disciplina supera a la motivaci\u00F3n. Hoy lo demostraste.',
-    'Cada repetici\u00F3n es una promesa que te cumples a vos mismo.',
-    'El hierro no miente. Tu esfuerzo queda registrado.',
-    'No entrenas para hoy. Entrenas para el Ariel de 60 a\u00F1os que te va a agradecer.',
-    'La consistencia vence al talento. Otra sesi\u00F3n m\u00E1s en el banco.',
-    'El dolor es temporal. El resultado es permanente.',
-    'Tu cuerpo puede. Es tu mente la que necesita convencerse.',
-    'A los 49 la mayor\u00EDa para. Vos aceler\u00E1s.',
-    'No es sobre ser el m\u00E1s fuerte. Es sobre ser m\u00E1s fuerte que ayer.',
-    'El gym es el \u00FAnico lugar donde fracasar (al fallo) es progresar.',
-    'Mientras otros duermen, vos ya est\u00E1s construyendo.',
-    'La mejor versi\u00F3n de vos se forja a las 6AM.',
-    'Ex-triatleta, CrossFitter, lifter. No hay l\u00EDmite que te detenga.',
-    'El sue\u00F1o se recupera, las ganas no se compran. Y vos tens ambas.',
-    'Cada d\u00EDa que entren\u00E1s, le gan\u00E1s un d\u00EDa al envejecimiento.'
-  ];
-  const MEDITACION = [
-    'Respira. 4 segundos dentro, 7 sostener, 8 soltar. Tu sistema nervioso te lo agradece.',
-    'Hoy enfocate en una sola cosa: estar presente en cada repetici\u00F3n.',
-    'El cuerpo es el templo. La comida es la ofrenda. Elige bien.',
-    'No compitas con nadie. Tu \u00FAnica competencia es quien eras ayer.',
-    'La fuerza exterior empieza con la calma interior.',
-    'Tu mente es un m\u00FAsculo m\u00E1s. Entrenala con el mismo rigor.',
-    'Gratitud: tienes salud, tienes fuerza, tienes prop\u00F3sito. Eso vale m\u00E1s que cualquier PR.',
-    'El proceso es el premio. No esperes al resultado para celebrar.',
-    'Cuando el cuerpo dice basta, preguntale a la mente si es verdad.',
-    'La keto no es una dieta, es una decisi\u00F3n de claridad mental. Hoy tu cerebro est\u00E1 limpio.',
-    'Cada noche que duermes bien, reconstruyes lo que el d\u00EDa destruy\u00F3.',
-    'La paciencia es la forma m\u00E1s subestimada de fuerza.',
-    'Entrenas para vivir mejor, no para vivir entrenando.',
-    'Tu hijo te observa. Cada sesi\u00F3n es una lecci\u00F3n silenciosa de disciplina.',
-    'El silencio de las 6AM es tu ventaja competitiva.'
-  ];
   // Usar fecha como seed para que cambie cada d\u00EDa
   const seed = new Date().toISOString().split('T')[0].split('-').reduce((a,b)=>a+parseInt(b),0);
   const buenoSesion = (ePost >= 6 && fPost <= 6) || pump >= 7 || obs.includes('Excelente') || obs.includes('Mejor');
   if(buenoSesion) {
-    tips.push('\u{1F525} ' + MOTIVACION[seed % MOTIVACION.length]);
+    tips.push('\u{1F525} ' + motivArr[seed % motivArr.length]);
   }
-  tips.push('\u{1F9D8} ' + MEDITACION[(seed + 7) % MEDITACION.length]);
+  tips.push('\u{1F9D8} ' + meditArr[(seed + 7) % meditArr.length]);
 
   return tips;
 };
@@ -576,7 +813,7 @@ function SaveStatus({status, message, onRetry}) {
 }
 
 // ─── TAB ENTRENO ─────────────────────────────────────────────────────────────
-function TabEntreno({user}) {
+function TabEntreno({user, cfg}) {
   const [dia, setDia] = useState(diaHoy());
   const [fecha, setFecha] = useState(hoy());
   const [reg, setReg] = useState({});
@@ -590,7 +827,7 @@ function TabEntreno({user}) {
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
 
-  const prog = PROG[dia] || PROG[1];
+  const prog = cfg.prog[dia] || cfg.prog[1];
 
   useEffect(() => {
     setSaveStatus(null);
@@ -891,6 +1128,11 @@ function TabEntreno({user}) {
                         <div><span style={{fontSize:10,fontFamily:'monospace',color:'#ef4444',fontWeight:700}}>PRECAUCION: </span>{ej.precaucion}</div>
                       </div>
                     )}
+                    {ej.video && (
+                      React.createElement('a', {href:ej.video, target:'_blank', rel:'noopener noreferrer', style:{display:'inline-flex',alignItems:'center',gap:6,background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:8,padding:'6px 12px',marginBottom:10,fontSize:12,color:G.acc,textDecoration:'none',cursor:'pointer',fontWeight:600}},
+                        '\u{25B6}\uFE0F} Ver video del ejercicio'
+                      )
+                    )}
                     <div style={{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}}>
                       {['#','PESO kg','REPS','CADENCIA','RIR','RPE','NOTAS'].map(h => (
                         <span key={h} style={{fontSize:7,color:G.mu,textAlign:'center',fontFamily:'monospace'}}>{h}</span>
@@ -934,7 +1176,7 @@ function TabEntreno({user}) {
 
       <Sec title={'\u{1F4CB} C\u00D3MO FUE LA SESI\u00D3N'} color={G.coa}>
         <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
-          {OBS_OPTIONS.map(opt => {
+          {(cfg.obsOptions||OBS_OPTIONS).map(opt => {
             const sel = (meta.obs||'').includes(opt.label);
             return (
               <button key={opt.id} onClick={()=>{
@@ -966,7 +1208,7 @@ function TabEntreno({user}) {
       <Sec title={'\u{1F9E0} DECISI\u00D3N DEL COACH'} color={G.acc}>
         {(() => {
           const sem = getSemPeriodo(fecha);
-          const tips = autoCoachAnalysis(meta, prog, sem);
+          const tips = autoCoachAnalysis(meta, prog, sem, cfg.motivacion||MOTIVACION_A, cfg.meditacion||MEDITACION_A);
           return (
             <div>
               {tips.map((tip, i) => (
@@ -987,8 +1229,8 @@ function TabEntreno({user}) {
 }
 
 // ─── PLAN DEL DIA COMPONENTS ──────────────────────────────────────────────────
-function SupChecklist({timing, label, color, checked, onChange}) {
-  const items = SUPLEMENTOS[timing] || [];
+function SupChecklist({timing, label, color, checked, onChange, suplementos}) {
+  const items = (suplementos||SUPLEMENTOS)[timing] || [];
   return React.createElement('div', {style:{background:G.sur,border:'1px solid '+color+'44',borderRadius:12,padding:14,marginBottom:12}},
     React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
       React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:color,fontWeight:700}}, label),
@@ -1056,9 +1298,9 @@ function PlanMealBlock({comida, isChecked, onCheck, override, onOverride, showEd
   );
 }
 
-function PlanDelDia({fecha, dia, planData, onUpdate}) {
-  const tipo = getDayType(dia);
-  const plan = PLANES[tipo];
+function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
+  const tipo = cfg.getDayType(dia);
+  const plan = cfg.planes[tipo];
   if(!plan) return null;
 
   const checkedSupAM = planData.sup_am || [];
@@ -1081,7 +1323,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate}) {
   };
 
   // Progress calc
-  const totalSups = SUPLEMENTOS.AM.length + SUPLEMENTOS.POST.length + SUPLEMENTOS.PM.length;
+  const totalSups = (cfg.suplementos.AM||[]).length + (cfg.suplementos.POST||[]).length + (cfg.suplementos.PM||[]).length;
   const doneSups = checkedSupAM.length + checkedSupPOST.length + checkedSupPM.length;
   const totalMeals = plan.comidas.filter(c=>c.id!=='ayuno').length;
   const doneMeals = checkedMeals.filter(id => plan.comidas.some(c=>c.id===id&&c.id!=='ayuno')).length;
@@ -1112,7 +1354,8 @@ function PlanDelDia({fecha, dia, planData, onUpdate}) {
     (tipo!=='crossfit' && tipo!=='descanso') && React.createElement(SupChecklist, {
       timing:'AM', label:'SUPLEMENTOS AM \u{2600}\u{FE0F}', color:G.acc,
       checked:checkedSupAM,
-      onChange:(v)=>onUpdate({...planData, sup_am:v})
+      onChange:(v)=>onUpdate({...planData, sup_am:v}),
+      suplementos:cfg.suplementos
     }),
 
     // Comidas del plan
@@ -1136,27 +1379,30 @@ function PlanDelDia({fecha, dia, planData, onUpdate}) {
     (tipo!=='descanso') && React.createElement(SupChecklist, {
       timing:'POST', label:'SUPLEMENTOS POST \u{1F4AA}', color:G.ok,
       checked:checkedSupPOST,
-      onChange:(v)=>onUpdate({...planData, sup_post:v})
+      onChange:(v)=>onUpdate({...planData, sup_post:v}),
+      suplementos:cfg.suplementos
     }),
 
     // CrossFit tiene suplementos AM reubicados
     (tipo==='crossfit') && React.createElement(SupChecklist, {
       timing:'AM', label:'SUPLEMENTOS PRE-WOD \u{26A1}', color:G.warn,
       checked:checkedSupAM,
-      onChange:(v)=>onUpdate({...planData, sup_am:v})
+      onChange:(v)=>onUpdate({...planData, sup_am:v}),
+      suplementos:cfg.suplementos
     }),
 
     // Suplementos PM siempre
     React.createElement(SupChecklist, {
       timing:'PM', label:'SUPLEMENTOS PM \u{1F31C}', color:G.coa,
       checked:checkedSupPM,
-      onChange:(v)=>onUpdate({...planData, sup_pm:v})
+      onChange:(v)=>onUpdate({...planData, sup_pm:v}),
+      suplementos:cfg.suplementos
     })
   );
 }
 
 // ─── TAB NUTRICION ────────────────────────────────────────────────────────────
-function TabNutricion({user}) {
+function TabNutricion({user, cfg}) {
   const [fecha, setFecha] = useState(hoy());
   const [dia, setDia] = useState(diaHoy());
   const [data, setData] = useState({});
@@ -1167,7 +1413,7 @@ function TabNutricion({user}) {
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
   const planSaveRef = useRef(null);
-  const prog = PROG[dia] || PROG[1];
+  const prog = cfg.prog[dia] || cfg.prog[1];
 
   useEffect(() => {
     setSaveStatus(null);
@@ -1260,7 +1506,7 @@ function TabNutricion({user}) {
   const hrs = calcAyuno();
 
   // Metas diarias
-  const METAS = { prot: 180, carbs: 40, grasa: 130, agua: 3.5, kcal: 2200 };
+  const METAS = cfg.metas;
 
   // Parsear macros de cada comida: "texto | P:20g C:0 G:5g"
   const parseMacros = (txt) => {
@@ -1332,7 +1578,7 @@ function TabNutricion({user}) {
 
       {/* ─── VISTA: PLAN DEL DIA ─── */}
       {vista==='plan' && (
-        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} />
+        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} cfg={cfg} />
       )}
 
       {/* ─── VISTA: REGISTRO ACTUAL ─── */}
@@ -1526,48 +1772,71 @@ const TABS = [
   {id:'progreso', label:'PROGRESO', icon:'P'}
 ];
 
+function UserSelector({onSelect}) {
+  const users = [
+    {id:ARIEL_ID, nombre:'Ariel', desc:'49 a\u00F1os \u2022 CrossFit + Pesas \u2022 Keto flexible', color:'#a5b4fc', icon:'\u{1F3CB}'},
+    {id:MELISSA_ID, nombre:'Melissa', desc:'45 a\u00F1os \u2022 Gym casa + Yoga \u2022 Keto fase 2', color:'#f0abfc', icon:'\u{1F9D8}'}
+  ];
+  return React.createElement('div', {style:{background:G.bg,minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,backgroundImage:'radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%)'}},
+    React.createElement('div', {style:{fontFamily:'monospace',fontSize:14,fontWeight:700,letterSpacing:4,color:G.acc,marginBottom:6}}, 'FITTRACKER'),
+    React.createElement('div', {style:{fontSize:12,color:G.mu,marginBottom:30}}, 'Selecciona tu perfil'),
+    users.map(u =>
+      React.createElement('button', {key:u.id, onClick:()=>onSelect(u.id), style:{background:G.sur+'cc',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',border:'2px solid '+u.color+'55',borderRadius:20,padding:'24px 30px',marginBottom:16,width:'100%',maxWidth:340,cursor:'pointer',textAlign:'left',boxShadow:'0 4px 24px rgba(0,0,0,0.25)',transition:'transform 0.15s,border-color 0.2s'}},
+        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:14}},
+          React.createElement('div', {style:{fontSize:36}}, u.icon),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:18,fontWeight:700,color:u.color,marginBottom:4}}, u.nombre),
+            React.createElement('div', {style:{fontSize:12,color:G.dim}}, u.desc)
+          )
+        )
+      )
+    )
+  );
+}
+
 function App() {
+  const [userId, setUserId] = useState(null);
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState('entreno');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    autoAuth().then(u => { setUser(u); setLoading(false); });
-  }, []);
+    if(!userId) return;
+    setLoading(true);
+    autoAuth(userId).then(u => { setUser(u); setLoading(false); });
+  }, [userId]);
 
-  if(loading) return (
-    <div style={{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:12}}>
-      Cargando...
-    </div>
+  if(!userId) return React.createElement(UserSelector, {onSelect:setUserId});
+
+  if(loading || !user) return (
+    React.createElement('div', {style:{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:12}},
+      'Cargando...'
+    )
   );
 
-  if(!user) return (
-    <div style={{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:12}}>
-      Iniciando FitTracker...
-    </div>
-  );
+  const cfg = USER_CFG[userId] || USER_CFG[ARIEL_ID];
 
   return (
-    <div style={{background:G.bg,minHeight:'100vh',maxWidth:640,margin:'0 auto'}}>
-      <div style={{background:G.sur+'ee',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',borderBottom:'1px solid '+G.bor,padding:'10px 16px 0',position:'sticky',top:0,zIndex:10,boxShadow:'0 2px 16px rgba(0,0,0,0.3)'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-          <div style={{fontFamily:'monospace',fontSize:12,fontWeight:700,letterSpacing:3,color:G.acc}}>FITTRACKER</div>
-          <div style={{fontSize:10,color:G.ok,fontFamily:'monospace'}}>Ariel</div>
-        </div>
-        <div style={{display:'flex',gap:2}}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{background:'none',color:tab===t.id?G.acc:G.mu,borderBottom:'2px solid '+(tab===t.id?G.acc:'transparent'),padding:'5px 14px',fontSize:10,fontWeight:700,fontFamily:'monospace',letterSpacing:1,border:'none',cursor:'pointer'}}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div style={{padding:14}}>
-        {tab==='entreno' && <TabEntreno user={user} />}
-        {tab==='nutri' && <TabNutricion user={user} />}
-        {tab==='progreso' && <TabProgreso user={user} />}
-      </div>
-    </div>
+    React.createElement('div', {style:{background:G.bg,minHeight:'100vh',maxWidth:640,margin:'0 auto'}},
+      React.createElement('div', {style:{background:G.sur+'ee',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',borderBottom:'1px solid '+G.bor,padding:'10px 16px 0',position:'sticky',top:0,zIndex:10,boxShadow:'0 2px 16px rgba(0,0,0,0.3)'}},
+        React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+          React.createElement('div', {style:{fontFamily:'monospace',fontSize:12,fontWeight:700,letterSpacing:3,color:G.acc}}, 'FITTRACKER'),
+          React.createElement('button', {onClick:()=>{setUserId(null);setUser(null);setTab('entreno');}, style:{background:'none',border:'1px solid '+G.bor,borderRadius:6,padding:'3px 10px',fontSize:11,color:cfg.nombre==='Melissa'?'#f0abfc':G.ok,cursor:'pointer',fontFamily:'monospace'}}, cfg.nombre + ' \u{25BC}')
+        ),
+        React.createElement('div', {style:{display:'flex',gap:2}},
+          TABS.map(t => (
+            React.createElement('button', {key:t.id, onClick:()=>setTab(t.id), style:{background:'none',color:tab===t.id?G.acc:G.mu,borderBottom:'2px solid '+(tab===t.id?G.acc:'transparent'),padding:'5px 14px',fontSize:10,fontWeight:700,fontFamily:'monospace',letterSpacing:1,border:'none',cursor:'pointer'}},
+              t.label
+            )
+          ))
+        )
+      ),
+      React.createElement('div', {style:{padding:14}},
+        tab==='entreno' && React.createElement(TabEntreno, {user:user, cfg:cfg}),
+        tab==='nutri' && React.createElement(TabNutricion, {user:user, cfg:cfg}),
+        tab==='progreso' && React.createElement(TabProgreso, {user:user})
+      )
+    )
   );
 }
 
