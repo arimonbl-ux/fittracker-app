@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -489,6 +489,84 @@ const PLANES_M = {
   }
 };
 
+// ─── BASE DE DATOS ALIMENTOS (macros por 100g salvo u:unidad) ───────────────
+const ALIMENTOS = {
+  // Proteinas
+  pollo:{n:'Pechuga pollo',p:31,c:0,g:3.6,s:10,cat:'prot'},
+  res:{n:'Carne res',p:26,c:0,g:15,s:10,cat:'prot'},
+  tilapia:{n:'Tilapia',p:26,c:0,g:2.7,s:10,cat:'prot'},
+  salmon:{n:'Salm\u00F3n',p:20,c:0,g:13,s:10,cat:'prot'},
+  cerdo:{n:'Cerdo lomo',p:27,c:0,g:8,s:10,cat:'prot'},
+  huevo:{n:'Huevo',p:13,c:1,g:10,s:1,cat:'prot',u:'ud',pu:50},
+  atun:{n:'At\u00FAn lata',p:26,c:0,g:1,s:10,cat:'prot'},
+  jamon:{n:'Jam\u00F3n pavo',p:13,c:3,g:2,s:10,cat:'prot'},
+  // Carbos
+  arroz:{n:'Arroz cocido',p:2.7,c:28,g:0.3,s:10,cat:'carb'},
+  papa:{n:'Papa',p:2,c:17,g:0.1,s:10,cat:'carb'},
+  camote:{n:'Camote',p:1.6,c:20,g:0.1,s:10,cat:'carb'},
+  frijoles:{n:'Frijoles negros',p:8.9,c:24,g:0.5,s:10,cat:'carb'},
+  yuca:{n:'Yuca',p:1.4,c:38,g:0.3,s:10,cat:'carb'},
+  platano:{n:'Pl\u00E1tano maduro',p:1.3,c:32,g:0.4,s:10,cat:'carb'},
+  tortilla:{n:'Tortilla ma\u00EDz',p:6,c:44,g:3,s:1,cat:'carb',u:'ud',pu:30},
+  pan:{n:'Pan integral',p:13,c:41,g:3.4,s:1,cat:'carb',u:'reb',pu:30},
+  avena:{n:'Avena',p:13,c:66,g:7,s:10,cat:'carb'},
+  // Grasas
+  aguacate:{n:'Aguacate',p:2,c:8.5,g:15,s:10,cat:'gras'},
+  aceite_oliva:{n:'Aceite oliva',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:14},
+  manteca:{n:'Manteca cerdo',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:13},
+  aceite_coco:{n:'Aceite coco',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:14},
+  queso_crema:{n:'Queso crema',p:6,c:4,g:34,s:10,cat:'gras'},
+  queso:{n:'Queso',p:25,c:1.3,g:33,s:10,cat:'gras'},
+  nueces:{n:'Nueces',p:15,c:14,g:65,s:5,cat:'gras'},
+  almendras:{n:'Almendras',p:21,c:22,g:49,s:5,cat:'gras'},
+  mani:{n:'Man\u00ED/cacahuate',p:26,c:16,g:49,s:5,cat:'gras'},
+  mantequilla_mani:{n:'Mantequilla man\u00ED',p:25,c:20,g:50,s:1,cat:'gras',u:'cda',pu:16},
+  // Vegetales
+  espinaca:{n:'Espinaca',p:2.9,c:3.6,g:0.4,s:10,cat:'veg'},
+  brocoli:{n:'Br\u00F3coli',p:2.8,c:7,g:0.4,s:10,cat:'veg'},
+  vegetales:{n:'Vegetales mixtos',p:2,c:5,g:0.3,s:10,cat:'veg'},
+  ensalada:{n:'Ensalada verde',p:1.5,c:3,g:0.2,s:10,cat:'veg'},
+  cebolla:{n:'Cebolla',p:1.1,c:9.3,g:0.1,s:10,cat:'veg'},
+  tomate:{n:'Tomate',p:0.9,c:3.9,g:0.2,s:10,cat:'veg'},
+  pepino:{n:'Pepino',p:0.7,c:3.6,g:0.1,s:10,cat:'veg'},
+  apio:{n:'Apio',p:0.7,c:3,g:0.2,s:10,cat:'veg'},
+  // Suplementos
+  carnivor:{n:'Carnivor (scoop)',p:23,c:1,g:0,s:1,cat:'sup',u:'sc',pu:35},
+  whey:{n:'Whey protein (sc)',p:24,c:3,g:1.5,s:1,cat:'sup',u:'sc',pu:32},
+  plant_prot:{n:'Prote\u00EDna plant',p:20,c:4,g:2,s:1,cat:'sup',u:'sc',pu:35},
+  eaa_s:{n:'EAA',p:100,c:0,g:0,s:1,cat:'sup'},
+  colageno_s:{n:'Col\u00E1geno',p:90,c:0,g:0,s:1,cat:'sup'},
+  creatina_s:{n:'Creatina',p:0,c:0,g:0,s:1,cat:'sup'},
+  glutamina_s:{n:'Glutamina',p:0,c:0,g:0,s:1,cat:'sup'},
+  // Extras
+  cafe:{n:'Caf\u00E9 negro',p:0,c:0,g:0,s:1,cat:'ext',u:'taza',pu:240},
+  miel:{n:'Miel',p:0.3,c:82,g:0,s:1,cat:'ext'},
+  chia:{n:'Ch\u00EDa',p:17,c:42,g:31,s:1,cat:'ext'},
+  linaza:{n:'Linaza molida',p:18,c:29,g:42,s:1,cat:'ext'},
+  sal:{n:'Sal de mar',p:0,c:0,g:0,s:1,cat:'ext'},
+  stevia:{n:'Stevia',p:0,c:0,g:0,s:1,cat:'ext'},
+  canela:{n:'Canela',p:4,c:81,g:1.2,s:1,cat:'ext'}
+};
+const AL_CATS = [
+  {id:'prot',n:'Prote\u00EDnas',c:'#a5b4fc'},
+  {id:'carb',n:'Carbohidratos',c:'#fcd34d'},
+  {id:'gras',n:'Grasas',c:'#d8b4fe'},
+  {id:'veg',n:'Vegetales',c:'#6ee7b7'},
+  {id:'sup',n:'Suplementos',c:'#38bdf8'},
+  {id:'ext',n:'Extras',c:'#fb923c'}
+];
+// Calcula macros de un alimento segun cantidad
+const calcAlMacros = (alId, qty) => {
+  const al = ALIMENTOS[alId];
+  if(!al) return {p:0,c:0,g:0,k:0};
+  const grams = al.u ? qty * (al.pu||1) : qty;
+  const factor = grams / 100;
+  const p = Math.round(al.p * factor * 10) / 10;
+  const c = Math.round(al.c * factor * 10) / 10;
+  const gr = Math.round(al.g * factor * 10) / 10;
+  return {p, c, g:gr, k:Math.round(p*4+c*4+gr*9)};
+};
+
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 const hoy = () => new Date().toISOString().split('T')[0];
 const diaHoy = () => new Date().getDay();
@@ -652,6 +730,7 @@ const USER_CFG = {
     suplementos:SUPLEMENTOS,
     planes:PLANES,
     metas:{prot:180,carbs:40,grasa:130,agua:3.5,kcal:2200},
+    perfil:{peso:75,tmb:1852,bf:8.5,lbm:68.6,protKg:2.3},
     obsOptions:OBS_OPTIONS,
     motivacion:MOTIVACION_A,
     meditacion:MEDITACION_A
@@ -663,6 +742,7 @@ const USER_CFG = {
     suplementos:SUPLEMENTOS_M,
     planes:PLANES_M,
     metas:{prot:100,carbs:20,grasa:85,agua:2.5,kcal:1300},
+    perfil:{peso:56,tmb:1200,bf:30,lbm:39.2,protKg:1.8},
     obsOptions:OBS_OPTIONS_M,
     motivacion:MOTIVACION_M,
     meditacion:MEDITACION_M
@@ -1230,8 +1310,18 @@ function TabEntreno({user, cfg}) {
 }
 
 // ─── PLAN DEL DIA COMPONENTS ──────────────────────────────────────────────────
-function SupChecklist({timing, label, color, checked, onChange, suplementos}) {
+function SupChecklist({timing, label, color, checked, onChange, suplementos, realItems, onRealUpdate}) {
   const items = (suplementos||SUPLEMENTOS)[timing] || [];
+  const [showTracker, setShowTracker] = useState(false);
+  const ri = realItems || {};
+  const riEntries = Object.entries(ri).filter(([,q])=>q>0);
+  const riTot = riEntries.reduce((acc,[alId,qty]) => {
+    const m = calcAlMacros(alId, qty);
+    return {p:acc.p+m.p, c:acc.c+m.c, g:acc.g+m.g};
+  }, {p:0,c:0,g:0});
+  riTot.k = Math.round(riTot.p*4+riTot.c*4+riTot.g*9);
+  const hasReal = riEntries.length > 0;
+
   return React.createElement('div', {style:{background:G.sur,border:'1px solid '+color+'44',borderRadius:12,padding:14,marginBottom:12}},
     React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
       React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:color,fontWeight:700}}, label),
@@ -1253,11 +1343,118 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos}) {
           React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:2}}, sup.timing)
         )
       )
+    ),
+    // ─── TRACKER REAL para suplementos (carnivor, whey, cafe, miel, etc.) ───
+    React.createElement('div', {style:{marginTop:6,borderTop:'1px solid '+G.bor,paddingTop:8}},
+      React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
+        React.createElement('button', {onClick:()=>setShowTracker(!showTracker), style:{background:showTracker?G.acc+'33':G.acc+'15',border:'1px solid '+G.acc+'44',borderRadius:7,padding:'5px 12px',fontSize:10,fontWeight:700,color:G.acc,cursor:'pointer'}},
+          showTracker ? '\u25B2 Cerrar detalle' : '\u{1F4CA} Detalle real'
+        ),
+        hasReal && React.createElement('span', {style:{fontSize:9,fontFamily:'monospace',color:G.ok}},
+          '\u2705 P:'+Math.round(riTot.p)+'g C:'+Math.round(riTot.c)+'g G:'+Math.round(riTot.g)+'g '+riTot.k+'kcal'
+        )
+      ),
+      showTracker && React.createElement('div', {style:{marginTop:8}},
+        riEntries.map(([alId, qty]) =>
+          React.createElement(FoodItemRow, {
+            key:alId, alId, qty,
+            onQtyChange:(nq)=>{
+              const upd = {...ri, [alId]:nq};
+              if(nq<=0) delete upd[alId];
+              onRealUpdate(upd);
+            },
+            onRemove:()=>{
+              const upd = {...ri};
+              delete upd[alId];
+              onRealUpdate(upd);
+            }
+          })
+        ),
+        React.createElement(AddFoodSelector, {
+          onAdd:(alId, defaultQty) => {
+            const upd = {...ri, [alId]: (ri[alId]||0) + defaultQty};
+            onRealUpdate(upd);
+          },
+          exclude: Object.keys(ri)
+        })
+      )
     )
   );
 }
 
-function PlanMealBlock({comida, isChecked, onCheck, override, onOverride, showEdit, onToggleEdit}) {
+// ─── QTY CONTROL: botones +/- con step configurable ───
+function QtyControl({value, onChange, step, min, unit}) {
+  const v = value || 0;
+  const st = step || 10;
+  const mn = min || 0;
+  const btnS = {width:32,height:32,borderRadius:8,border:'1px solid '+G.bor,background:G.alt,color:'#e2e8f0',fontSize:16,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0};
+  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
+    React.createElement('button', {onClick:()=>onChange(Math.max(mn, v-st)), style:btnS}, '\u2212'),
+    React.createElement('div', {style:{minWidth:48,textAlign:'center',fontSize:14,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}},
+      v + (unit||'g')
+    ),
+    React.createElement('button', {onClick:()=>onChange(v+st), style:btnS}, '+')
+  );
+}
+
+// ─── STEP TOGGLE: alternar entre 1 y 10 ───
+function StepToggle({step, setStep}) {
+  return React.createElement('div', {style:{display:'flex',gap:0,background:G.alt,borderRadius:6,border:'1px solid '+G.bor,overflow:'hidden'}},
+    [1,10].map(s =>
+      React.createElement('button', {key:s, onClick:()=>setStep(s), style:{padding:'3px 8px',fontSize:9,fontWeight:700,fontFamily:'monospace',border:'none',background:step===s?G.acc:'transparent',color:step===s?'#fff':G.mu,cursor:'pointer'}}, '\u00B1'+s)
+    )
+  );
+}
+
+// ─── FOOD ITEM ROW: alimento + qty + macros calculados ───
+function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride}) {
+  const al = ALIMENTOS[alId];
+  if(!al) return null;
+  const [step, setStep] = useState(stepOverride || al.s || 10);
+  const m = calcAlMacros(alId, qty);
+  const unit = al.u || 'g';
+  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:G.alt,borderRadius:8,marginBottom:4,flexWrap:'wrap'}},
+    React.createElement('div', {style:{flex:'1 1 90px',fontSize:12,color:'#e2e8f0',fontWeight:600,minWidth:80}}, al.n),
+    React.createElement(QtyControl, {value:qty, onChange:onQtyChange, step:step, min:0, unit:unit}),
+    React.createElement(StepToggle, {step, setStep}),
+    React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',color:G.dim,minWidth:100,textAlign:'right'}},
+      React.createElement('span', {style:{color:G.acc}}, 'P:'+Math.round(m.p)),
+      ' ',
+      React.createElement('span', {style:{color:G.warn}}, 'C:'+Math.round(m.c)),
+      ' ',
+      React.createElement('span', {style:{color:G.coa}}, 'G:'+Math.round(m.g)),
+      ' ',
+      React.createElement('span', {style:{color:G.mu}}, m.k+'k')
+    ),
+    React.createElement('button', {onClick:onRemove, style:{background:'none',border:'none',color:G.mu,fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0}}, '\u00D7')
+  );
+}
+
+// ─── ADD FOOD SELECTOR: dropdown por categoria ───
+function AddFoodSelector({onAdd, exclude}) {
+  const [open, setOpen] = useState(false);
+  const [cat, setCat] = useState(null);
+  const exc = exclude || [];
+  if(!open) return React.createElement('button', {onClick:()=>setOpen(true), style:{background:G.acc+'22',border:'1px dashed '+G.acc+'66',borderRadius:8,padding:'8px 12px',fontSize:11,color:G.acc,cursor:'pointer',width:'100%',fontWeight:600}}, '+ Agregar alimento');
+  const items = cat ? Object.entries(ALIMENTOS).filter(([id,a])=>a.cat===cat && !exc.includes(id)) : [];
+  return React.createElement('div', {style:{background:G.alt,borderRadius:10,padding:10,border:'1px solid '+G.bor}},
+    React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:cat?8:0}},
+      AL_CATS.map(c =>
+        React.createElement('button', {key:c.id, onClick:()=>setCat(cat===c.id?null:c.id), style:{padding:'4px 10px',borderRadius:6,border:cat===c.id?'1px solid '+c.c:'1px solid '+G.bor,background:cat===c.id?c.c+'22':'transparent',color:cat===c.id?c.c:G.mu,fontSize:10,fontWeight:600,cursor:'pointer'}}, c.n)
+      ),
+      React.createElement('button', {onClick:()=>{setOpen(false);setCat(null);}, style:{marginLeft:'auto',background:'none',border:'none',color:G.mu,fontSize:12,cursor:'pointer'}}, '\u2715 Cerrar')
+    ),
+    cat && React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,maxHeight:180,overflowY:'auto'}},
+      items.map(([id,al]) =>
+        React.createElement('button', {key:id, onClick:()=>{onAdd(id, al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?1:100));setOpen(false);setCat(null);}, style:{background:G.sur,border:'1px solid '+G.bor,borderRadius:8,padding:'6px 8px',color:'#e2e8f0',fontSize:11,cursor:'pointer',textAlign:'left',fontWeight:500}}, al.n)
+      )
+    )
+  );
+}
+
+// ─── PLAN MEAL BLOCK ENHANCED: recomendado + tracker real ───
+function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate}) {
+  const [expanded, setExpanded] = useState(false);
   if(!comida.macros && comida.id==='ayuno') {
     return React.createElement('div', {style:{background:'#22c55e11',border:'1px dashed #22c55e44',borderRadius:10,padding:'12px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:10}},
       React.createElement('span', {style:{fontSize:18}}, '\u{1F54A}'),
@@ -1267,20 +1464,32 @@ function PlanMealBlock({comida, isChecked, onCheck, override, onOverride, showEd
       )
     );
   }
+  // Calcular macros reales del tracking
+  const ri = realItems || {};
+  const riEntries = Object.entries(ri).filter(([,q])=>q>0);
+  const realTot = riEntries.reduce((acc,[alId,qty]) => {
+    const m = calcAlMacros(alId, qty);
+    return {p:acc.p+m.p, c:acc.c+m.c, g:acc.g+m.g};
+  }, {p:0,c:0,g:0});
+  realTot.k = Math.round(realTot.p*4+realTot.c*4+realTot.g*9);
+  const hasReal = riEntries.length > 0;
+
   return React.createElement('div', {style:{background:isChecked?G.ok+'11':G.sur,border:'1px solid '+(isChecked?G.ok+'44':G.bor),borderRadius:12,marginBottom:8,overflow:'hidden',transition:'all 0.2s'}},
+    // Header: checkbox + plan info
     React.createElement('div', {onClick:onCheck, style:{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 14px',cursor:'pointer'}},
       React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isChecked?G.ok:G.bor),background:isChecked?G.ok:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14,color:'#fff',marginTop:2,transition:'all 0.2s'}},
         isChecked ? '\u2713' : ''
       ),
       React.createElement('div', {style:{flex:1}},
         React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}},
-          React.createElement('span', {style:{fontSize:12,fontWeight:700,color:isChecked?G.ok:'#e2e8f0',textDecoration:isChecked?'line-through':'none'}}, comida.label),
+          React.createElement('span', {style:{fontSize:12,fontWeight:700,color:isChecked?G.ok:'#e2e8f0'}}, comida.label),
           React.createElement('span', {style:{fontSize:11,color:G.mu,fontFamily:'monospace'}}, comida.hora)
         ),
+        React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',letterSpacing:0.5,color:G.mu,marginBottom:4}}, 'SUGERIDO:'),
         comida.items.map((item,i) =>
           React.createElement('div', {key:i, style:{fontSize:11,color:isChecked?G.mu:G.dim,marginBottom:2,paddingLeft:2}}, '\u2022 ' + item)
         ),
-        comida.macros && React.createElement('div', {style:{marginTop:6,fontSize:10,fontFamily:'monospace',color:G.dim,display:'flex',gap:8}},
+        comida.macros && React.createElement('div', {style:{marginTop:4,fontSize:10,fontFamily:'monospace',color:G.dim,display:'flex',gap:8}},
           React.createElement('span', {style:{color:G.acc}}, comida.macros.split(' ').find(x=>x.startsWith('P:'))||''),
           React.createElement('span', {style:{color:G.warn}}, comida.macros.split(' ').find(x=>x.startsWith('C:'))||''),
           React.createElement('span', {style:{color:G.coa}}, comida.macros.split(' ').find(x=>x.startsWith('G:'))||''),
@@ -1288,13 +1497,54 @@ function PlanMealBlock({comida, isChecked, onCheck, override, onOverride, showEd
         )
       )
     ),
-    React.createElement('div', {style:{borderTop:'1px solid '+G.bor,padding:'6px 14px',display:'flex',gap:8,alignItems:'center'}},
-      React.createElement('button', {onClick:onToggleEdit, style:{background:'none',border:'none',color:G.acc,fontSize:10,cursor:'pointer',padding:'2px 4px'}}, showEdit ? '\u{25B2} Cerrar' : '\u{270F}\u{FE0F} Editar real'),
-      override && React.createElement('span', {style:{fontSize:10,color:G.warn,fontFamily:'monospace'}}, '\u{1F4DD} Editado')
+    // Real intake summary badge + expand button
+    React.createElement('div', {style:{borderTop:'1px solid '+G.bor,padding:'6px 14px',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
+      React.createElement('button', {onClick:(e)=>{e.stopPropagation();setExpanded(!expanded);}, style:{background:expanded?G.acc+'33':G.acc+'15',border:'1px solid '+G.acc+'44',borderRadius:7,padding:'5px 12px',fontSize:10,fontWeight:700,color:G.acc,cursor:'pointer'}},
+        expanded ? '\u25B2 Cerrar tracker' : '\u{1F4CA} Registrar real'
+      ),
+      hasReal && React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',color:G.ok,display:'flex',gap:6}},
+        React.createElement('span', null, '\u2705'),
+        React.createElement('span', {style:{color:G.acc}}, 'P:'+Math.round(realTot.p)),
+        React.createElement('span', {style:{color:G.warn}}, 'C:'+Math.round(realTot.c)),
+        React.createElement('span', {style:{color:G.coa}}, 'G:'+Math.round(realTot.g)),
+        React.createElement('span', {style:{color:G.mu}}, realTot.k+'kcal')
+      )
     ),
-    showEdit && React.createElement('div', {style:{padding:'8px 14px 12px',borderTop:'1px solid '+G.bor,background:G.alt}},
-      React.createElement('div', {style:{fontSize:11,color:G.mu,marginBottom:4}}, '\u00BFComiste algo diferente? Escribe aqu\u00ED con macros (ej: P:30g C:5g G:10g)'),
-      React.createElement('input', {value:override||'', onChange:e=>onOverride(e.target.value), placeholder:'Ej: 3 huevos + aguacate | P:25g C:2g G:20g', style:{background:G.bg,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'8px 10px',fontSize:12,width:'100%',outline:'none'}})
+    // Expanded: food tracking
+    expanded && React.createElement('div', {style:{padding:'10px 14px 14px',borderTop:'1px solid '+G.bor,background:G.bg+'cc'}},
+      React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',letterSpacing:1,color:G.warn,fontWeight:700,marginBottom:8}}, '\u{1F37D}\u{FE0F} \u00BFQU\u00C9 COM\u00CD REALMENTE?'),
+      // Listed food items
+      riEntries.map(([alId, qty]) =>
+        React.createElement(FoodItemRow, {
+          key:alId, alId, qty,
+          onQtyChange:(nq)=>{
+            const upd = {...ri, [alId]:nq};
+            if(nq<=0) delete upd[alId];
+            onRealUpdate(comida.id, upd);
+          },
+          onRemove:()=>{
+            const upd = {...ri};
+            delete upd[alId];
+            onRealUpdate(comida.id, upd);
+          }
+        })
+      ),
+      // Macro total for this meal
+      hasReal && React.createElement('div', {style:{display:'flex',justifyContent:'flex-end',gap:8,fontSize:10,fontFamily:'monospace',padding:'6px 0 8px',borderTop:'1px dashed '+G.bor,marginTop:4}},
+        React.createElement('span', {style:{color:G.mu,fontWeight:700}}, 'TOTAL REAL:'),
+        React.createElement('span', {style:{color:G.acc,fontWeight:700}}, 'P:'+Math.round(realTot.p)+'g'),
+        React.createElement('span', {style:{color:G.warn,fontWeight:700}}, 'C:'+Math.round(realTot.c)+'g'),
+        React.createElement('span', {style:{color:G.coa,fontWeight:700}}, 'G:'+Math.round(realTot.g)+'g'),
+        React.createElement('span', {style:{color:G.ok,fontWeight:700}}, realTot.k+' kcal')
+      ),
+      // Add food button
+      React.createElement(AddFoodSelector, {
+        onAdd:(alId, defaultQty) => {
+          const upd = {...ri, [alId]: (ri[alId]||0) + defaultQty};
+          onRealUpdate(comida.id, upd);
+        },
+        exclude: Object.keys(ri)
+      })
     )
   );
 }
@@ -1308,8 +1558,8 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
   const checkedSupPOST = planData.sup_post || [];
   const checkedSupPM = planData.sup_pm || [];
   const checkedMeals = planData.meals_checked || [];
-  const overrides = planData.overrides || {};
-  const [editingMeal, setEditingMeal] = useState(null);
+  const realData = planData.real || {};
+  const supReal = planData.sup_real || {};
 
   const toggleMeal = (mealId) => {
     const cur = planData.meals_checked || [];
@@ -1317,13 +1567,18 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
     onUpdate({...planData, meals_checked:next});
   };
 
-  const setOverride = (mealId, val) => {
-    const ov = {...(planData.overrides||{}), [mealId]:val};
-    if(!val) delete ov[mealId];
-    onUpdate({...planData, overrides:ov});
+  const updateReal = (mealId, items) => {
+    const nr = {...(planData.real||{}), [mealId]:items};
+    if(Object.keys(items).length===0) delete nr[mealId];
+    onUpdate({...planData, real:nr});
   };
 
-  // Progress calc (excluir pre/intra/post de comidas, ya estan en suplementos)
+  const updateSupReal = (key, items) => {
+    const nr = {...(planData.sup_real||{}), [key]:items};
+    onUpdate({...planData, sup_real:nr});
+  };
+
+  // Progress calc
   const SUPLE_MEAL_IDS = ['pre','intra','post'];
   const totalSups = (cfg.suplementos.AM||[]).length + (cfg.suplementos.POST||[]).length + (cfg.suplementos.PM||[]).length;
   const doneSups = checkedSupAM.length + checkedSupPOST.length + checkedSupPM.length;
@@ -1332,6 +1587,27 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
   const totalItems = totalSups + totalMeals;
   const doneItems = doneSups + doneMeals;
   const pctDone = totalItems > 0 ? Math.round(doneItems/totalItems*100) : 0;
+
+  // ─── CALCULAR MACROS REALES TOTALES (de todos los trackers) ───
+  const calcTotalReal = () => {
+    let p=0, c=0, g=0;
+    // Macros de comidas con tracker real
+    Object.values(realData).forEach(mealItems => {
+      Object.entries(mealItems).forEach(([alId,qty]) => {
+        if(qty>0){ const m=calcAlMacros(alId,qty); p+=m.p; c+=m.c; g+=m.g; }
+      });
+    });
+    // Macros de suplementos con tracker real
+    Object.values(supReal).forEach(supItems => {
+      Object.entries(supItems).forEach(([alId,qty]) => {
+        if(qty>0){ const m=calcAlMacros(alId,qty); p+=m.p; c+=m.c; g+=m.g; }
+      });
+    });
+    return {p:Math.round(p), c:Math.round(c), g:Math.round(g), k:Math.round(p*4+c*4+g*9)};
+  };
+
+  // Check if there's any real data entered
+  const hasAnyReal = Object.values(realData).some(m=>Object.keys(m).length>0) || Object.values(supReal).some(m=>Object.keys(m).length>0);
 
   return React.createElement('div', null,
     // Header con progreso
@@ -1352,15 +1628,17 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
       plan.resumen.nota && React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:8,fontStyle:'italic'}}, '\u{1F4A1} ' + plan.resumen.nota)
     ),
 
-    // Suplementos AM (solo si hay entreno AM)
+    // ─── SUPLEMENTOS AM con tracker real ───
     (tipo!=='crossfit' && tipo!=='descanso') && React.createElement(SupChecklist, {
       timing:'AM', label:'SUPLEMENTOS AM \u{2600}\u{FE0F}', color:G.acc,
       checked:checkedSupAM,
       onChange:(v)=>onUpdate({...planData, sup_am:v}),
-      suplementos:cfg.suplementos
+      suplementos:cfg.suplementos,
+      realItems:supReal['am']||{},
+      onRealUpdate:(items)=>updateSupReal('am', items)
     }),
 
-    // Comidas del plan
+    // ─── COMIDAS DEL DIA con tracker real ───
     React.createElement('div', {style:{marginBottom:12}},
       React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.warn,fontWeight:700,marginBottom:10,paddingLeft:4}}, 'COMIDAS DEL D\u00CDA \u{1F372}'),
       plan.comidas.filter(c => !['pre','intra','post'].includes(c.id)).map(comida =>
@@ -1369,65 +1647,106 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
           comida:comida,
           isChecked:checkedMeals.includes(comida.id),
           onCheck:()=>toggleMeal(comida.id),
-          override:overrides[comida.id]||'',
-          onOverride:(v)=>setOverride(comida.id,v),
-          showEdit:editingMeal===comida.id,
-          onToggleEdit:()=>setEditingMeal(editingMeal===comida.id?null:comida.id)
+          realItems:realData[comida.id]||{},
+          onRealUpdate:(mealId, items)=>updateReal(mealId, items)
         })
       )
     ),
 
-    // Suplementos POST (solo si hay entreno)
+    // ─── SUPLEMENTOS POST con tracker real ───
     (tipo!=='descanso') && React.createElement(SupChecklist, {
       timing:'POST', label:'SUPLEMENTOS POST \u{1F4AA}', color:G.ok,
       checked:checkedSupPOST,
       onChange:(v)=>onUpdate({...planData, sup_post:v}),
-      suplementos:cfg.suplementos
+      suplementos:cfg.suplementos,
+      realItems:supReal['post']||{},
+      onRealUpdate:(items)=>updateSupReal('post', items)
     }),
 
-    // CrossFit tiene suplementos AM reubicados
+    // CrossFit: suplementos AM reubicados
     (tipo==='crossfit') && React.createElement(SupChecklist, {
       timing:'AM', label:'SUPLEMENTOS PRE-WOD \u{26A1}', color:G.warn,
       checked:checkedSupAM,
       onChange:(v)=>onUpdate({...planData, sup_am:v}),
-      suplementos:cfg.suplementos
+      suplementos:cfg.suplementos,
+      realItems:supReal['am']||{},
+      onRealUpdate:(items)=>updateSupReal('am', items)
     }),
 
-    // Suplementos PM siempre
+    // ─── SUPLEMENTOS PM con tracker real ───
     React.createElement(SupChecklist, {
       timing:'PM', label:'SUPLEMENTOS PM \u{1F31C}', color:G.coa,
       checked:checkedSupPM,
       onChange:(v)=>onUpdate({...planData, sup_pm:v}),
-      suplementos:cfg.suplementos
+      suplementos:cfg.suplementos,
+      realItems:supReal['pm']||{},
+      onRealUpdate:(items)=>updateSupReal('pm', items)
     }),
 
     // ─── RESUMEN CONSUMIDO HOY ───
     (() => {
-      const pM = (txt) => { if(!txt) return {p:0,c:0,g:0,k:0}; const pm=txt.match(/P:~?(\d+)/i); const cm=txt.match(/C:~?(\d+)/i); const gm=txt.match(/G:~?(\d+)/i); return {p:pm?parseInt(pm[1]):0,c:cm?parseInt(cm[1]):0,g:gm?parseInt(gm[1]):0}; };
+      const METAS = cfg.metas;
+      // Si hay datos reales del tracker, usar esos
+      if(hasAnyReal) {
+        const tot = calcTotalReal();
+        return React.createElement(Sec, {color:G.ok},
+          React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}}, '\u{2705} CONSUMIDO HOY (TRACKER REAL)'),
+          React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center'}},
+            [{l:'Prote\u00EDna',v:tot.p,m:METAS.prot,u:'g',c:G.acc},{l:'Carbos',v:tot.c,m:METAS.carbs,u:'g',c:G.warn},{l:'Grasa',v:tot.g,m:METAS.grasa,u:'g',c:G.coa},{l:'Kcal',v:tot.k,m:METAS.kcal,u:'',c:G.dim}].map(x =>
+              React.createElement('div', {key:x.l,style:{background:G.alt,borderRadius:8,padding:'8px 4px'}},
+                React.createElement('div', {style:{fontSize:18,fontWeight:700,fontFamily:'monospace',color:x.v>=x.m*0.9?G.ok:x.c}}, x.v),
+                React.createElement('div', {style:{fontSize:9,color:G.mu,marginTop:2}}, x.l),
+                React.createElement('div', {style:{fontSize:9,color:G.mu}}, '/' + x.m + x.u)
+              )
+            )
+          ),
+          // Barras de progreso
+          React.createElement('div', {style:{marginTop:10}},
+            [{l:'P',v:tot.p,m:METAS.prot,c:G.acc},{l:'C',v:tot.c,m:METAS.carbs,c:G.warn},{l:'G',v:tot.g,m:METAS.grasa,c:G.coa}].map(x => {
+              const pct = Math.min(120, Math.round(x.v/x.m*100));
+              return React.createElement('div', {key:x.l, style:{marginBottom:4}},
+                React.createElement('div', {style:{display:'flex',justifyContent:'space-between',fontSize:9,color:G.mu,marginBottom:2}},
+                  React.createElement('span', null, x.l),
+                  React.createElement('span', null, x.v+'/'+x.m+'g ('+pct+'%)')
+                ),
+                React.createElement('div', {style:{height:5,background:G.alt,borderRadius:3,overflow:'hidden'}},
+                  React.createElement('div', {style:{height:'100%',width:Math.min(100,pct)+'%',background:pct>100?G.bad:pct>=80?G.ok:x.c,borderRadius:3}})
+                )
+              );
+            })
+          ),
+          // Deficit/surplus indicator
+          React.createElement('div', {style:{marginTop:10,padding:'8px 12px',background:tot.k>METAS.kcal?G.bad+'15':tot.k>=METAS.kcal*0.85?G.ok+'15':G.warn+'15',borderRadius:8,textAlign:'center'}},
+            React.createElement('span', {style:{fontSize:12,fontWeight:700,fontFamily:'monospace',color:tot.k>METAS.kcal?G.bad:tot.k>=METAS.kcal*0.85?G.ok:G.warn}},
+              tot.k > METAS.kcal ? '\u{26A0}\u{FE0F} SUPER\u00C1VIT +' + (tot.k-METAS.kcal) + ' kcal' :
+              tot.k >= METAS.kcal*0.85 ? '\u{2705} EN RANGO (' + (METAS.kcal-tot.k) + ' kcal restantes)' :
+              '\u{1F4C9} D\u00C9FICIT \u2212' + (METAS.kcal-tot.k) + ' kcal'
+            )
+          )
+        );
+      }
+      // Fallback: macros desde checkmarks del plan
+      if(doneItems===0) return null;
+      const pM = (txt) => { if(!txt) return {p:0,c:0,g:0}; const pm=txt.match(/P:~?(\d+)/i); const cm=txt.match(/C:~?(\d+)/i); const gm=txt.match(/G:~?(\d+)/i); return {p:pm?parseInt(pm[1]):0,c:cm?parseInt(cm[1]):0,g:gm?parseInt(gm[1]):0}; };
       const checked = plan.comidas.filter(c => checkedMeals.includes(c.id) && c.id!=='ayuno' && !['pre','intra','post'].includes(c.id));
-      const overridden = checked.map(c => overrides[c.id] ? pM(overrides[c.id]) : pM(c.macros));
-      // Auto-sumar macros de pre/post si suplementos correspondientes estan checkeados
+      const overridden = checked.map(c => pM(c.macros));
       const preMeal = plan.comidas.find(c => c.id==='pre');
       const postMeal = plan.comidas.find(c => c.id==='post');
       if(preMeal && checkedSupAM.length > 0) overridden.push(pM(preMeal.macros));
       if(postMeal && checkedSupPOST.length > 0) overridden.push(pM(postMeal.macros));
       const tot = overridden.reduce((a,m) => ({p:a.p+m.p,c:a.c+m.c,g:a.g+m.g}), {p:0,c:0,g:0});
       tot.k = tot.p*4+tot.c*4+tot.g*9;
-      const METAS = cfg.metas;
-      if(doneItems===0) return null;
       return React.createElement(Sec, {color:G.ok},
-        React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}}, '\u{2705} CONSUMIDO HOY'),
+        React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:6}}, '\u{2705} CONSUMIDO HOY (ESTIMADO)'),
+        React.createElement('div', {style:{fontSize:9,color:G.mu,marginBottom:8,fontStyle:'italic'}}, 'Basado en checklist. Usa "Registrar real" para datos exactos.'),
         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center'}},
-          [{l:'Prote\u00EDna',v:tot.p,m:METAS.prot,u:'g',c:G.acc},{l:'Carbos',v:tot.c,m:METAS.carbs,u:'g',c:G.warn},{l:'Grasa',v:tot.g,m:METAS.grasa,u:'g',c:G.coa},{l:'Kcal',v:tot.k,m:METAS.kcal,u:'',c:G.dim}].map(x =>
+          [{l:'Prot',v:tot.p,m:METAS.prot,u:'g',c:G.acc},{l:'Carbs',v:tot.c,m:METAS.carbs,u:'g',c:G.warn},{l:'Grasa',v:tot.g,m:METAS.grasa,u:'g',c:G.coa},{l:'Kcal',v:tot.k,m:METAS.kcal,u:'',c:G.dim}].map(x =>
             React.createElement('div', {key:x.l,style:{background:G.alt,borderRadius:8,padding:'8px 4px'}},
               React.createElement('div', {style:{fontSize:18,fontWeight:700,fontFamily:'monospace',color:x.v>=x.m*0.9?G.ok:x.c}}, x.v),
               React.createElement('div', {style:{fontSize:9,color:G.mu,marginTop:2}}, x.l),
               React.createElement('div', {style:{fontSize:9,color:G.mu}}, '/' + x.m + x.u)
             )
           )
-        ),
-        React.createElement('div', {style:{marginTop:8,fontSize:11,color:G.mu,textAlign:'center'}},
-          checked.length + ' comida' + (checked.length>1?'s':'') + ' + ' + doneSups + ' suplementos registrados'
         )
       );
     })()
@@ -1521,11 +1840,7 @@ function TabNutricion({user, cfg}) {
         // Preserve hambre/digestion at top level
         if(data.hambre) existingNotas.hambre = data.hambre;
         if(data.digestion) existingNotas.digestion = data.digestion;
-        
-        // Also save the notas field directly via upsert
-        
-        
-        // Only upsert notas field
+        // Only upsert notas field to avoid issues with empty/null fields
         const result = await sb.from('nutricion').upsert({ user_id:user.id, fecha, notas: JSON.stringify(existingNotas) }, { onConflict:'user_id,fecha' });
         if(result.error) throw result.error;
         // Update _notasRaw so future saves preserve plan
@@ -1814,10 +2129,374 @@ function TabProgreso({user}) {
   );
 }
 
+// \u2500\u2500\u2500 CALCULO GASTO CALORICO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+const MET_BTIPO = {fuerza:6,tecnico:5.5,metcon:8,pump:3.5,aislamiento:4.5,warmup:3};
+
+const calcGasto = (ejercicios, meta, prog, perfil) => {
+  let tonnage=0, setsN=0, rpeS=0, rpeN=0;
+  if(ejercicios && typeof ejercicios==='object'){
+    Object.values(ejercicios).forEach(sd=>{
+      if(sd && typeof sd==='object') Object.values(sd).forEach(s=>{
+        if(s){
+          const p=parseFloat(s.peso)||0, r=parseInt(s.reps)||0;
+          if(p>0&&r>0){tonnage+=p*r;setsN++;}
+          const rpe=parseFloat(s.rpe)||0;
+          if(rpe>0){rpeS+=rpe;rpeN++;}
+        }
+      });
+    });
+  }
+  let durMin=0;
+  if(meta.inicio&&meta.fin){
+    const [h1,m1]=meta.inicio.split(':').map(Number);
+    const [h2,m2]=meta.fin.split(':').map(Number);
+    durMin=(h2*60+m2)-(h1*60+m1); if(durMin<0) durMin+=1440;
+  }
+  let metS=0, bN=0;
+  if(prog&&prog.bloques) prog.bloques.forEach(b=>{metS+=(MET_BTIPO[b.btipo]||4);bN++;});
+  const avgMET=bN>0?metS/bN:5;
+  const avgRPE=rpeN>0?rpeS/rpeN:6;
+  const eat=durMin>0?(avgMET*perfil.peso*durMin)/60:0;
+  const tBonus=tonnage*0.004;
+  const epocF=avgRPE>7?0.15:avgRPE>5?0.10:0.06;
+  const epoc=(eat+tBonus)*epocF;
+  const neat=(3.5*perfil.peso*20)/60;
+  const totalEAT=Math.round(eat+tBonus+epoc);
+  return {tonnage:Math.round(tonnage),setsN,durMin,avgMET:+(avgMET).toFixed(1),avgRPE:+(avgRPE).toFixed(1),eat:Math.round(eat),tBonus:Math.round(tBonus),epoc:Math.round(epoc),neat:Math.round(neat),totalEAT,tmb:perfil.tmb,tdee:Math.round(perfil.tmb+totalEAT+neat)};
+};
+
+// Calcular ingesta desde plan checked o registro manual
+const calcIngesta = (nutriData, planData, plan, cfg) => {
+  const pM = (txt) => { if(!txt) return {p:0,c:0,g:0}; const pm=txt.match(/P:~?(\d+)/i); const cm=txt.match(/C:~?(\d+)/i); const gm=txt.match(/G:~?(\d+)/i); return {p:pm?parseInt(pm[1]):0,c:cm?parseInt(cm[1]):0,g:gm?parseInt(gm[1]):0}; };
+  let prot=0, carbs=0, grasa=0, kcal=0, fuente='ninguna';
+
+  // PRIORIDAD 1: Datos del tracker real (alimentos con gramos exactos)
+  if(planData && (planData.real || planData.sup_real)) {
+    let rp=0, rc=0, rg=0;
+    const realMeals = planData.real || {};
+    const realSups = planData.sup_real || {};
+    const hasAny = Object.values(realMeals).some(m=>Object.keys(m).length>0) || Object.values(realSups).some(m=>Object.keys(m).length>0);
+    if(hasAny) {
+      [realMeals, realSups].forEach(src => {
+        Object.values(src).forEach(items => {
+          Object.entries(items).forEach(([alId,qty]) => {
+            if(qty>0){ const m=calcAlMacros(alId,qty); rp+=m.p; rc+=m.c; rg+=m.g; }
+          });
+        });
+      });
+      if(rp>0||rc>0||rg>0) {
+        prot=Math.round(rp); carbs=Math.round(rc); grasa=Math.round(rg);
+        kcal=Math.round(rp*4+rc*4+rg*9);
+        fuente='tracker';
+      }
+    }
+  }
+
+  // PRIORIDAD 2: Desde plan checklist
+  if(fuente==='ninguna' && planData && plan && plan.comidas) {
+    const checked = planData.meals_checked || [];
+    const supAM = planData.sup_am || [];
+    const supPOST = planData.sup_post || [];
+    const mealItems = plan.comidas.filter(c => checked.includes(c.id) && c.id!=='ayuno' && !['pre','intra','post'].includes(c.id));
+    const macros = mealItems.map(c => pM(c.macros));
+    const preMeal = plan.comidas.find(c => c.id==='pre');
+    const postMeal = plan.comidas.find(c => c.id==='post');
+    if(preMeal && supAM.length>0) macros.push(pM(preMeal.macros));
+    if(postMeal && supPOST.length>0) macros.push(pM(postMeal.macros));
+    const tot = macros.reduce((a,m) => ({p:a.p+m.p,c:a.c+m.c,g:a.g+m.g}),{p:0,c:0,g:0});
+    if(tot.p>0||tot.c>0||tot.g>0) {
+      prot=tot.p; carbs=tot.c; grasa=tot.g; kcal=tot.p*4+tot.c*4+tot.g*9;
+      fuente='plan';
+    }
+  }
+
+  // PRIORIDAD 3: Registro manual
+  if(fuente==='ninguna' && nutriData) {
+    const mp = parseFloat(nutriData.prot)||0;
+    const mc = parseFloat(nutriData.carbs)||0;
+    if(mp>0||mc>0) {
+      prot=mp; carbs=mc;
+      grasa = Math.round((cfg.metas.kcal - prot*4 - carbs*4) / 9);
+      kcal = prot*4 + carbs*4 + grasa*9;
+      fuente='registro';
+    }
+  }
+
+  return {prot,carbs,grasa,kcal,fuente};
+};
+
+// \u2500\u2500\u2500 TAB BALANCE (GASTO vs INGESTA) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function TabBalance({user, cfg}) {
+  const [dia, setDia] = useState(diaHoy());
+  const [fecha, setFecha] = useState(hoy());
+  const [gasto, setGasto] = useState(null);
+  const [ingesta, setIngesta] = useState(null);
+  const [meta, setMeta] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [weekData, setWeekData] = useState([]);
+
+  const perfil = cfg.perfil;
+  const prog = cfg.prog[dia] || cfg.prog[1];
+  const dayType = cfg.getDayType(dia);
+  const plan = cfg.planes[dayType];
+
+  // Cargar datos del dia
+  useEffect(() => {
+    setLoading(true);
+    const loadDay = async () => {
+      // Training data
+      const eRes = await getEntreno(user.id, fecha, dia);
+      const ejercicios = eRes.data?.ejercicios || {};
+      const rawMeta = eRes.data?.notas || '{}';
+      let parsedMeta = {};
+      try { parsedMeta = JSON.parse(rawMeta); } catch {}
+
+      // Nutrition data
+      const nRes = await getNutricion(user.id, fecha);
+      const nutriData = nRes.data || {};
+      let planData = {};
+      try { const raw = nutriData._notasRaw || '{}'; planData = JSON.parse(raw).plan || {}; } catch {}
+
+      const g = calcGasto(ejercicios, parsedMeta, prog, perfil);
+      const i = calcIngesta(nutriData, planData, plan, cfg);
+
+      setGasto(g);
+      setIngesta(i);
+      setMeta(parsedMeta);
+      setLoading(false);
+    };
+    loadDay();
+  }, [fecha, dia, user.id]);
+
+  // Cargar semana para mini chart
+  useEffect(() => {
+    const loadWeek = async () => {
+      const days = [1,2,3,4,5,6,0];
+      const results = [];
+      for(const d of days) {
+        const f = getWeekDate(fecha, d);
+        const eRes = await getEntreno(user.id, f, d);
+        const ej = eRes.data?.ejercicios || {};
+        let pm = {};
+        try { pm = JSON.parse(eRes.data?.notas || '{}'); } catch {}
+        const pr = cfg.prog[d] || cfg.prog[1];
+        const g = calcGasto(ej, pm, pr, perfil);
+
+        const nRes = await getNutricion(user.id, f);
+        const nd = nRes.data || {};
+        let pd = {};
+        try { pd = JSON.parse(nd._notasRaw || '{}').plan || {}; } catch {}
+        const dt = cfg.getDayType(d);
+        const pl = cfg.planes[dt];
+        const ing = calcIngesta(nd, pd, pl, cfg);
+
+        results.push({dia:d,fecha:f,gasto:g,ingesta:ing,label:DIAS[d]});
+      }
+      setWeekData(results);
+    };
+    loadWeek();
+  }, [fecha, user.id]);
+
+  if(loading) return React.createElement('div',{style:{textAlign:'center',padding:40,color:G.mu,fontFamily:'monospace',fontSize:12}},'Calculando balance...');
+
+  const balance = ingesta ? (ingesta.kcal - (gasto?.tdee||0)) : 0;
+  const protDemand = Math.round(perfil.protKg * perfil.peso);
+  const protBalance = ingesta ? (ingesta.prot - protDemand) : 0;
+  const sueno = parseFloat(meta.sueno)||0;
+  const fPre = parseInt(meta.fPre)||0;
+  const fPost = parseInt(meta.fPost)||0;
+  const ePre = parseInt(meta.ePre)||0;
+
+  // Barra de progreso helper
+  const BarProg = ({label, val, max, color, unit}) => {
+    const pct = max>0 ? Math.min(100, (val/max)*100) : 0;
+    const over = val > max;
+    return React.createElement('div',{style:{marginBottom:8}},
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:G.dim,marginBottom:3}},
+        React.createElement('span',null,label),
+        React.createElement('span',{style:{color:over?G.bad:color,fontWeight:700}},val+(unit||'')+(max>0?(' / '+max+(unit||'')):''))
+      ),
+      React.createElement('div',{style:{background:G.bg,borderRadius:4,height:8,overflow:'hidden'}},
+        React.createElement('div',{style:{width:pct+'%',height:'100%',background:over?G.bad:color,borderRadius:4,transition:'width 0.5s'}})
+      )
+    );
+  };
+
+  // Mini bar chart semanal
+  const WeekChart = () => {
+    if(weekData.length===0) return null;
+    const maxVal = Math.max(...weekData.map(d=>Math.max(d.gasto.tdee,d.ingesta.kcal)),1);
+    return React.createElement('div',{style:{marginTop:6}},
+      React.createElement('div',{style:{display:'flex',gap:4,alignItems:'flex-end',height:80}},
+        weekData.map((d,i) => {
+          const gH = Math.max(2,(d.gasto.tdee/maxVal)*70);
+          const iH = Math.max(2,(d.ingesta.kcal/maxVal)*70);
+          const isSel = d.fecha===fecha;
+          return React.createElement('div',{key:i,style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:1,cursor:'pointer',opacity:isSel?1:0.7},onClick:()=>{setFecha(d.fecha);setDia(d.dia);}},
+            React.createElement('div',{style:{display:'flex',gap:1,alignItems:'flex-end',height:72}},
+              React.createElement('div',{style:{width:8,height:gH,background:G.bad+'cc',borderRadius:2}}),
+              React.createElement('div',{style:{width:8,height:iH,background:G.ok+'cc',borderRadius:2}})
+            ),
+            React.createElement('div',{style:{fontSize:7,color:isSel?G.acc:G.mu,fontWeight:isSel?700:400,fontFamily:'monospace'}},d.label)
+          );
+        })
+      ),
+      React.createElement('div',{style:{display:'flex',justifyContent:'center',gap:16,marginTop:6}},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4,fontSize:8,color:G.mu}},
+          React.createElement('div',{style:{width:8,height:8,background:G.bad+'cc',borderRadius:2}}), 'Gasto'
+        ),
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4,fontSize:8,color:G.mu}},
+          React.createElement('div',{style:{width:8,height:8,background:G.ok+'cc',borderRadius:2}}), 'Ingesta'
+        )
+      )
+    );
+  };
+
+  // Indicador de recuperacion
+  const getRecoveryScore = () => {
+    let score = 50; // base
+    if(sueno>=7) score+=20; else if(sueno>=6) score+=10; else if(sueno>0) score-=10;
+    if(protBalance>=0) score+=15; else score-=10;
+    if(balance>=-300 && balance<=200) score+=10; else score-=10;
+    if(fPost<=5) score+=5; else score-=5;
+    return Math.max(0,Math.min(100,score));
+  };
+  const recoveryScore = getRecoveryScore();
+  const recoveryColor = recoveryScore>=70?G.ok:recoveryScore>=45?G.warn:G.bad;
+  const recoveryLabel = recoveryScore>=70?'Buena recuperaci\u00F3n':recoveryScore>=45?'Recuperaci\u00F3n moderada':'Recuperaci\u00F3n comprometida';
+
+  // Recomendaciones
+  const recs = [];
+  if(ingesta.fuente==='ninguna') recs.push({icon:'\u{1F4CB}',txt:'Sin datos de ingesta. Registra tus comidas en NUTRICION \u{2192} Plan del D\u00EDa',color:G.warn});
+  if(gasto.setsN===0 && gasto.durMin===0) recs.push({icon:'\u{1F3CB}',txt:'Sin datos de entreno registrados. Ve a ENTRENO para registrar tu sesi\u00F3n.',color:G.mu});
+  if(protBalance<-20) recs.push({icon:'\u{1F6A8}',txt:'D\u00E9ficit prote\u00EDco de '+Math.abs(protBalance)+'g. Prioriza prote\u00EDna para no perder m\u00FAsculo.',color:G.bad});
+  if(balance<-500) recs.push({icon:'\u{26A0}\u{FE0F}',txt:'D\u00E9ficit cal\u00F3rico severo (-'+Math.abs(balance)+' kcal). Riesgo de catabolismo y ca\u00EDda de energ\u00EDa.',color:G.bad});
+  else if(balance<-200) recs.push({icon:'\u{1F50B}',txt:'D\u00E9ficit moderado (-'+Math.abs(balance)+' kcal). Ok para recomp si prote\u00EDna est\u00E1 cubierta.',color:G.warn});
+  else if(balance>300) recs.push({icon:'\u{26A1}',txt:'Super\u00E1vit de +'+balance+' kcal. Cuidar si el objetivo es mantener definici\u00F3n.',color:G.warn});
+  if(sueno>0 && sueno<6) recs.push({icon:'\u{1F634}',txt:'Sue\u00F1o cr\u00EDtico ('+sueno+'h). La recuperaci\u00F3n muscular requiere m\u00EDnimo 7h. Magnesio + ashwagandha PM.',color:G.bad});
+  else if(sueno>0 && sueno<7) recs.push({icon:'\u{1F31C}',txt:'Sue\u00F1o bajo ('+sueno+'h). Vigilar fatiga acumulada esta semana.',color:G.warn});
+  if(protBalance>=0 && balance>=-300 && sueno>=7) recs.push({icon:'\u{2705}',txt:'\u{1F4AA} Excelente d\u00EDa. Prote\u00EDna cubierta, balance energ\u00E9tico ok, sue\u00F1o adecuado.',color:G.ok});
+
+  return React.createElement('div',null,
+    React.createElement(NavSemana,{fecha,setFecha,dia,setDia}),
+
+    // TITULO
+    React.createElement(Sec,{color:G.acc},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.acc,fontWeight:700,marginBottom:6}},'\u{1F4CA} BALANCE GASTO vs INGESTA'),
+      React.createElement('div',{style:{fontSize:11,color:G.dim}}, (plan?plan.label:'D\u00EDa') + ' \u2022 ' + fmtFecha(fecha))
+    ),
+
+    // GASTO CALORICO
+    React.createElement(Sec,{color:G.bad},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.bad,fontWeight:700,marginBottom:10}},'\u{1F525} GASTO CAL\u00D3RICO ESTIMADO'),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center',marginBottom:12}},
+        [{l:'TDEE Total',v:gasto.tdee,c:G.bad},{l:'TMB Basal',v:gasto.tmb,c:G.mu},{l:'Entreno (EAT)',v:gasto.totalEAT,c:'#f97316'}].map((x,i) =>
+          React.createElement('div',{key:i,style:{background:G.bg,borderRadius:10,padding:'10px 6px',border:'1px solid '+G.bor}},
+            React.createElement('div',{style:{fontSize:18,fontWeight:800,color:x.c,fontFamily:'monospace'}},x.v),
+            React.createElement('div',{style:{fontSize:8,color:G.mu,marginTop:2}},x.l+' kcal')
+          )
+        )
+      ),
+      gasto.setsN>0 && React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:6,textAlign:'center'}},
+        [{l:'Tonnage',v:gasto.tonnage>1000?(gasto.tonnage/1000).toFixed(1)+'t':gasto.tonnage+'kg'},{l:'Sets',v:gasto.setsN},{l:'Dur',v:gasto.durMin+'min'},{l:'RPE avg',v:gasto.avgRPE}].map((x,i) =>
+          React.createElement('div',{key:i,style:{background:G.alt,borderRadius:8,padding:'6px 4px'}},
+            React.createElement('div',{style:{fontSize:13,fontWeight:700,color:G.dim,fontFamily:'monospace'}},x.v),
+            React.createElement('div',{style:{fontSize:7,color:G.mu}},x.l)
+          )
+        )
+      ),
+      gasto.setsN>0 && React.createElement('div',{style:{marginTop:8,fontSize:9,color:G.mu,fontFamily:'monospace',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
+        React.createElement('span',null,'Aerobico: '+gasto.eat+' kcal'),
+        React.createElement('span',null,'Mec\u00E1nico: '+gasto.tBonus+' kcal'),
+        React.createElement('span',null,'EPOC: '+gasto.epoc+' kcal')
+      )
+    ),
+
+    // INGESTA NUTRICIONAL
+    React.createElement(Sec,{color:G.ok},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}},'\u{1F37D}\u{FE0F} INGESTA NUTRICIONAL'),
+      ingesta.fuente==='ninguna'
+        ? React.createElement('div',{style:{textAlign:'center',padding:16,color:G.mu,fontSize:12}},'Sin datos. Registra en NUTRICI\u00D3N \u{2192} Plan del D\u00EDa')
+        : React.createElement('div',null,
+            React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center',marginBottom:10}},
+              [{l:'Prote\u00EDna',v:ingesta.prot,u:'g',c:G.acc},{l:'Carbos',v:ingesta.carbs,u:'g',c:G.warn},{l:'Grasa',v:ingesta.grasa,u:'g',c:G.coa},{l:'Kcal',v:ingesta.kcal,u:'',c:G.dim}].map((x,i) =>
+                React.createElement('div',{key:i,style:{background:G.bg,borderRadius:10,padding:'10px 6px',border:'1px solid '+G.bor}},
+                  React.createElement('div',{style:{fontSize:18,fontWeight:800,color:x.c,fontFamily:'monospace'}},x.v),
+                  React.createElement('div',{style:{fontSize:8,color:G.mu,marginTop:2}},x.l+(x.u?' ('+x.u+')':''))
+                )
+              )
+            ),
+            React.createElement('div',{style:{fontSize:9,color:G.mu,textAlign:'center',fontFamily:'monospace'}},'Fuente: '+(ingesta.fuente==='plan'?'Plan del D\u00EDa (checklist)':'Registro manual'))
+          )
+    ),
+
+    // BALANCE ENERGETICO
+    React.createElement(Sec,{color:balance>=0?G.ok:Math.abs(balance)>400?G.bad:G.warn},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:balance>=0?G.ok:G.warn,fontWeight:700,marginBottom:10}},'\u{2696}\u{FE0F} BALANCE ENERG\u00C9TICO'),
+      React.createElement('div',{style:{textAlign:'center',marginBottom:12}},
+        React.createElement('div',{style:{fontSize:32,fontWeight:900,color:balance>=0?G.ok:Math.abs(balance)>400?G.bad:G.warn,fontFamily:'monospace'}},
+          (balance>=0?'+':'')+balance+' kcal'
+        ),
+        React.createElement('div',{style:{fontSize:11,color:G.mu}},
+          balance>=0?'Super\u00E1vit cal\u00F3rico':'D\u00E9ficit cal\u00F3rico'
+        )
+      ),
+      BarProg({label:'Calor\u00EDas',val:ingesta.kcal,max:gasto.tdee,color:G.warn,unit:' kcal'}),
+      BarProg({label:'Prote\u00EDna',val:ingesta.prot,max:protDemand,color:G.acc,unit:'g'}),
+      BarProg({label:'Carbos',val:ingesta.carbs,max:cfg.metas.carbs,color:G.warn,unit:'g'}),
+      BarProg({label:'Grasa',val:ingesta.grasa,max:cfg.metas.grasa,color:G.coa,unit:'g'})
+    ),
+
+    // RECUPERACION
+    React.createElement(Sec,{color:recoveryColor},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:recoveryColor,fontWeight:700,marginBottom:10}},'\u{1F9EC} RECUPERACI\u00D3N MUSCULAR'),
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:16,marginBottom:12}},
+        React.createElement('div',{style:{position:'relative',width:64,height:64}},
+          React.createElement('svg',{width:64,height:64,viewBox:'0 0 64 64'},
+            React.createElement('circle',{cx:32,cy:32,r:28,fill:'none',stroke:G.bor,strokeWidth:4}),
+            React.createElement('circle',{cx:32,cy:32,r:28,fill:'none',stroke:recoveryColor,strokeWidth:4,strokeDasharray:176,strokeDashoffset:176-(176*recoveryScore/100),strokeLinecap:'round',transform:'rotate(-90 32 32)',style:{transition:'stroke-dashoffset 0.8s'}})
+          ),
+          React.createElement('div',{style:{position:'absolute',top:0,left:0,width:64,height:64,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:800,color:recoveryColor,fontFamily:'monospace'}},recoveryScore+'%')
+        ),
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:13,fontWeight:700,color:recoveryColor}},recoveryLabel),
+          React.createElement('div',{style:{fontSize:10,color:G.mu,marginTop:4}},
+            'Sue\u00F1o: '+(sueno>0?sueno+'h':'\u2014')+' \u2022 Fatiga: '+(fPost>0?fPost+'/10':'\u2014')+' \u2022 Energ\u00EDa: '+(ePre>0?ePre+'/10':'\u2014')
+          ),
+          React.createElement('div',{style:{fontSize:10,color:G.mu,marginTop:2}},
+            'Prote\u00EDna: '+ingesta.prot+'/'+protDemand+'g ('+(protBalance>=0?'+':'')+protBalance+'g)'
+          )
+        )
+      ),
+      React.createElement('div',{style:{fontSize:10,color:G.dim,background:G.bg,borderRadius:8,padding:'8px 10px',border:'1px solid '+G.bor}},
+        protBalance<0
+          ? '\u{26A0}\u{FE0F} Necesitas '+Math.abs(protBalance)+'g m\u00E1s de prote\u00EDna para cubrir la demanda de reparaci\u00F3n muscular. Prioriza carne, huevos o prote\u00EDna post.'
+          : '\u{2705} Prote\u00EDna cubierta. La reparaci\u00F3n muscular tiene sustrato suficiente.'
+      )
+    ),
+
+    // GRAFICO SEMANAL
+    React.createElement(Sec,{color:G.acc},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.acc,fontWeight:700,marginBottom:6}},'\u{1F4C8} SEMANA'),
+      React.createElement(WeekChart,null)
+    ),
+
+    // RECOMENDACIONES
+    recs.length>0 && React.createElement(Sec,{color:G.coa},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.coa,fontWeight:700,marginBottom:8}},'\u{1F4A1} RECOMENDACIONES'),
+      recs.map((r,i) => React.createElement('div',{key:i,style:{display:'flex',gap:8,alignItems:'flex-start',marginBottom:6,padding:'6px 8px',background:G.bg,borderRadius:8,border:'1px solid '+r.color+'44'}},
+        React.createElement('span',{style:{fontSize:14,flexShrink:0}},r.icon),
+        React.createElement('span',{style:{fontSize:11,color:r.color,lineHeight:'1.4'}},r.txt)
+      ))
+    )
+  );
+}
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 const TABS = [
   {id:'entreno', label:'ENTRENO', icon:'H'},
   {id:'nutri', label:'NUTRICION', icon:'N'},
+  {id:'balance', label:'BALANCE', icon:'B'},
   {id:'progreso', label:'PROGRESO', icon:'P'}
 ];
 
@@ -1883,6 +2562,7 @@ function App() {
       React.createElement('div', {style:{padding:14}},
         tab==='entreno' && React.createElement(TabEntreno, {user:user, cfg:cfg}),
         tab==='nutri' && React.createElement(TabNutricion, {user:user, cfg:cfg}),
+        tab==='balance' && React.createElement(TabBalance, {user:user, cfg:cfg}),
         tab==='progreso' && React.createElement(TabProgreso, {user:user})
       )
     )
