@@ -1323,11 +1323,12 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
     onUpdate({...planData, overrides:ov});
   };
 
-  // Progress calc
+  // Progress calc (excluir pre/intra/post de comidas, ya estan en suplementos)
+  const SUPLE_MEAL_IDS = ['pre','intra','post'];
   const totalSups = (cfg.suplementos.AM||[]).length + (cfg.suplementos.POST||[]).length + (cfg.suplementos.PM||[]).length;
   const doneSups = checkedSupAM.length + checkedSupPOST.length + checkedSupPM.length;
-  const totalMeals = plan.comidas.filter(c=>c.id!=='ayuno').length;
-  const doneMeals = checkedMeals.filter(id => plan.comidas.some(c=>c.id===id&&c.id!=='ayuno')).length;
+  const totalMeals = plan.comidas.filter(c=>c.id!=='ayuno' && !SUPLE_MEAL_IDS.includes(c.id)).length;
+  const doneMeals = checkedMeals.filter(id => plan.comidas.some(c=>c.id===id&&c.id!=='ayuno' && !SUPLE_MEAL_IDS.includes(c.id))).length;
   const totalItems = totalSups + totalMeals;
   const doneItems = doneSups + doneMeals;
   const pctDone = totalItems > 0 ? Math.round(doneItems/totalItems*100) : 0;
@@ -1362,7 +1363,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
     // Comidas del plan
     React.createElement('div', {style:{marginBottom:12}},
       React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.warn,fontWeight:700,marginBottom:10,paddingLeft:4}}, 'COMIDAS DEL D\u00CDA \u{1F372}'),
-      plan.comidas.map(comida =>
+      plan.comidas.filter(c => !['pre','intra','post'].includes(c.id)).map(comida =>
         React.createElement(PlanMealBlock, {
           key:comida.id,
           comida:comida,
@@ -1403,8 +1404,13 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
     // ─── RESUMEN CONSUMIDO HOY ───
     (() => {
       const pM = (txt) => { if(!txt) return {p:0,c:0,g:0,k:0}; const pm=txt.match(/P:~?(\d+)/i); const cm=txt.match(/C:~?(\d+)/i); const gm=txt.match(/G:~?(\d+)/i); return {p:pm?parseInt(pm[1]):0,c:cm?parseInt(cm[1]):0,g:gm?parseInt(gm[1]):0}; };
-      const checked = plan.comidas.filter(c => checkedMeals.includes(c.id) && c.id!=='ayuno');
+      const checked = plan.comidas.filter(c => checkedMeals.includes(c.id) && c.id!=='ayuno' && !['pre','intra','post'].includes(c.id));
       const overridden = checked.map(c => overrides[c.id] ? pM(overrides[c.id]) : pM(c.macros));
+      // Auto-sumar macros de pre/post si suplementos correspondientes estan checkeados
+      const preMeal = plan.comidas.find(c => c.id==='pre');
+      const postMeal = plan.comidas.find(c => c.id==='post');
+      if(preMeal && checkedSupAM.length > 0) overridden.push(pM(preMeal.macros));
+      if(postMeal && checkedSupPOST.length > 0) overridden.push(pM(postMeal.macros));
       const tot = overridden.reduce((a,m) => ({p:a.p+m.p,c:a.c+m.c,g:a.g+m.g}), {p:0,c:0,g:0});
       tot.k = tot.p*4+tot.c*4+tot.g*9;
       const METAS = cfg.metas;
