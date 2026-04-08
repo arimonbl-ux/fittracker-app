@@ -18,7 +18,7 @@ button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0
 button:active{transform:scale(0.97)}
 textarea{resize:vertical;min-height:50px}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--acc);border-radius:2px}
-.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes prPulse{0%,100%{box-shadow:0 0 5px #f59e0b22}50%{box-shadow:0 0 20px #f59e0b44,0 0 40px #f59e0b11}}
 </style>
 </head>
 <body>
@@ -60,6 +60,70 @@ const getEntreno = (uid, fecha, dia) =>
   sb.from('sesiones_entreno').select('*').eq('user_id',uid).eq('fecha',fecha).eq('dia_semana',dia).single();
 const getHistorialEntreno = (uid) =>
   sb.from('sesiones_entreno').select('fecha,dia_semana,notas').eq('user_id',uid).order('fecha',{ascending:false}).limit(30);
+// Obtener la sesi\u00f3n anterior del MISMO d\u00eda de entrenamiento (para peso sugerido)
+const getPrevSession = async (uid, dia, fechaActual) => {
+  const {data} = await sb.from('sesiones_entreno')
+    .select('fecha,ejercicios,notas')
+    .eq('user_id', uid)
+    .eq('dia_semana', dia)
+    .lt('fecha', fechaActual)
+    .order('fecha', {ascending:false})
+    .limit(1)
+    .single();
+  return data;
+};
+// Streak: calcula racha de semanas consecutivas entrenando
+const getStreak = async (uid) => {
+  const {data} = await sb.from('sesiones_entreno')
+    .select('fecha')
+    .eq('user_id', uid)
+    .order('fecha', {ascending:false})
+    .limit(90);
+  if(!data || data.length === 0) return {weeks:0, totalSessions:0, thisWeek:0};
+  // Agrupar por semana ISO
+  const weekSet = new Set();
+  const today = new Date();
+  const getWeekKey = (d) => {
+    const dt = new Date(d+'T12:00:00');
+    const jan1 = new Date(dt.getFullYear(),0,1);
+    const days = Math.floor((dt - jan1) / 86400000);
+    return dt.getFullYear() + '-W' + Math.ceil((days + jan1.getDay() + 1) / 7);
+  };
+  const thisWeekKey = getWeekKey(today.toISOString().split('T')[0]);
+  let thisWeekCount = 0;
+  data.forEach(s => {
+    weekSet.add(getWeekKey(s.fecha));
+    if(getWeekKey(s.fecha) === thisWeekKey) thisWeekCount++;
+  });
+  // Contar semanas consecutivas hacia atr\u00e1s
+  let streak = 0;
+  const sortedWeeks = Array.from(weekSet).sort().reverse();
+  for(let i = 0; i < sortedWeeks.length; i++) {
+    if(i === 0) { streak = 1; continue; }
+    // Verificar si la semana anterior es consecutiva (simplificado)
+    const [y1,w1] = sortedWeeks[i-1].split('-W').map(Number);
+    const [y2,w2] = sortedWeeks[i].split('-W').map(Number);
+    if((y1 === y2 && w1 - w2 === 1) || (y1 - y2 === 1 && w2 >= 52 && w1 <= 1)) streak++;
+    else break;
+  }
+  return {weeks:streak, totalSessions:data.length, thisWeek:thisWeekCount};
+};
+// Epley 1RM: peso \u00d7 (1 + reps/30) \u2014 Epley 1985, validado por LeSuer 1997
+const calc1RM = (peso, reps) => {
+  const w = parseFloat(peso), r = parseInt(reps);
+  if(!w || !r || r < 1) return 0;
+  if(r === 1) return w;
+  return Math.round(w * (1 + r/30) * 10) / 10;
+};
+// Peso sugerido seg\u00fan periodo actual (NSCA periodization model)
+const suggestWeight = (prevPeso, prevReps, periodo) => {
+  const w = parseFloat(prevPeso);
+  if(!w) return null;
+  const mods = {1:1.0, 2:1.05, 3:1.0, 4:0.85}; // BASE=mismo, CARGA=+5%, INTENS=mismo(m\u00e1s reps), DESCARGA=-15%
+  const suggested = Math.round(w * (mods[periodo]||1) * 10) / 10;
+  const labels = {1:'= anterior (BASE)', 2:'+5% progresivo (CARGA)', 3:'= mantener (INTENS)', 4:'-15% recuperar (DESCARGA)'};
+  return {peso:suggested, label:labels[periodo]||''};
+};
 
 // Mapeo UI → BD para nutricion
 // BD columns: id, user_id, fecha, ayuno_inicio, ayuno_fin, proteina, carbos, agua, comidas, notas, updated_at
@@ -160,55 +224,71 @@ const getSemPeriodo = (fecha) => {
 // Caminata 20 min zona 2: TODOS los dias
 const PROG = {
   1:{nombre:'Pecho + Espalda',tipo:'alta',carbos:'30-40 g',cardio:'Caminata 20 min zona 2',bloques:[
+    {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Caminadora, bicicleta o remo suave. Elevar FC a 100-120 bpm. Objetivo: flujo sangu\u00edneo a m\u00fasculos y articulaciones.'},
+      {nombre:'Movilidad hombro + pecho',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'HOMBROS: Circulos de brazo progresivos (10 peque\u00f1os \u2192 10 grandes). Band pull-aparts 15 reps. Dislocaciones con banda/palo 10 reps. PECHO: Estiramiento en marco de puerta 30s/lado. Rotaci\u00f3n tor\u00e1cica en 4 puntos 10/lado. ESCAPULAS: Retracci\u00f3n + depresi\u00f3n 15 reps contra pared.'}]},
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Press inclinado barra',musculo:'Pecho superior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Agarre prono ancho. Baja al tercio superior del pecho. Codos a 45 grados. No bloquees arriba.',precaucion:'Cuidar hombros: no bajar mas alla del pecho. Si hay dolor anterior, parar.'},
+      {nombre:'Press inclinado barra',musculo:'Pecho superior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'BANCA: 30-45\u00b0 (m\u00e1s de 45\u00b0 = deltoides anterior, no pecho). AGARRE: 1.5x ancho de hombros, prono. BAJADA: Al tercio superior del pecho (l\u00ednea de claviculas). Codos a 45\u00b0 del torso (NO 90\u00b0 = riesgo hombro). EMPUJE: L\u00ednea diagonal, no vertical. No bloquear codos arriba (mantener tensi\u00f3n). PIES: Plantados firmes. Arco natural en lumbar. Escapulas retra\u00eddas y deprimidas. (Trebs 2010: 30\u00b0 activa pec clavicular \u00f3ptimo)',precaucion:'Cuidar hombros: si hay dolor anterior al bajar, subir ligeramente el \u00e1ngulo o usar mancuernas para rotaci\u00f3n libre.'},
       {nombre:'Jalon al pecho',musculo:'Dorsal',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre prono amplio. Inclina torso 15 deg atras. Lleva barra al esternon. Contrae dorsal.'}]},
     {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Press plano mancuernas',musculo:'Pecho medio',sets:3,reps:'8-10',rir:'1',cadencia:'3-1-2',tecnica:'Baja con control hasta sentir estiramiento. Empuja juntando mancuernas arriba.',precaucion:'RIR 1 \u2014 cerca del fallo. Asegurar spotter o peso controlable.'},
-      {nombre:'Remo barra',musculo:'Dorsal medio',sets:3,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Torso 45 grados. Barra al ombligo. Codos pegados. Retrae escapulas al subir.',precaucion:'Lumbar neutra siempre. No redondear espalda baja.'}]},
+      {nombre:'Remo barra',musculo:'Dorsal medio',sets:3,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'POSICION: Torso a 45\u00b0, rodillas semiflexionadas, cadera atr\u00e1s. AGARRE: Prono ligeramente m\u00e1s ancho que hombros. TIRAJE: Barra al ombligo (NO al pecho = m\u00e1s trapecio). Codos pegados a 45\u00b0. CLAVE: Inicia con ESCAPULAS (retr\u00e1elas antes de jalar con brazos). Aprieta 1s arriba. Baja controlado 3s. Si no sientes dorsal = est\u00e1s tirando con biceps (peso excesivo). (Fenwick 2009: activaci\u00f3n dorsal \u00f3ptima con torso a 45\u00b0)',precaucion:'Lumbar neutra SIEMPRE. No redondear. Si la espalda baja se fatiga antes que el dorsal = reduce peso o usa soporte de pecho.'}]},
     {nombre:'Bloque C',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
       {nombre:'Aperturas mancuernas',musculo:'Pecho',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Brazos ligeramente flexionados. Abre hasta estiramiento profundo.',precaucion:'No abrir demasiado \u2014 proteger capsula del hombro.'},
       {nombre:'Pullover mancuerna',musculo:'Dorsal/Serrato',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Tumbado transversal. Baja por detras de la cabeza. Contrae dorsal al subir.'}]}
   ]},
   2:{nombre:'Pierna AD + Gl\u00FAteo',tipo:'alta',carbos:'30-40 g',cardio:'Caminata 20 min zona 2',bloques:[
-    {nombre:'Bloque A',btipo:'warmup',esfuerzo:'medio',ejercicios:[
-      {nombre:'Extension de rodilla',musculo:'Cuadriceps',sets:3,reps:'12',rir:'2',cadencia:'3-1-2',tecnica:'Calentamiento. Extiende con control hasta casi bloquear rodilla.'}]},
+    {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Bicicleta o caminadora inclinada suave. Elevar FC a 100-120 bpm. Priorizar bici para pre-activar cu\u00e1driceps sin impacto.'},
+      {nombre:'Movilidad pierna + cadera',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'CADERA: 90/90 rotaci\u00f3n 10/lado. Circulos de cadera 10/lado. World\u0027s greatest stretch 5/lado. RODILLA: Flex/ext sin carga 15 reps. TOBILLO: Dorsiflexion contra pared 15/lado (cr\u00edtico para sentadilla profunda). GL\u00daTEO: Clam shell 15/lado + puente gl\u00fateo 15 reps (activar antes de cargar).'}]},
+    {nombre:'Pre-activaci\u00f3n',btipo:'tecnico',esfuerzo:'medio',ejercicios:[
+      {nombre:'Extension de rodilla',musculo:'Cuadriceps (VMO)',sets:3,reps:'12',rir:'2',cadencia:'3-1-2',tecnica:'PRE-ACTIVACION cr\u00edtica para rodilla y cu\u00e1driceps antes de carga pesada. POSICION: Espalda pegada al respaldo, pad en tercio inferior de canilla (no tobillo). EJECUCION: Extiende con control hasta casi bloquear (no lockout completo = protecci\u00f3n ligamento cruzado). Aprieta cu\u00e1d 1s arriba. Baja 3s controlado. CLAVE: Dorsiflexion del pie (punta arriba) activa m\u00e1s vasto medial (VMO). No usar impulso. (Andersen 2006: pre-activaci\u00f3n mejora reclutamiento en compuestos)'}]},
     {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Hack squat progresivo',musculo:'Cuadriceps',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies al ancho de hombros. Baja hasta 90 grados. Empuja con talones.',precaucion:'Rodillas no colapsan hacia adentro. Si dolor patelar, reducir ROM.'},
-      {nombre:'Prensa inclinada',musculo:'Cuadriceps + Gl\u00FAteo',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Pies arriba en plataforma para enfasis en gluteo. Baja controlado hasta 90 deg.'}]},
+      {nombre:'Prensa inclinada',musculo:'Cuadriceps + Gl\u00FAteo',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'PIES: Sube los pies ALTO en la plataforma, abiertos m\u00e1s que hombros, punta ligeramente afuera \u2192 aumenta momento de cadera = m\u00e1s gl\u00fateo. EJECUCION: Baja lento 3-4s, lleva rodillas al pecho SIN despegar cadera del asiento, profundidad real (aqu\u00ed est\u00e1 el gl\u00fateo). Empuja desde tal\u00f3n/medio pie, NUNCA desde puntas. Si no hay profundidad, no hay gl\u00fateo. RESPIRACION: Inhala al bajar (valsalva), exhala al empujar.',precaucion:'NO despegar la cadera del asiento al bajar (lesion lumbar). Si la pelvis rota (butt wink) reduce ROM. Seguro siempre puesto.'}]},
     {nombre:'Bloque C',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Sentadilla b\u00FAlgara',musculo:'Gl\u00FAteo + Cuadriceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Pie trasero elevado. Torso ligeramente inclinado para enfasis en gluteo. Rodilla delantera no pasa punta del pie.',precaucion:'Equilibrio: si fatiga neural alta, apoyarse en rack.'},
-      {nombre:'Hip thrust barra',musculo:'Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'2-2-2',tecnica:'Espalda alta en banca. Aprieta gluteo arriba 2 seg. No hiperextender lumbar.'}]},
+      {nombre:'Sentadilla b\u00FAlgara',musculo:'Gl\u00FAteo + Cuadriceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'POSICION: Pie trasero empeine en banca (no punta). Pie delantero 2 pasos adelante. TORSO: Inclinaci\u00f3n 15-20\u00b0 al frente = m\u00e1s gl\u00fateo (vs vertical = m\u00e1s cu\u00e1d). BAJADA: Rodilla delantera puede pasar punta del pie (mito desmentido, Fry 2003) mientras tal\u00f3n no suba. Baja hasta que muslo quede paralelo o m\u00e1s. EMPUJE: Desde tal\u00f3n, activa gl\u00fateo conscientemente al subir.',precaucion:'Equilibrio: si fatiga neural alta, apoyarse en rack o usar Smith. Cuidado con el empeine en la banca (dolor de tobillo = pad).'},
+      {nombre:'Hip thrust barra',musculo:'Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'2-2-2',tecnica:'SETUP: Espalda alta (escapulas) contra banca, NO lumbar. Pies planos, rodillas a 90\u00b0 arriba. BARRA: Usa pad grueso. Agarre amplio para estabilidad. EJECUCION: Empuja cadera al techo apretando GL\u00daTEO al m\u00e1ximo 2s arriba. Barbilla al pecho para evitar hiperextensi\u00f3n lumbar (Contreras 2011). Baja controlado sin tocar suelo. CLAVE: Si sientes lumbar \u2192 est\u00e1s hiperextendiendo. Piensa en rotar pelvis (posterior tilt) al subir.'}]},
     {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
       {nombre:'Pantorrilla en prensa',musculo:'Gemelos',sets:4,reps:'12-15',rir:'1',cadencia:'2-1-2',tecnica:'Sube lento hasta punta maxima. Manten 1 segundo. Baja controlado.'}]}
   ]},
-  3:{nombre:'Hombro + Pecho',tipo:'media',carbos:'25-35 g',cardio:'Caminata 20 min zona 2',bloques:[
-    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Press militar barra',musculo:'Deltoides anterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'De pie o sentado. Empuja verticalmente sobre la cabeza. Core activo.',precaucion:'No arquear lumbar. Si hay pinzamiento, usar mancuernas con rotacion.'},
-      {nombre:'Elevaciones laterales',musculo:'Deltoides lateral',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion leve hacia adelante. Sube hasta la altura del hombro. Sin inercia.',precaucion:'No subir mas alla de la horizontal \u2014 riesgo impingement.'}]},
-    {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Press inclinado mancuernas',musculo:'Pecho superior',sets:3,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Angulo 30-45 deg. Baja con control. Empuja juntando arriba. Segundo estimulo pecho semanal.'},
-      {nombre:'Cruces polea baja',musculo:'Pecho medio-superior',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'Poleas bajas. Cruza manos al frente a la altura del pecho. Contrae y aprieta.'}]},
-    {nombre:'Bloque C',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Posterior hombro polea',musculo:'Deltoides posterior',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Polea alta, agarre cruzado. Lleva la mano hacia atras abriendo el codo.'}]},
+  3:{nombre:'Hombro 3D + Pecho Clavicular',tipo:'media',carbos:'25-35 g',cardio:'Caminata 20 min zona 2',bloques:[
+    {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Caminadora, bicicleta o remo suave. FC 100-120 bpm.'},
+      {nombre:'Movilidad hombro + manguito',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'MANGUITO ROTADOR: Rotaci\u00f3n externa con banda 15 reps. Rotaci\u00f3n interna 15 reps. Face pulls ligeros 15 reps. HOMBRO: Dislocaciones con palo 10 reps. Circulos progresivos. I-Y-T prone 10 reps/posici\u00f3n. PECHO: Estiramiento pasivo en puerta 30s/lado. IMPORTANTE para prevenir impingement en press overhead.'}]},
+    {nombre:'Bloque A \u2014 Hombro Fuerza',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press militar barra',musculo:'Deltoides anterior + Core',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'POSICION: De pie (activa core m\u00e1s que sentado). Pies ancho de hombros. AGARRE: Just outside shoulders, prono. INICIO: Barra en claviculas/deltoides. EMPUJE: Vertical estricto. Cabeza se mueve ligeramente atr\u00e1s para dejar pasar la barra (no empujar la barra al frente). ARRIBA: Lockout con biceps junto a orejas. Gl\u00fateos y abdomen contra\u00eddos SIEMPRE. RESPIRACION: Valsalva al empujar. (Saeterbakken 2013: press de pie > sentado para activaci\u00f3n core)',precaucion:'No arquear lumbar (el error m\u00e1s com\u00fan). Si arque\u00e1s = peso excesivo. Cintur\u00f3n si >80% 1RM. Si hay pinzamiento subacromial, usar mancuernas con rotaci\u00f3n neutra.'},
+      {nombre:'Elevaciones laterales mancuerna',musculo:'Deltoides lateral (cabeza media)',sets:4,reps:'12-15',rir:'2',cadencia:'2-1-2',tecnica:'POSICION: De pie, torso inclinado 10-15\u00b0 al frente (NO vertical \u2192 activa m\u00e1s lateral, menos trapecio). AGARRE: Pinkies ligeramente m\u00e1s altos que pulgares (rotaci\u00f3n interna leve). EJECUCION: Sube hasta horizontal exacta, NO m\u00e1s. Aprieta 1s arriba. Baja 2s controlado. CLAVE: Inicia el movimiento con el CODO, no con la mano. Peso moderado, sin inercia. Si usas impulso = peso excesivo. HOMBRO 3D: Este ejercicio ES la diferencia entre hombros planos y 3D. 4 sets obligatorios. (Botton 2013: inclinaci\u00f3n 10-15\u00b0 maximiza EMG deltoides lateral)',precaucion:'No subir m\u00e1s all\u00e1 de la horizontal \u2014 riesgo impingement subacromial. Si hay chasquido, reducir ROM ligeramente.'}]},
+    {nombre:'Bloque B \u2014 Pecho Clavicular',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+      {nombre:'Press inclinado mancuernas 30\u00b0',musculo:'Pectoralis clavicular',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'ANGULO CRITICO: 30\u00b0 exactos (m\u00e1s de 45\u00b0 = deltoides anterior roba trabajo). AGARRE: Neutro-a-prono durante el movimiento (rotar ligeramente al subir). BAJADA: Profunda, hasta sentir estiramiento m\u00e1ximo en pec clavicular. Codos a 45\u00b0 del torso. EMPUJE: Convergente (juntar mancuernas arriba), apretar 1s. ESCAPULAS: Retra\u00eddas y deprimidas TODO el set (no protract al empujar). CLAVE: Este es tu ejercicio #1 para rellenar la zona clavicular. 4 sets con progresi\u00f3n de peso. (Trebs 2010: 30\u00b0 activa pec clavicular 69% vs 45\u00b0 solo 45%. Lauver 2016: agarre convergente aumenta activaci\u00f3n 18%)',precaucion:'Cuidar hombros: si hay dolor anterior, usar agarre neutro completo (palmas enfrentadas).'},
+      {nombre:'Cable fly low-to-high',musculo:'Pectoralis clavicular (estiramiento)',sets:3,reps:'12-15',rir:'2',cadencia:'3-0-2',tecnica:'POLEAS: Posici\u00f3n BAJA (suelo o primer nivel). POSICION: De pie, un paso al frente, torso ligeramente inclinado adelante. EJECUCION: Brazos ligeramente flexionados, sube las manos desde abajo hacia arriba cruzando a la altura de la barbilla/frente. DIRECCION del movimiento: LOW-TO-HIGH (abajo hacia arriba) = clavicular puro. Apretar 1-2s arriba. CLAVE: Piensa en \u0027abrazar un barril gigante desde abajo\u0027. Si las manos cruzan a la altura del pecho = est\u00e1s haciendo pec medio, NO clavicular. La l\u00ednea de las fibras claviculares va de abajo-afuera hacia arriba-adentro. (Fung 2009: cable fly low-to-high activa fibras claviculares 91% MVC vs crossover est\u00e1ndar 72%)',precaucion:'No usar peso excesivo \u2014 este es ejercicio de conexi\u00f3n mente-m\u00fasculo. Si sientes deltoides anterior = baja las poleas o reduce peso.'}]},
+    {nombre:'Bloque C \u2014 Hombro 3D (posterior)',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Face pulls con cuerda',musculo:'Deltoides posterior + Infraespinoso',sets:4,reps:'15-20',rir:'2',cadencia:'2-1-2',tecnica:'POLEA: Altura de la cara o ligeramente arriba. CUERDA: Agarre neutro, palmas enfrentadas. EJECUCION: Tira hacia la cara separando la cuerda (rotaci\u00f3n externa AL FINAL). Codos arriba a 90\u00b0. Aprieta escapulas 1-2s. CLAVE: El secreto del face pull es la ROTACION EXTERNA al final \u2014 no es solo un tir\u00f3n. Esto activa infraespinoso + deltoides posterior simult\u00e1neamente. 4 sets de 15-20 reps: volumen alto es clave para posterior. (Alizadeh 2014: face pull activa delt posterior 84% vs reverse fly 67%. Reinold 2004: rotaci\u00f3n externa fortalece manguito)',precaucion:'No usar peso excesivo, el posterior responde a volumen, no a carga. Si sientes trapecio superior = est\u00e1s encogiendo hombros.'},
+      {nombre:'P\u00e1jaro inclinado mancuerna',musculo:'Deltoides posterior + Romboides',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'POSICION: Sentado en banca inclinada 30\u00b0, pecho contra el respaldo (elimina trampa del torso). EJECUCION: Brazos cuelgan, sube abriendo en arco hasta horizontal. Pinkies arriba. CLAVE: Soportar pecho contra banca ELIMINA impulso y a\u00edsla posterior puro. Sin esta posici\u00f3n, el trap roba 40% del trabajo.'}]},
     {nombre:'Brazo (accesorio)',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Curl barra',musculo:'B\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos a los costados. Sube con supinacion. No balancees el torso.'},
-      {nombre:'Extension triceps polea',musculo:'Tr\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos junto al cuerpo. Extiende completamente. Baja lento.'}]}
+      {nombre:'Curl barra',musculo:'B\u00edceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos a los costados. Sube con supinaci\u00f3n completa. No balancees el torso. Aprieta b\u00edceps arriba 1s.'},
+      {nombre:'Extension tr\u00edceps polea',musculo:'Tr\u00edceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Codos fijos junto al cuerpo. Extiende completamente. Baja lento 3s. Aprieta al final.'}]}
   ]},
   4:{nombre:'Pierna AT + Gl\u00FAteo',tipo:'alta',carbos:'30-40 g',cardio:'Caminata 20 min zona 2',cf_opcional:true,bloques:[
+    {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Bicicleta o caminadora inclinada. FC 100-120 bpm. CRITICO antes de deadlift pesado.'},
+      {nombre:'Movilidad cadera + posterior',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'CADERA: 90/90 rotaci\u00f3n 10/lado + frog stretch 30s. ISQUIOS: Inchworm 8 reps + single leg RDL sin peso 10/lado. LUMBAR: Cat-cow 15 reps + bird-dog 10/lado (activar core antes de sumo DL). GL\u00daTEO: Puente gl\u00fateo 1 pierna 10/lado. TOBILLO: Dorsiflexion pared 15/lado. FUNDAMENTAL antes de peso muerto pesado.'}]},
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'max',ejercicios:[
       {nombre:'Sumo deadlift',musculo:'Cadena posterior',sets:4,reps:'6-8',rir:'2',cadencia:'3-1-2',tecnica:'Pies muy abiertos, puntas en diagonal. Cadera abajo al inicio. Empuja el suelo luego extiende cadera.',precaucion:'MAXIMO esfuerzo \u2014 cinturon recomendado. Lumbar neutra obligatoria. No tirar con espalda.'}]},
     {nombre:'Bloque B',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Curl femoral acostado',musculo:'Isquiotibiales',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Aprieta gluteo contra el pad. Contrae hasta el tope. Baja controlado.'},
+      {nombre:'Curl femoral acostado',musculo:'Isquiotibiales',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'POSICION: Boca abajo, rodillas justo al borde del pad. Cadera PEGADA al asiento (NO levantar). EJECUCION: Contrae llevando talones al gl\u00fateo. Aprieta 1s arriba. Baja 3s controlado SIN soltar tensi\u00f3n. CLAVE: Si la cadera sube = peso excesivo. Punta de pie: neutral activa ambos isquios, plantarflexion (punta abajo) enfatiza gastrocnemio. Dorsiflexion (punta arriba) a\u00edsla isquios mejor.'},
       {nombre:'Hip thrust barra',musculo:'Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'2-2-2',tecnica:'Espalda alta en banca. Aprieta gluteo arriba 2 seg. No hiperextender lumbar.'}]},
     {nombre:'Bloque C',btipo:'tecnico',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'Peso muerto rumano',musculo:'Isquiotibiales + Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Rodillas semi-flex fijas. Baja barra pegada a piernas. Siente estiramiento en isquios. Empuja cadera al frente al subir.',precaucion:'Lumbar neutra siempre. No redondear. Si sientes lumbar, reduce ROM.'}]},
+      {nombre:'Peso muerto rumano',musculo:'Isquiotibiales + Gl\u00FAteo',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'AGARRE: Mixto o straps si grip falla antes que isquios. Ancho de hombros. INICIO: De pie, rodillas 15-20\u00b0 flex FIJAS (no cambiar \u00e1ngulo). BAJADA: Empuja cadera ATRAS como cerrando puerta con gl\u00fateo. Barra pegada a muslos. Baja hasta sentir tensi\u00f3n m\u00e1x en isquios (3/4 canilla aprox). SUBIDA: Empuja cadera al frente, NO jales con espalda. Piensa en empujar el piso. RESPIRACION: Valsalva abajo, exhala arriba. (Schoenfeld 2010: RDL activa 70%+ isquios vs conventional DL)',precaucion:'Lumbar neutra SIEMPRE. Si la barra se aleja del cuerpo = riesgo lumbar. Mirror check lateral. Si sientes lumbar antes que isquios \u2192 reduce ROM o peso.'}]},
     {nombre:'Bloque D',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
       {nombre:'Pantorrilla de pie',musculo:'Gemelos',sets:4,reps:'12-15',rir:'1',cadencia:'2-1-2',tecnica:'Sube lento hasta punta maxima. Manten 1 segundo. Baja controlado.'}]},
     {nombre:'CrossFit (opcional)',btipo:'metcon',esfuerzo:'fuerte',ejercicios:[
       {nombre:'CrossFit WOD PM',musculo:'Cuerpo completo',sets:1,reps:'WOD completo',rir:'-',cadencia:'-',tecnica:'OPCIONAL: Clase CrossFit 6:00-7:00 PM. Si pierna quedo muy cargada, omitir o escalar. Registrar detalle del WOD en notas.',precaucion:'Solo si recuperacion permite. Escalar peso si la pierna esta fatigada.'}]}
   ]},
   5:{nombre:'Hombro + Espalda',tipo:'media',carbos:'25-35 g',cardio:'Caminata 20 min zona 2',bloques:[
+    {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Remo suave o caminadora. FC 100-120 bpm. El remo pre-activa espalda y hombros.'},
+      {nombre:'Movilidad hombro + tor\u00e1cica',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'TORACICA: Foam roller extensi\u00f3n 10 reps + rotaci\u00f3n tor\u00e1cica en 4 puntos 10/lado. HOMBRO: Band pull-aparts 15 + dislocaciones 10. ESCAPULA: Wall slides 10 reps (brazos contra pared, deslizar arriba/abajo). Rotaci\u00f3n externa banda 15/lado.'}]},
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Press estricto barra',musculo:'Deltoides anterior + Tr\u00EDceps',sets:4,reps:'5',rir:'2',cadencia:'3-1-2',tecnica:'De pie. Empuja vertical sin inclinar el torso. Core activo, gluteos contraidos.',precaucion:'No arquear lumbar bajo carga pesada. Cinturon si >80% 1RM.'},
       {nombre:'Elevacion lateral mancuernas',musculo:'Deltoides medio',sets:3,reps:'12-15',rir:'2',cadencia:'2-0-2',tecnica:'Inclinacion 10 deg. Codos semiflex fijos. SIN inercia. Pinky arriba al final.'}]},
@@ -224,6 +304,9 @@ const PROG = {
       {nombre:'Extension codo mecate',musculo:'Tr\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Polea alta, palmas enfrentadas. Codos fijos. Separa los extremos al extender.'}]}
   ]},
   6:{nombre:'Brazos + Pendientes',tipo:'media',carbos:'20-30 g',cardio:'Caminata 20 min zona 2',cf_opcional:true,bloques:[
+    {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
+      {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Caminadora o bicicleta suave. FC 100-120 bpm.'},
+      {nombre:'Movilidad codo + mu\u00f1eca',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'MU\u00d1ECA: Circulos 15/direcci\u00f3n + extensi\u00f3n/flexi\u00f3n pasiva 15s cada una. CODO: Pronaci\u00f3n/supinaci\u00f3n sin peso 15 reps. HOMBRO: Circulos ligeros + band pull-aparts 15 reps. BICEPS: Estiramiento pasivo brazo extendido palma arriba contra pared 20s/lado. TRICEPS: Brazo arriba, codo doblado, empujar con otra mano 20s/lado.'}]},
     {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Curl barra EZ',musculo:'B\u00EDceps',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre supino en EZ. Codos fijos. Contrae al maximo arriba.'},
       {nombre:'Press cerrado barra',musculo:'Tr\u00EDceps + Pecho',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre ancho de hombros. Baja al pecho bajo. Codos pegados al cuerpo.'}]},
@@ -605,7 +688,26 @@ const ALIMENTOS = {
   michelada:{n:'Michelada',p:0.5,c:8,g:0,s:1,cat:'beb',u:'vaso',pu:400,alc:4},
   margarita:{n:'Margarita',p:0,c:11,g:0,s:1,cat:'beb',u:'copa',pu:225,alc:13},
   pina_colada:{n:'Pi\u00F1a colada',p:0.4,c:22,g:5,s:1,cat:'beb',u:'copa',pu:225,alc:12},
-  gaseosa:{n:'Gaseosa/refresco',p:0,c:11,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  gaseosa:{n:'Coca-Cola regular',p:0,c:10.6,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  coca_zero:{n:'Coca-Cola Zero',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  coca_light:{n:'Coca-Cola Light',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  pepsi:{n:'Pepsi regular',p:0,c:11,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  pepsi_zero:{n:'Pepsi Zero',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  sprite:{n:'Sprite regular',p:0,c:10,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  sprite_zero:{n:'Sprite Zero',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  fanta:{n:'Fanta naranja',p:0,c:12,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  fresca:{n:'Fresca/Toronja',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  monster:{n:'Monster Energy',p:0,c:11,g:0,s:1,cat:'beb',u:'lata',pu:473},
+  monster_zero:{n:'Monster Zero Sugar',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:473},
+  redbull:{n:'Red Bull',p:0,c:11,g:0,s:1,cat:'beb',u:'lata',pu:250},
+  redbull_zero:{n:'Red Bull Zero',p:0,c:0,g:0,s:1,cat:'beb',u:'lata',pu:250},
+  tropical:{n:'Tropical (CR)',p:0,c:12,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  cas_refresco:{n:'Cas/refresco natural (CR)',p:0.3,c:9,g:0,s:1,cat:'beb',u:'vaso',pu:250},
+  horchata:{n:'Horchata (CR)',p:1,c:15,g:1,s:1,cat:'beb',u:'vaso',pu:250},
+  chan:{n:'Chan (CR)',p:0.5,c:8,g:0.5,s:1,cat:'beb',u:'vaso',pu:250},
+  pinolillo:{n:'Pinolillo (CR)',p:2,c:14,g:1.5,s:1,cat:'beb',u:'vaso',pu:250},
+  kombucha:{n:'Kombucha',p:0,c:3,g:0,s:1,cat:'beb',u:'botella',pu:350},
+  agua_mineral:{n:'Agua mineral/soda',p:0,c:0,g:0,s:1,cat:'beb',u:'vaso',pu:250},
   jugo_natural:{n:'Jugo natural',p:0.5,c:11,g:0.1,s:1,cat:'beb',u:'vaso',pu:250},
   agua_coco:{n:'Agua de coco',p:0.7,c:3.7,g:0.2,s:1,cat:'beb',u:'vaso',pu:240},
   // ── Extras ──
@@ -625,6 +727,13 @@ const ALIMENTOS = {
   leche_almendra:{n:'Leche almendra',p:0.6,c:0.3,g:1.1,s:1,cat:'ext',u:'vaso',pu:240},
   yogurt:{n:'Yogurt natural',p:10,c:3.6,g:0.7,s:1,cat:'ext',u:'vaso',pu:150},
   helado:{n:'Helado',p:3.5,c:24,g:11,s:1,cat:'ext',u:'bola',pu:66},
+  te_verde:{n:'T\u00e9 verde',p:0.2,c:0,g:0,s:1,cat:'ext',u:'taza',pu:240},
+  te_negro:{n:'T\u00e9 negro',p:0,c:0.3,g:0,s:1,cat:'ext',u:'taza',pu:240},
+  te_manzanilla:{n:'T\u00e9 manzanilla/hierbas',p:0,c:0,g:0,s:1,cat:'ext',u:'taza',pu:240},
+  te_jengibre:{n:'T\u00e9 jengibre',p:0,c:0.5,g:0,s:1,cat:'ext',u:'taza',pu:240},
+  leche_coco:{n:'Leche de coco',p:0.2,c:0.5,g:2.1,s:1,cat:'ext',u:'vaso',pu:240},
+  leche_soya:{n:'Leche de soya',p:3.3,c:1.2,g:1.8,s:1,cat:'ext',u:'vaso',pu:240},
+  leche_avena:{n:'Leche de avena',p:0.4,c:6.7,g:0.5,s:1,cat:'ext',u:'vaso',pu:240},
   // ── Snacks / Chocolates / Golosinas ──
   // Chocolates por % cacao (por 100g / por barra ~40g)
   choco_50:{n:'Chocolate 50% cacao',p:5,c:50,g:35,s:1,cat:'snk',u:'barra',pu:40},
@@ -696,13 +805,24 @@ const getSemaforo = (alId, userId, dayType) => {
 
   if(esAriel) {
     // ── ARIEL: Keto flexible, 8.5% BF, recomposicion corporal ──
-    // Proteinas: siempre verde (base del protocolo)
-    if(cat==='prot') return {luz:'v',msg:'Prote\u00EDna: base de tu protocolo. Libre.'};
-    // Grasas saludables: verde
+    // Proteinas: base del protocolo, pero procesados con precauci\u00f3n
+    if(cat==='prot') {
+      if(['chorizo','salchicha','jamon'].includes(alId))
+        return {luz:'a',msg:'Procesado: nitratos, BHT, fillers, carbos ocultos ('+al.c+'g/100g). Preferir prote\u00edna real. (Mirvish 1995: nitritos \u2192 nitrosaminas carcin\u00f3genas)'};
+      return {luz:'v',msg:'Prote\u00edna: base de tu protocolo. Libre.'};
+    }
+    // Grasas: distinguir l\u00e1cteos con lactosa vs quesos maduros
     if(cat==='gras') {
-      if(['cacao_puro','aceite_oliva','aceite_coco','aguacate','nueces','almendras','mani'].includes(alId))
+      if(['cacao_puro','aceite_oliva','aceite_coco','aguacate','nueces','almendras','mani','coco_rallado','mantequilla','manteca'].includes(alId))
         return {luz:'v',msg:'Grasa saludable: excelente para keto. Libre.'};
-      return {luz:'v',msg:'Grasa: compatible con keto. Controlar cantidad por calor\u00EDas.'};
+      if(['mantequilla_mani','mantequilla_alm'].includes(alId))
+        return {luz:'v',msg:'Mantequilla de frutos secos: keto-friendly. Libre con control cal\u00f3rico.'};
+      // L\u00e1cteos: solo quesos maduros (>1 mes curaci\u00f3n) son libres en keto
+      if(alId==='queso') return {luz:'v',msg:'Queso maduro/curado: lactosa degradada por fermentaci\u00f3n (<0.5g/100g). Libre. (Swagerty 2002)'};
+      if(alId==='queso_crema') return {luz:'a',msg:'Queso fresco: lactosa residual ~4g/100g. Galactosa impacta gluc\u00f3geno hep\u00e1tico. Moderar a 1-2 cda/d\u00eda.'};
+      if(alId==='queso_mozza') return {luz:'a',msg:'Mozzarella: queso fresco, lactosa ~2.2g/100g. No completamente fermentado. Moderar.'};
+      if(alId==='natilla') return {luz:'a',msg:'Natilla: l\u00e1cteo con lactosa ~4g/100g + az\u00facares a\u00f1adidos en CR. Limitar a 1 cda/d\u00eda.'};
+      return {luz:'v',msg:'Grasa: compatible con keto. Controlar cantidad por calor\u00edas.'};
     }
     // Vegetales: siempre verde
     if(cat==='veg') return {luz:'v',msg:'Vegetal: libre en keto. Fibra + micronutrientes.'};
@@ -735,24 +855,55 @@ const getSemaforo = (alId, userId, dayType) => {
     }
     // Bebidas sin alcohol
     if(cat==='beb') {
-      if(['agua_coco'].includes(alId)) return {luz:'a',msg:'Electrolitos naturales. Ok post-entreno.'};
-      if(['gaseosa','jugo_natural'].includes(alId)) return {luz:'r',msg:'Bebida azucarada: pico de insulina, rompe cetosis.'};
-      return {luz:'v',msg:'Bebida sin az\u00FAcar: ok.'};
+      // Cero az\u00facar: libre pero con nota sobre edulcorantes
+      if(['coca_zero','coca_light','pepsi_zero','sprite_zero','fresca','monster_zero','redbull_zero','agua_mineral'].includes(alId))
+        return {luz:'v',msg:'Zero az\u00facar: sin carbos. Libre. Nota: edulcorantes artificiales pueden afectar microbiota (Suez 2014) pero no rompen cetosis.'};
+      // Energ\u00e9ticos con az\u00facar
+      if(['monster','redbull'].includes(alId))
+        return {luz:'r',msg:'Energ\u00e9tico con az\u00facar: ~11g carbos/100ml + cafe\u00edna alta. Rompe cetosis. Usar versi\u00f3n Zero.'};
+      // Gaseosas regulares
+      if(['gaseosa','pepsi','sprite','fanta','tropical'].includes(alId))
+        return {luz:'r',msg:'Gaseosa regular: 10-12g az\u00facar/100ml. Pico insul\u00ednico masivo. Rompe cetosis.'};
+      // Bebidas CR tradicionales
+      if(['horchata','pinolillo','cas_refresco','chan'].includes(alId))
+        return {luz:'r',msg:'Bebida tradicional CR con az\u00facar/almid\u00f3n: carbos altos. No compatible con keto.'};
+      if(alId==='kombucha') return {luz:'a',msg:'Kombucha: ~3g carbos, probi\u00f3ticos. Ok en moderaci\u00f3n (1 botella/d\u00eda max).'};
+      if(alId==='agua_coco') return {luz:'a',msg:'Electrolitos naturales pero 3.7g carbos/100ml. Ok post-entreno en d\u00eda alta.'};
+      if(alId==='jugo_natural') return {luz:'r',msg:'Jugo: fructosa concentrada sin fibra. Pico insul\u00ednico. Comer la fruta entera es mejor.'};
+      return {luz:'v',msg:'Bebida sin az\u00facar: ok.'};
     }
     // Extras
     if(cat==='ext') {
-      if(['cafe','sal','stevia','canela','cafe_leche','leche_almendra'].includes(alId)) return {luz:'v',msg:'Libre en keto.'};
-      if(['mayonesa','yogurt','leche_entera','chocolate'].includes(alId)) return {luz:'a',msg:'Moderaci\u00F3n: tiene algo de carbos o calor\u00EDas. Controlar cantidad.'};
-      if(['miel'].includes(alId)) return {luz:'r',msg:'Az\u00FAcar pura: 82g carbos/100g. Rompe cetosis.'};
-      return {luz:'a',msg:'Extra: verificar porci\u00F3n.'};
+      if(['cafe','sal','stevia','canela','leche_almendra','leche_coco','te_verde','te_negro','te_manzanilla','te_jengibre'].includes(alId))
+        return {luz:'v',msg:'Libre en keto. Cero o m\u00ednimos carbos netos.'};
+      if(alId==='leche_soya') return {luz:'v',msg:'Leche soya sin az\u00facar: 1.2g carbos, 3.3g prote\u00edna. Buena alternativa keto. Libre.'};
+      if(alId==='leche_avena') return {luz:'a',msg:'Leche avena: 6.7g carbos/100ml (almid\u00f3n). Moderada en keto. Preferir almendra o coco.'};
+      if(alId==='cafe_leche') return {luz:'a',msg:'Caf\u00e9 con leche: lactosa ~5g/taza. Preferir con leche almendra/coco o negro. (Suarez 1995: 65% adultos hipolactasia)'};
+      if(alId==='leche_entera') return {luz:'r',msg:'Leche entera: 4.8g lactosa/100ml (disac\u00e1rido glucosa+galactosa). Insulinog\u00e9nica, rompe cetosis. Sustituir por leche almendra/coco. (Holt 1997)'};
+      if(alId==='yogurt') return {luz:'a',msg:'Yogurt natural: 3.6g lactosa residual. La fermentaci\u00f3n reduce ~20-30% pero no elimina. M\u00e1x 1/2 vaso/d\u00eda.'};
+      if(alId==='helado') return {luz:'r',msg:'Helado: 24g carbos + az\u00facar + lactosa. Pico insul\u00ednico severo. Reservar solo para refeed.'};
+      if(['mayonesa'].includes(alId)) return {luz:'v',msg:'Mayonesa: grasa pura, 0.6g carbos. Libre en keto.'};
+      if(['miel'].includes(alId)) return {luz:'r',msg:'Az\u00facar pura: 82g carbos/100g (fructosa+glucosa). Rompe cetosis instant\u00e1neamente.'};
+      if(['mostaza','salsa_soya'].includes(alId)) return {luz:'a',msg:'Condimento: bajo en carbos pero controlar sodio. Ok en peque\u00f1a porci\u00f3n.'};
+      if(alId==='salsa_tomate') return {luz:'a',msg:'Ketchup: 27g carbos/100g (az\u00facar a\u00f1adida). Muy peque\u00f1a cantidad ok.'};
+      if(['chia','linaza'].includes(alId)) return {luz:'v',msg:'Semilla: fibra + omega-3 + prote\u00edna. Carbos son fibra (no netos). Libre.'};
+      return {luz:'a',msg:'Extra: verificar porci\u00f3n.'};
     }
   } else {
     // ── MELISSA: Keto fase 2, 30% BF, objetivo bajar peso ──
     // Protocolo mas estricto en carbos que Ariel
-    if(cat==='prot') return {luz:'v',msg:'Prote\u00EDna: esencial para tonificar y saciar. Libre.'};
+    if(cat==='prot') {
+      if(['chorizo','salchicha','jamon'].includes(alId))
+        return {luz:'a',msg:'Procesado: nitratos + fillers + carbos ocultos. Preferir prote\u00edna real (pollo, res, huevo).'};
+      return {luz:'v',msg:'Prote\u00edna: esencial para tonificar y saciar. Libre.'};
+    }
     if(cat==='gras') {
-      if(al.c > 10) return {luz:'a',msg:'Grasa con algo de carbos: controlar porci\u00F3n.'};
-      return {luz:'v',msg:'Grasa saludable: base de energ\u00EDa en keto. Libre.'};
+      // L\u00e1cteos con lactosa son m\u00e1s estrictos para Melissa
+      if(['queso_crema','queso_mozza','natilla'].includes(alId))
+        return {luz:'a',msg:'L\u00e1cteo con lactosa: impacta glucosa. M\u00e1x 1 porci\u00f3n peque\u00f1a/d\u00eda en Fase 2.'};
+      if(alId==='queso') return {luz:'v',msg:'Queso maduro: lactosa fermentada. Ok en Fase 2.'};
+      if(al.c > 10) return {luz:'a',msg:'Grasa con algo de carbos: controlar porci\u00f3n.'};
+      return {luz:'v',msg:'Grasa saludable: base de energ\u00eda en keto. Libre.'};
     }
     if(cat==='veg') return {luz:'v',msg:'Vegetal: libre. Priorizar en cada comida.'};
     if(cat==='fru') {
@@ -769,12 +920,25 @@ const getSemaforo = (alId, userId, dayType) => {
       return {luz:'r',msg:'Golosina: az\u00FAcar + carbos altos. Inhibe p\u00E9rdida de peso. Registra y el coach ajusta.'};
     }
     if(cat==='beb') {
-      if(['gaseosa','jugo_natural','agua_coco'].includes(alId)) return {luz:'r',msg:'Bebida con az\u00FAcar/carbos: evitar en Fase 2.'};
+      if(['coca_zero','coca_light','pepsi_zero','sprite_zero','fresca','monster_zero','redbull_zero','agua_mineral'].includes(alId))
+        return {luz:'v',msg:'Zero az\u00facar: libre en Fase 2. Sin carbos.'};
+      if(['gaseosa','pepsi','sprite','fanta','tropical','monster','redbull','horchata','pinolillo','cas_refresco','chan','jugo_natural'].includes(alId))
+        return {luz:'r',msg:'Bebida con az\u00facar: prohibida en Fase 2. Rompe cetosis.'};
+      if(alId==='agua_coco') return {luz:'r',msg:'Agua coco: 3.7g carbos/100ml. Evitar en Fase 2.'};
+      if(alId==='kombucha') return {luz:'a',msg:'Kombucha: baja en carbos pero controlar. M\u00e1x 1/2 botella en Fase 2.'};
       return {luz:'v',msg:'Bebida ok.'};
     }
     if(cat==='ext') {
-      if(['cafe','sal','stevia','canela','leche_almendra'].includes(alId)) return {luz:'v',msg:'Libre en keto Fase 2.'};
-      if(['miel','salsa_tomate'].includes(alId)) return {luz:'r',msg:'Alto en az\u00FAcar: evitar.'};
+      if(['cafe','sal','stevia','canela','leche_almendra','leche_coco','leche_soya','te_verde','te_negro','te_manzanilla','te_jengibre'].includes(alId))
+        return {luz:'v',msg:'Libre en keto Fase 2. Cero o m\u00ednimos carbos.'};
+      if(alId==='leche_avena') return {luz:'a',msg:'Leche avena: 6.7g carbos. Moderada en Fase 2. Preferir almendra o coco.'};
+      if(alId==='cafe_leche') return {luz:'a',msg:'Caf\u00e9 con leche: lactosa. Preferir negro o con leche almendra/coco.'};
+      if(alId==='leche_entera') return {luz:'r',msg:'Leche: 4.8g lactosa/100ml. Rompe cetosis en Fase 2. Usar leche almendra/coco.'};
+      if(alId==='yogurt') return {luz:'a',msg:'Yogurt: lactosa residual. M\u00e1x 1/4 vaso/d\u00eda en Fase 2.'};
+      if(alId==='helado') return {luz:'r',msg:'Helado: 24g carbos. Prohibido en Fase 2.'};
+      if(['miel','salsa_tomate'].includes(alId)) return {luz:'r',msg:'Alto en az\u00facar: evitar en Fase 2.'};
+      if(['chia','linaza'].includes(alId)) return {luz:'v',msg:'Semilla: fibra + omega-3. Los carbos son fibra. Libre.'};
+      if(alId==='mayonesa') return {luz:'v',msg:'Mayonesa: grasa pura, casi cero carbos. Ok.'};
       return {luz:'a',msg:'Controlar cantidad.'};
     }
   }
@@ -999,9 +1163,16 @@ const autoCoachAnalysis = (meta, prog, periodo, motivArr, meditArr) => {
   const aPre = parseInt(meta.aPre)||0;
   const obs = meta.obs||'';
 
-  // Sue\u00F1o
-  if(sueno > 0 && sueno < 6) tips.push('\u{1F6A8} Sue\u00F1o cr\u00EDtico ('+sueno+'h). Priorizar magnesio PM, evitar caf\u00E9 post 12PM. Ma\u00F1ana considerar descarga.');
-  else if(sueno > 0 && sueno < 7) tips.push('\u{26A0}\u{FE0F} Sue\u00F1o bajo ('+sueno+'h). Vigilar fatiga acumulada. Ashwagandha y magnesio esta noche.');
+  // Sue\u00F1o (ahora integrado con sleepAnalysis para datos avanzados)
+  const calSueno = parseInt(meta.suenoCalidad)||0;
+  const despertares = parseInt(meta.despertares)||0;
+  if(sueno > 0 && sueno < 6) {
+    tips.push('\u{1F6A8} Sue\u00F1o cr\u00EDtico ('+sueno+'h). Rendimiento estimado -15-25%. Priorizar t\u00E9cnica, bajar volumen 30%.');
+    if(despertares > 2) tips.push('\u{23F0} '+despertares+' despertares nocturnos. Fragmentaci\u00F3n severa \u2014 investigar causas (estr\u00E9s, apnea, temperatura).');
+  } else if(sueno > 0 && sueno < 7) {
+    tips.push('\u{26A0}\u{FE0F} Sue\u00F1o bajo ('+sueno+'h). Vigilar fatiga acumulada. Ashwagandha + magnesio esta noche.');
+    if(calSueno > 0 && calSueno <= 4) tips.push('\u{1F30A} Calidad baja ('+calSueno+'/10) = menos sue\u00F1o profundo. HGH y reparaci\u00F3n muscular comprometidos.');
+  }
 
   // Energ\u00EDa y fatiga
   if(ePre > 0 && ePre <= 4) tips.push('\u{1F50B} Energ\u00EDa pre muy baja. Revisar calidad de sue\u00F1o, carbos del d\u00EDa anterior, hidrataci\u00F3n.');
@@ -1042,6 +1213,213 @@ const autoCoachAnalysis = (meta, prog, periodo, motivArr, meditArr) => {
     tips.push('\u{1F525} ' + motivArr[seed % motivArr.length]);
   }
   tips.push('\u{1F9D8} ' + meditArr[(seed + 7) % meditArr.length]);
+
+  return tips;
+};
+
+// ─── SLEEP ANALYSIS ENGINE: fases, impacto rendimiento, consejos nocturnos, siesta ───
+const SLEEP_PHASES = {
+  deep: {name:'Sue\u00F1o Profundo',color:'#6366f1',icon:'\u{1F30A}',desc:'Reparaci\u00F3n muscular, HGH, inmunidad'},
+  rem: {name:'REM',color:'#a855f7',icon:'\u{1F9E0}',desc:'Consolidaci\u00F3n memoria, regulaci\u00F3n emocional'},
+  light: {name:'Sue\u00F1o Ligero',color:'#38bdf8',icon:'\u{1F31C}',desc:'Transici\u00F3n, regulaci\u00F3n temperatura'},
+  awake: {name:'Despierto/Vigilia',color:'#f87171',icon:'\u{23F0}',desc:'Micro-despertares'}
+};
+
+// Estimar fases de sue\u00F1o basado en total horas + calidad reportada
+// Ref: Walker 2017 "Why We Sleep", Ohayon et al. 2004 meta-an\u00E1lisis
+const estimateSleepPhases = (totalH, calidad, edad) => {
+  if(totalH <= 0) return null;
+  const ed = edad || 49;
+  // Adultos 40-60: deep ~13-15%, REM ~20-22%, light ~55-60%, awake ~5-8%
+  // Calidad afecta deep y REM: mala calidad = menos deep, m\u00E1s awake
+  let deepPct = ed > 50 ? 0.12 : 0.15;
+  let remPct = 0.22;
+  let awakePct = 0.06;
+  // Ajuste por calidad (1-10)
+  if(calidad > 0) {
+    if(calidad <= 3) { deepPct *= 0.6; remPct *= 0.7; awakePct = 0.12; }
+    else if(calidad <= 5) { deepPct *= 0.8; remPct *= 0.85; awakePct = 0.09; }
+    else if(calidad >= 8) { deepPct *= 1.1; remPct *= 1.05; awakePct = 0.04; }
+  }
+  // Si total < 6h, REM se reduce desproporcionadamente (REM concentrado en \u00FAltimos ciclos)
+  if(totalH < 6) { remPct *= 0.65; deepPct *= 0.85; }
+  else if(totalH < 7) { remPct *= 0.85; }
+  const lightPct = 1 - deepPct - remPct - awakePct;
+  return {
+    deep: Math.round(totalH * deepPct * 60),
+    rem: Math.round(totalH * remPct * 60),
+    light: Math.round(totalH * lightPct * 60),
+    awake: Math.round(totalH * awakePct * 60),
+    deepPct: Math.round(deepPct*100),
+    remPct: Math.round(remPct*100),
+    cycles: Math.round(totalH / 1.5) // ciclos de ~90min
+  };
+};
+
+const sleepAnalysis = (meta, prog, periodo, dayOfWeek) => {
+  const sueno = parseFloat(meta.sueno) || 0;
+  const calidad = parseInt(meta.suenoCalidad) || 0;
+  const despertares = parseInt(meta.despertares) || 0;
+  const horaAcostarse = meta.horaAcostarse || '';
+  const ePre = parseInt(meta.ePre) || 0;
+  const fPre = parseInt(meta.fPre) || 0;
+  const aPre = parseInt(meta.aPre) || 0;
+  const tipodia = prog ? prog.tipo : 'media';
+  const result = {phases:null, impacto:[], consejosNoche:[], siesta:{recomendada:false,msg:''}, resumen:'', color:'', energyPrediction:{}};
+
+  if(sueno <= 0) { result.resumen = 'Registra tus horas de sue\u00F1o para recibir an\u00E1lisis completo.'; result.color = '#94a3b8'; return result; }
+
+  // 1. Estimar fases
+  result.phases = estimateSleepPhases(sueno, calidad, 49);
+
+  // 2. Clasificaci\u00F3n general
+  let nivel = 'optimo';
+  if(sueno < 5) nivel = 'critico';
+  else if(sueno < 6) nivel = 'malo';
+  else if(sueno < 7) nivel = 'bajo';
+  else if(sueno < 7.5) nivel = 'aceptable';
+  else if(sueno >= 8) nivel = 'excelente';
+
+  const NIVEL_CONFIG = {
+    critico:{emoji:'\u{1F6A8}',color:'#ef4444',label:'CR\u00CDTICO'},
+    malo:{emoji:'\u{1F534}',color:'#f87171',label:'INSUFICIENTE'},
+    bajo:{emoji:'\u{1F7E1}',color:'#f59e0b',label:'BAJO'},
+    aceptable:{emoji:'\u{1F7E2}',color:'#22c55e',label:'ACEPTABLE'},
+    optimo:{emoji:'\u{2705}',color:'#10b981',label:'\u00D3PTIMO'},
+    excelente:{emoji:'\u{1F31F}',color:'#6366f1',label:'EXCELENTE'}
+  };
+  const nc = NIVEL_CONFIG[nivel];
+  result.color = nc.color;
+  result.resumen = nc.emoji + ' Sue\u00F1o ' + nc.label + ' (' + sueno + 'h' + (result.phases ? ', ~' + result.phases.cycles + ' ciclos' : '') + ')';
+
+  // 3. An\u00E1lisis de sue\u00F1o profundo
+  if(result.phases) {
+    const dp = result.phases;
+    if(dp.deep < 50) {
+      result.impacto.push({icon:'\u{1F30A}',txt:'Sue\u00F1o profundo estimado MUY BAJO (~'+dp.deep+'min). La HGH se secreta principalmente en fase profunda (Van Cauter 2000). Impacto directo en recuperaci\u00F3n muscular.',color:'#ef4444'});
+    } else if(dp.deep < 70) {
+      result.impacto.push({icon:'\u{1F30A}',txt:'Sue\u00F1o profundo moderado (~'+dp.deep+'min). Aceptable pero no \u00F3ptimo para la s\u00EDntesis proteica nocturna (Dattilo et al. 2011).',color:'#f59e0b'});
+    } else {
+      result.impacto.push({icon:'\u{1F30A}',txt:'Sue\u00F1o profundo adecuado (~'+dp.deep+'min). Buena ventana para reparaci\u00F3n y crecimiento muscular.',color:'#10b981'});
+    }
+    if(dp.rem < 60) {
+      result.impacto.push({icon:'\u{1F9E0}',txt:'REM bajo (~'+dp.remPct+'%). Afecta aprendizaje motor y coordinaci\u00F3n (Walker 2017). Ejercicios t\u00E9cnicos pueden verse comprometidos.',color:'#f59e0b'});
+    }
+  }
+
+  // 4. Impacto en entrenamiento del d\u00EDa
+  if(nivel === 'critico' || nivel === 'malo') {
+    result.impacto.push({icon:'\u{1F3CB}',txt:'RENDIMIENTO COMPROMETIDO: Con <6h de sue\u00F1o, la fuerza m\u00E1xima baja 5-10% y el riesgo de lesi\u00F3n sube 60% (Milewski et al. 2014). Recomendaci\u00F3n: bajar volumen 30%, priorizar t\u00E9cnica.',color:'#ef4444'});
+    if(tipodia === 'alta') {
+      result.impacto.push({icon:'\u{26A0}\u{FE0F}',txt:'D\u00EDa de intensidad ALTA + sue\u00F1o insuficiente = alto riesgo. Considerar cambiar a trabajo t\u00E9cnico liviano o yoga/movilidad.',color:'#f87171'});
+    }
+    result.impacto.push({icon:'\u{2615}',txt:'Caf\u00E9 estrat\u00E9gico: 200mg cafe\u00EDna 30min pre-entreno puede compensar parcialmente (Goldstein et al. 2010). M\u00C1XIMO 1 taza, no despu\u00E9s de 12PM.',color:'#94a3b8'});
+  } else if(nivel === 'bajo') {
+    result.impacto.push({icon:'\u{1F3CB}',txt:'Rendimiento levemente afectado. Tiempo de reacci\u00F3n y coordinaci\u00F3n pueden bajar 5-15% (Reilly & Edwards 2007). Mantener plan pero con mayor enfoque en t\u00E9cnica.',color:'#f59e0b'});
+    if(fPre > 5) result.impacto.push({icon:'\u{26A0}\u{FE0F}',txt:'Fatiga pre-entreno alta + sue\u00F1o bajo = fatiga acumulada. Considerar reducir 1-2 sets por ejercicio.',color:'#f59e0b'});
+  } else {
+    result.impacto.push({icon:'\u{1F4AA}',txt:'Sue\u00F1o adecuado para rendimiento \u00F3ptimo. Testosterona, HGH y reparaci\u00F3n tisular en rango normal (Leproult & Van Cauter 2011).',color:'#10b981'});
+  }
+
+  // 5. Despertares nocturnos
+  if(despertares > 0) {
+    if(despertares >= 3) result.impacto.push({icon:'\u{23F0}',txt:despertares+' despertares nocturnos. Fragmentaci\u00F3n severa reduce calidad de deep sleep y REM (Bonnet & Arand 2003). Investigar: apnea, estr\u00E9s, ruido, temperatura.',color:'#ef4444'});
+    else if(despertares >= 1) result.impacto.push({icon:'\u{23F0}',txt:despertares+' despertar(es) nocturno(s). Normal si son breves (<5min). Si son prolongados, revisar higiene del sue\u00F1o.',color:'#f59e0b'});
+  }
+
+  // 6. Recomendaci\u00F3n de siesta
+  if(nivel === 'critico' || nivel === 'malo') {
+    result.siesta = {recomendada:true,msg:'\u{1F6CF}\u{FE0F} SIESTA RECOMENDADA: 20-26min entre 1-3PM (Brooks & Lack 2006). No m\u00E1s de 30min para evitar inercia de sue\u00F1o. Esto puede restaurar 30% del d\u00E9ficit cognitivo.',urgencia:'alta'};
+  } else if(nivel === 'bajo') {
+    result.siesta = {recomendada:true,msg:'\u{1F4A4} Siesta opcional: 15-20min entre 1-2PM puede ayudar con la energ\u00EDa de la tarde. Evitar despu\u00E9s de 3PM (afecta sue\u00F1o nocturno).',urgencia:'media'};
+  } else if(sueno >= 7 && (ePre > 0 && ePre <= 4)) {
+    result.siesta = {recomendada:true,msg:'\u{1F31E} Dormiste bien pero la energ\u00EDa est\u00E1 baja. Power nap de 10-15min podr\u00EDa ayudar. Tambi\u00E9n revisar nutrici\u00F3n e hidrataci\u00F3n.',urgencia:'baja'};
+  } else {
+    result.siesta = {recomendada:false,msg:'\u{2705} Sue\u00F1o suficiente, no necesit\u00E1s siesta. Si sent\u00EDs fatiga post-almuerzo, una caminata de 10min es mejor opci\u00F3n.',urgencia:'ninguna'};
+  }
+
+  // 7. Consejos para ESTA NOCHE (basados en datos de hoy)
+  result.consejosNoche.push({icon:'\u{1F319}',txt:'PROTOCOLO NOCTURNO RECOMENDADO:',color:'#6366f1',isHeader:true});
+  if(nivel === 'critico' || nivel === 'malo' || nivel === 'bajo') {
+    result.consejosNoche.push({icon:'\u{1F48A}',txt:'Magnesio glicinato 400mg + L-teanina 200mg 1h antes de dormir (Abbasi et al. 2012)',color:'#a855f7'});
+    result.consejosNoche.push({icon:'\u{1F4F1}',txt:'Pantallas OFF m\u00EDnimo 60min antes de acostarte. Luz azul suprime melatonina 50% (Chang et al. 2015)',color:'#f59e0b'});
+    result.consejosNoche.push({icon:'\u{1F321}\u{FE0F}',txt:'Temperatura habitaci\u00F3n: 18-20\u00B0C. Cuerpo necesita bajar 1\u00B0C core temp para iniciar sue\u00F1o profundo (Harding et al. 2019)',color:'#38bdf8'});
+    if(despertares > 2) result.consejosNoche.push({icon:'\u{1F3B5}',txt:'Ruido blanco o tapones. La fragmentaci\u00F3n es tu mayor enemigo ahora mismo.',color:'#94a3b8'});
+  }
+  if(aPre > 5) {
+    result.consejosNoche.push({icon:'\u{1F9D8}',txt:'Ansiedad detectada. Respiraci\u00F3n 4-7-8 (inhalar 4s, sostener 7s, exhalar 8s) x 4 ciclos antes de dormir (Weil 2015)',color:'#a855f7'});
+    result.consejosNoche.push({icon:'\u{1F33F}',txt:'Ashwagandha 600mg con la cena (Chandrasekhar et al. 2012). Reduce cortisol nocturno 28%.',color:'#22c55e'});
+  }
+  // Hora ideal para acostarse
+  const entrenoManana = [1,2,3,4,5].includes(dayOfWeek);
+  if(entrenoManana) {
+    result.consejosNoche.push({icon:'\u{23F0}',txt:'Para entrenar a las 6AM con 7.5h de sue\u00F1o: acostarte a las 10:00-10:15PM. Esto da 5 ciclos completos de 90min.',color:'#10b981'});
+  } else {
+    result.consejosNoche.push({icon:'\u{23F0}',txt:'D\u00EDa de descanso ma\u00F1ana. Aprovech\u00E1 para dormir 8-9h y maximizar recuperaci\u00F3n acumulada.',color:'#10b981'});
+  }
+  if(horaAcostarse) {
+    const parts = horaAcostarse.split(':');
+    const hr = parseInt(parts[0])||22;
+    if(hr >= 23 || hr < 4) result.consejosNoche.push({icon:'\u{26A0}\u{FE0F}',txt:'Te acostaste tarde ('+horaAcostarse+'). Cada hora antes de medianoche vale por dos para deep sleep (Monk et al. 2003).',color:'#f59e0b'});
+  }
+  // General
+  result.consejosNoche.push({icon:'\u{1F4A7}',txt:'\u00DAltima comida 2-3h antes de dormir. Cena alta en tript\u00F3fano (pollo, pavo, huevos, l\u00E1cteos) promueve melatonina natural.',color:'#94a3b8'});
+
+  // 8. Predicci\u00F3n de energ\u00EDa para el d\u00EDa
+  let energyLevel = 'normal';
+  let energyPct = 80;
+  if(nivel === 'critico') { energyLevel = 'critico'; energyPct = 40; }
+  else if(nivel === 'malo') { energyLevel = 'bajo'; energyPct = 55; }
+  else if(nivel === 'bajo') { energyLevel = 'moderado'; energyPct = 70; }
+  else if(nivel === 'excelente') { energyLevel = 'alto'; energyPct = 95; }
+  if(despertares > 2) energyPct -= 10;
+  if(calidad > 0 && calidad <= 4) energyPct -= 10;
+  if(aPre > 6) energyPct -= 5;
+  energyPct = Math.max(20, Math.min(100, energyPct));
+  result.energyPrediction = {level:energyLevel, pct:energyPct, msg:'Energ\u00EDa predicha: '+energyPct+'%' + (energyPct < 60 ? ' \u2014 d\u00EDa para cuidarte' : energyPct < 75 ? ' \u2014 funcional pero sin pico' : ' \u2014 buen d\u00EDa para rendir')};
+
+  return result;
+};
+
+// ─── ENERGY CHECK-IN: mid-day y end-of-day con consejos ───
+const energyCheckInAdvice = (momento, nivel, sueno, meta) => {
+  const tips = [];
+  const suenoH = parseFloat(sueno) || 0;
+  const n = parseInt(nivel) || 5;
+
+  if(momento === 'midday') {
+    if(n <= 3) {
+      tips.push({icon:'\u{1F50B}',txt:'Energ\u00EDa baja a medio d\u00EDa. Opciones inmediatas:',color:'#f59e0b',isHeader:true});
+      tips.push({icon:'\u{1F6B6}',txt:'Caminata de 10min al aire libre. Luz solar resetea ritmo circadiano y sube cortisol saludable (Blume et al. 2019)',color:'#22c55e'});
+      if(suenoH < 7) tips.push({icon:'\u{1F6CF}\u{FE0F}',txt:'Power nap 20min AHORA si es posible. Con tu d\u00E9ficit de sue\u00F1o, es la mejor inversi\u00F3n.',color:'#6366f1'});
+      tips.push({icon:'\u{1F4A7}',txt:'Hidrataci\u00F3n: 500ml agua + electrolitos. La deshidrataci\u00F3n leve (-2%) reduce energ\u00EDa 20% (Popkin et al. 2010)',color:'#38bdf8'});
+      tips.push({icon:'\u{1F951}',txt:'Snack: pu\u00F1ado de nueces + prote\u00EDna. Evitar az\u00FAcar simple (crash en 30-60min).',color:'#10b981'});
+    } else if(n <= 5) {
+      tips.push({icon:'\u{26A1}',txt:'Energ\u00EDa moderada. Normal para esta hora. Mant\u00E9n hidrataci\u00F3n y evit\u00E1 carbos simples.',color:'#f59e0b'});
+      if(suenoH < 7) tips.push({icon:'\u{1F4A4}',txt:'Un power nap de 15min podr\u00EDa subirte 1-2 puntos de energ\u00EDa para la tarde.',color:'#94a3b8'});
+    } else {
+      tips.push({icon:'\u{2705}',txt:'\u00A1Buena energ\u00EDa a medio d\u00EDa! Mantener: hidrataci\u00F3n constante + pr\u00F3xima comida balanceada.',color:'#10b981'});
+    }
+    // Sin cafe\u00EDna despu\u00E9s de esta hora
+    tips.push({icon:'\u{2615}',txt:'Recordatorio: NO m\u00E1s cafe\u00EDna despu\u00E9s de ahora. Vida media de 5-6h afectar\u00E1 tu sue\u00F1o esta noche (Drake et al. 2013).',color:'#94a3b8'});
+  }
+
+  if(momento === 'endday') {
+    if(n <= 3) {
+      tips.push({icon:'\u{1F50B}',txt:'D\u00EDa agotador. Plan de recuperaci\u00F3n nocturna:',color:'#ef4444',isHeader:true});
+      tips.push({icon:'\u{1F6CF}\u{FE0F}',txt:'Ir a la cama 30-60min ANTES de lo normal. Tu cuerpo necesita recuperarse.',color:'#6366f1'});
+      tips.push({icon:'\u{1F9D8}',txt:'10min de stretching o yoga suave. Activa parasimpat\u00EDtico para mejor transici\u00F3n al sue\u00F1o.',color:'#a855f7'});
+      tips.push({icon:'\u{1F375}',txt:'T\u00E9 de manzanilla o valeriana. Evitar alcohol (reduce REM 20-40%, Ebrahim et al. 2013).',color:'#22c55e'});
+    } else if(n <= 5) {
+      tips.push({icon:'\u{1F319}',txt:'D\u00EDa moderado. Mant\u00E9n tu rutina nocturna normal. Hora ideal de acostarte: 10-10:30PM.',color:'#f59e0b'});
+    } else if(n <= 7) {
+      tips.push({icon:'\u{2705}',txt:'\u00A1Buen d\u00EDa de energ\u00EDa! Mant\u00E9n el momentum: cena nutritiva + rutina de sue\u00F1o a la hora.',color:'#10b981'});
+    } else {
+      tips.push({icon:'\u{1F31F}',txt:'\u00A1D\u00EDa excelente! Tu combinaci\u00F3n sue\u00F1o+nutrici\u00F3n+entreno est\u00E1 funcionando. Repet\u00ED este patr\u00F3n.',color:'#6366f1'});
+    }
+    // Consejo basado en entrenamiento de ma\u00F1ana
+    tips.push({icon:'\u{1F4CB}',txt:'Ma\u00F1ana toc\u00E1 entrenar: prep\u00E1 la ropa, hidrataci\u00F3n y pre-entreno desde hoy. Reduce fricci\u00F3n = m\u00E1s consistencia.',color:'#94a3b8'});
+  }
 
   return tips;
 };
@@ -1202,6 +1580,244 @@ function Rating({label, value, onChange, color, small, onSave}) {
   );
 }
 
+// ── REST TIMER ────────────────────────────────────────────────────────────────
+// Descanso sugerido por tipo de bloque (basado en NSCA Essentials of Strength Training, 4th Ed)
+// Fuerza/compuestos: 2-5 min (fosfocreatina + ATP full recovery)
+// Hipertrofia: 60-120s (stress metab\u00f3lico + mec\u00e1nico \u00f3ptimo)
+// Aislamiento: 45-90s
+// Warmup/pump: 30-60s
+const REST_SECS = {fuerza:150,aislamiento:75,tecnico:120,metcon:60,warmup:45,pump:30};
+function RestTimer({btipo, esBiserie}) {
+  const [running, setRunning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [total, setTotal] = useState(0);
+  const intervalRef = useRef(null);
+  const sugSecs = esBiserie ? 15 : (REST_SECS[btipo] || 90);
+  const start = (secs) => {
+    if(intervalRef.current) clearInterval(intervalRef.current);
+    setTotal(secs); setTimeLeft(secs); setRunning(true);
+    intervalRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if(prev <= 1) {
+          clearInterval(intervalRef.current); intervalRef.current = null;
+          setRunning(false);
+          // Vibrar si es m\u00f3vil
+          if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+  const stop = () => { if(intervalRef.current) clearInterval(intervalRef.current); intervalRef.current=null; setRunning(false); setTimeLeft(0); };
+  useEffect(() => () => { if(intervalRef.current) clearInterval(intervalRef.current); }, []);
+  const mm = String(Math.floor(timeLeft/60)).padStart(2,'0');
+  const ss = String(timeLeft%60).padStart(2,'0');
+  const pct = total > 0 ? ((total-timeLeft)/total)*100 : 0;
+  const isLast10 = running && timeLeft <= 10 && timeLeft > 0;
+  const isDone = !running && total > 0 && timeLeft === 0;
+  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginTop:6,flexWrap:'wrap'}},
+    !running && React.createElement('button', {onClick:()=>start(sugSecs),
+      style:{background:isDone?G.ok+'33':G.acc+'22',border:'1px solid '+(isDone?G.ok:G.acc)+'44',borderRadius:6,padding:'4px 10px',fontSize:10,color:isDone?G.ok:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer'}},
+      isDone ? '\u{2705} LISTO \u2014 Siguiente serie' : '\u{23F1}\uFE0F '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60+' Descanso'),
+    !running && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
+      style:{background:G.warn+'22',border:'1px solid '+G.warn+'33',borderRadius:6,padding:'4px 8px',fontSize:9,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
+      'R\u00e1pido'),
+    !running && React.createElement('button', {onClick:()=>start(sugSecs+30),
+      style:{background:G.alt,border:'1px solid '+G.bor,borderRadius:6,padding:'4px 8px',fontSize:9,color:G.mu,fontFamily:'monospace',cursor:'pointer'}},
+      '+30s'),
+    running && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+      React.createElement('div', {style:{position:'relative',width:120,height:20,background:G.alt,borderRadius:10,overflow:'hidden'}},
+        React.createElement('div', {style:{position:'absolute',left:0,top:0,height:'100%',width:pct+'%',background:isLast10?G.bad:G.acc,borderRadius:10,transition:'width 1s linear'}}),
+        React.createElement('span', {style:{position:'absolute',width:'100%',textAlign:'center',lineHeight:'20px',fontSize:14,fontFamily:'monospace',fontWeight:700,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}, mm+':'+ss)
+      ),
+      React.createElement('button', {onClick:stop,style:{background:G.bad+'33',border:'1px solid '+G.bad+'44',borderRadius:6,padding:'3px 8px',fontSize:9,color:G.bad,cursor:'pointer'}}, '\u{25A0} Stop')
+    )
+  );
+}
+
+// \u2500\u2500\u2500 MUSCLE MAP SVG \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Mapa de m\u00fasculos activados por d\u00eda de entrenamiento
+const MUSCLE_MAP = {
+  pecho:{label:'Pecho',paths:['M35,32 Q40,28 50,28 Q60,28 65,32 L62,42 Q50,44 38,42 Z']},
+  espalda:{label:'Espalda',paths:['M36,32 Q50,30 64,32 L66,48 Q50,50 34,48 Z']},
+  hombro:{label:'Hombros',paths:['M28,28 Q32,24 36,28 L36,34 Q32,36 28,34 Z','M64,28 Q68,24 72,28 L72,34 Q68,36 64,34 Z']},
+  biceps:{label:'B\u00edceps',paths:['M26,36 L30,36 L30,50 L26,50 Z','M70,36 L74,36 L74,50 L70,50 Z']},
+  triceps:{label:'Tr\u00edceps',paths:['M22,36 L26,36 L26,50 L22,50 Z','M74,36 L78,36 L78,50 L74,50 Z']},
+  cuadriceps:{label:'Cu\u00e1ds',paths:['M38,58 L46,58 L46,76 L38,76 Z','M54,58 L62,58 L62,76 L54,76 Z']},
+  isquio:{label:'Isquios',paths:['M38,58 L46,58 L46,76 L38,76 Z','M54,58 L62,58 L62,76 L54,76 Z']},
+  gluteo:{label:'Gl\u00fateo',paths:['M36,50 Q50,48 64,50 L62,58 Q50,60 38,58 Z']},
+  pantorrilla:{label:'Pantorrillas',paths:['M40,78 L44,78 L44,90 L40,90 Z','M56,78 L60,78 L60,90 L56,90 Z']},
+  core:{label:'Core',paths:['M42,42 L58,42 L58,56 L42,56 Z']},
+  dorsal:{label:'Dorsal',paths:['M34,34 Q38,32 42,36 L42,48 Q38,50 34,48 Z','M58,36 Q62,32 66,34 L66,48 Q62,50 58,48 Z']},
+  deltpost:{label:'Delt Post',paths:['M28,28 Q30,26 32,28 L32,32 Q30,33 28,32 Z','M68,28 Q70,26 72,28 L72,32 Q70,33 68,32 Z']}
+};
+// Qu\u00e9 m\u00fasculos se activan cada d\u00eda (primarios al 100%, secundarios al 50%)
+const DAY_MUSCLES = {
+  1:{primary:['pecho','dorsal','espalda'],secondary:['hombro','biceps','triceps','core']},
+  2:{primary:['cuadriceps','gluteo'],secondary:['isquio','pantorrilla','core']},
+  3:{primary:['hombro','pecho','deltpost'],secondary:['triceps','biceps','core']},
+  4:{primary:['isquio','gluteo'],secondary:['cuadriceps','pantorrilla','core']},
+  5:{primary:['hombro','dorsal','espalda'],secondary:['biceps','triceps','deltpost']},
+  6:{primary:['biceps','triceps'],secondary:['hombro','core']}
+};
+
+function MuscleBody({dia, size}) {
+  const dm = DAY_MUSCLES[dia] || {primary:[],secondary:[]};
+  const w = size || 100;
+  const h = w * 1.05;
+  const getColor = (muscle) => {
+    if(dm.primary.includes(muscle)) return '#7c3aed';
+    if(dm.secondary.includes(muscle)) return '#7c3aed55';
+    return '#334155';
+  };
+  const getGlow = (muscle) => dm.primary.includes(muscle) ? '0 0 6px #7c3aedaa' : 'none';
+  return React.createElement('svg', {viewBox:'0 0 100 95', width:w, height:h, style:{filter:'drop-shadow(0 2px 8px rgba(124,58,237,0.2))'}},
+    // Cabeza
+    React.createElement('ellipse', {cx:50,cy:12,rx:8,ry:9,fill:'#475569',stroke:'#64748b',strokeWidth:0.5}),
+    // Cuello
+    React.createElement('rect', {x:46,y:20,width:8,height:6,rx:2,fill:'#475569'}),
+    // Cuerpo outline
+    React.createElement('path', {d:'M36,26 Q28,26 26,30 L22,36 L22,52 L26,52 L30,36 L36,34 L36,56 L38,58 L38,76 L36,78 L36,92 L44,92 L46,78 L46,58 L50,56 L54,58 L54,78 L56,92 L64,92 L64,78 L62,76 L62,58 L64,56 L64,34 L70,36 L74,52 L78,52 L78,36 L74,30 Q72,26 64,26 Z',fill:'#1e293b',stroke:'#475569',strokeWidth:0.5}),
+    // Muscle overlays
+    Object.entries(MUSCLE_MAP).map(([key, m]) =>
+      m.paths.map((p, i) =>
+        React.createElement('path', {key:key+'_'+i, d:p, fill:getColor(key), opacity:dm.primary.includes(key)?0.85:dm.secondary.includes(key)?0.4:0.15, style:{filter:getGlow(key),transition:'all 0.3s ease'}})
+      )
+    )
+  );
+}
+
+// \u2500\u2500\u2500 SESSION DASHBOARD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function SessionDashboard({prog, dia, periodo}) {
+  if(!prog || !prog.bloques) return null;
+  const bloques = prog.bloques.filter(b => b.btipo !== 'warmup');
+  const warmupBlock = prog.bloques.find(b => b.btipo === 'warmup');
+  // Stats
+  let totalSets = 0, totalEjercicios = 0;
+  bloques.forEach(b => b.ejercicios.forEach(e => { totalSets += (e.sets||0); totalEjercicios++; }));
+  // Tiempo estimado: warmup 10min + sets*avgTime + rest
+  const avgSetTime = 45; // segundos promedio por set (ejecuci\u00f3n)
+  const avgRest = bloques.reduce((s,b) => s + (REST_SECS[b.btipo]||90) * b.ejercicios.reduce((ss,e)=>ss+(e.sets||0),0), 0);
+  const estMinutes = Math.round((10*60 + totalSets*avgSetTime + avgRest) / 60);
+  // Muscle groups
+  const dm = DAY_MUSCLES[dia] || {primary:[],secondary:[]};
+  const primaryMuscles = dm.primary.map(k => MUSCLE_MAP[k]?.label || k);
+  const secondaryMuscles = dm.secondary.map(k => MUSCLE_MAP[k]?.label || k);
+  const sem = PERIODO[periodo] || PERIODO[1];
+  const difficultyLevel = prog.tipo === 'alta' ? 3 : prog.tipo === 'media' ? 2 : 1;
+
+  return React.createElement('div', {style:{background:'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',border:'1px solid #7c3aed44',borderRadius:16,padding:16,marginBottom:14,position:'relative',overflow:'hidden'}},
+    // Glow effect
+    React.createElement('div', {style:{position:'absolute',top:-20,right:-20,width:100,height:100,background:'radial-gradient(circle, #7c3aed22 0%, transparent 70%)',borderRadius:'50%'}}),
+    React.createElement('div', {style:{position:'absolute',bottom:-15,left:-15,width:80,height:80,background:'radial-gradient(circle, #3b82f622 0%, transparent 70%)',borderRadius:'50%'}}),
+    // Header
+    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4,marginBottom:10}},
+      React.createElement('span', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:'#7c3aed',fontWeight:700}}, 'SESSION PREVIEW'),
+      React.createElement('div', {style:{flex:1,height:1,background:'linear-gradient(90deg, #7c3aed44, transparent)',marginLeft:8}})
+    ),
+    // Content: stats + muscle map
+    React.createElement('div', {style:{display:'flex',gap:16,alignItems:'center',position:'relative',zIndex:1}},
+      // Left: muscle map
+      React.createElement('div', {style:{flexShrink:0}},
+        React.createElement(MuscleBody, {dia:dia, size:90})
+      ),
+      // Right: stats
+      React.createElement('div', {style:{flex:1,minWidth:0}},
+        // Stats grid
+        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:8}},
+          // Ejercicios
+          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#a78bfa'}}, totalEjercicios),
+            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'EJERCICIOS')
+          ),
+          // Sets
+          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#60a5fa'}}, totalSets),
+            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'SETS TOTALES')
+          ),
+          // Tiempo
+          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#34d399'}}, estMinutes + '\''),
+            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'ESTIMADO')
+          ),
+          // Dificultad
+          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:14,fontWeight:800,fontFamily:'monospace'}},
+              Array.from({length:3}).map((_,i) =>
+                React.createElement('span', {key:i, style:{color:i < difficultyLevel ? (difficultyLevel===3?'#ef4444':difficultyLevel===2?'#f59e0b':'#22c55e') : '#334155'}}, '\u{25CF} ')
+              )
+            ),
+            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, difficultyLevel===3?'ALTA':difficultyLevel===2?'MEDIA':'BAJA')
+          )
+        ),
+        // Muscles pills
+        React.createElement('div', {style:{display:'flex',gap:3,flexWrap:'wrap'}},
+          primaryMuscles.map(m =>
+            React.createElement('span', {key:m, style:{background:'#7c3aed33',color:'#c4b5fd',borderRadius:4,padding:'2px 6px',fontSize:8,fontFamily:'monospace',fontWeight:700,border:'1px solid #7c3aed55'}}, m)
+          ),
+          secondaryMuscles.map(m =>
+            React.createElement('span', {key:m, style:{background:'#ffffff08',color:'#64748b',borderRadius:4,padding:'2px 6px',fontSize:8,fontFamily:'monospace'}}, m)
+          )
+        )
+      )
+    )
+  );
+}
+
+// \u2500\u2500\u2500 PR TRACKER \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function PRBanner({prevReg, reg, prog}) {
+  if(!prevReg || !prog || !prog.bloques) return null;
+  const prs = [];
+  (prog.bloques||[]).forEach((bl,bi) => {
+    if(bl.btipo === 'warmup') return;
+    bl.ejercicios.forEach((ej,ei) => {
+      const key = 'b'+bi+'_'+ei;
+      const prevSets = prevReg[key];
+      const curSets = reg[key];
+      if(!prevSets || !curSets) return;
+      // Mejor 1RM anterior
+      let prevBest = 0;
+      Object.values(prevSets).forEach(s => { const rm = calc1RM(s.peso, s.reps); if(rm > prevBest) prevBest = rm; });
+      // Mejor 1RM actual
+      let curBest = 0, curPeso = 0;
+      Object.values(curSets).forEach(s => { const rm = calc1RM(s.peso, s.reps); if(rm > curBest) { curBest = rm; curPeso = parseFloat(s.peso)||0; } });
+      if(curBest > prevBest && prevBest > 0 && curPeso > 0) {
+        const pctUp = Math.round(((curBest - prevBest) / prevBest) * 100);
+        prs.push({nombre:ej.nombre, prev:prevBest, now:curBest, pct:pctUp});
+      }
+    });
+  });
+  if(prs.length === 0) return null;
+  return React.createElement('div', {style:{background:'linear-gradient(135deg, #fbbf2411, #f59e0b22, #fbbf2411)',border:'1px solid #f59e0b44',borderRadius:12,padding:'10px 14px',marginBottom:12,animation:'prPulse 2s ease-in-out infinite'}},
+    React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginBottom:6}},
+      React.createElement('span', {style:{fontSize:16}}, '\u{1F3C6}'),
+      React.createElement('span', {style:{fontSize:11,fontFamily:'monospace',fontWeight:700,color:'#fbbf24',letterSpacing:1}}, 'NUEVO PR' + (prs.length>1?'s':'') + ' HOY')
+    ),
+    prs.map((pr,i) =>
+      React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:8,marginBottom:2}},
+        React.createElement('span', {style:{fontSize:12,fontWeight:700,color:'#fde68a'}}, pr.nombre),
+        React.createElement('span', {style:{fontSize:10,color:'#fbbf24',fontFamily:'monospace'}}, '1RM: '+pr.prev+'kg \u2192 '+pr.now+'kg'),
+        React.createElement('span', {style:{background:'#22c55e33',color:'#22c55e',borderRadius:4,padding:'1px 5px',fontSize:9,fontFamily:'monospace',fontWeight:700}}, '+'+pr.pct+'%')
+      )
+    )
+  );
+}
+
+// \u2500\u2500\u2500 STREAK BADGE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function StreakBadge({streak}) {
+  if(!streak || streak.weeks === 0) return null;
+  const fire = streak.weeks >= 8 ? '#ef4444' : streak.weeks >= 4 ? '#f97316' : '#fbbf24';
+  const level = streak.weeks >= 12 ? 'BEAST MODE' : streak.weeks >= 8 ? 'ON FIRE' : streak.weeks >= 4 ? 'CONSISTENTE' : 'EN RACHA';
+  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,background:'linear-gradient(90deg, '+fire+'11, '+fire+'22, '+fire+'11)',border:'1px solid '+fire+'44',borderRadius:10,padding:'6px 12px',marginBottom:12}},
+    React.createElement('span', {style:{fontSize:20}}, streak.weeks >= 8 ? '\u{1F525}' : '\u{26A1}'),
+    React.createElement('div', null,
+      React.createElement('div', {style:{fontSize:12,fontWeight:800,fontFamily:'monospace',color:fire}}, streak.weeks + ' semanas ' + level),
+      React.createElement('div', {style:{fontSize:9,color:'#94a3b8',fontFamily:'monospace'}}, streak.totalSessions + ' sesiones totales \u{2022} ' + streak.thisWeek + ' esta semana')
+    )
+  );
+}
+
 function Sec({title, color, children}) {
   return (
     <div style={{background:G.sur+'cc',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',border:'1px solid '+(color||G.bor),borderRadius:16,padding:16,marginBottom:14,boxShadow:'0 4px 24px rgba(0,0,0,0.25)'}}>
@@ -1219,15 +1835,15 @@ function SaveStatus({status, message, onRetry}) {
   if(status === 'saving') {
     bgColor = G.acc + '22';
     textColor = G.acc;
-    icon = '⟳';
+    icon = '\u{27F3}';
   } else if(status === 'saved') {
     bgColor = G.ok + '22';
     textColor = G.ok;
-    icon = '✓';
+    icon = '\u{2713}';
   } else if(status === 'error') {
     bgColor = G.bad + '22';
     textColor = G.bad;
-    icon = '✗';
+    icon = '\u{2717}';
   }
 
   return (
@@ -1246,13 +1862,16 @@ function TabEntreno({user, cfg}) {
   const [dia, setDia] = useState(diaHoy());
   const [fecha, setFecha] = useState(hoy());
   const [reg, setReg] = useState({});
-  const [meta, setMeta] = useState({inicio:'',fin:'',sueno:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',obs:'',coach:''});
+  const [meta, setMeta] = useState({inicio:'',fin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [saveMessage, setSaveMessage] = useState('');
   const [vista, setVista] = useState('hoy');
   const [historial, setHistorial] = useState([]);
   const [loadHist, setLoadHist] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [prevReg, setPrevReg] = useState(null); // Registro sesi\u00f3n anterior (mismo d\u00eda)
+  const [prevFecha, setPrevFecha] = useState('');
+  const [streak, setStreak] = useState({weeks:0,totalSessions:0,thisWeek:0});
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
 
@@ -1261,13 +1880,27 @@ function TabEntreno({user, cfg}) {
   useEffect(() => {
     setSaveStatus(null);
     setLoading(true);
-    getEntreno(user.id, fecha, dia).then(({data}) => {
-      if(data) {
-        setReg(data.ejercicios || {});
-        try { const n = JSON.parse(data.notas||'{}'); setMeta(m=>({...m,...n})); } catch {}
+    // Cargar sesi\u00f3n actual Y sesi\u00f3n anterior del mismo d\u00eda
+    // Cargar streak en paralelo (no bloquea carga principal)
+    getStreak(user.id).then(s => setStreak(s)).catch(()=>{});
+    Promise.all([
+      getEntreno(user.id, fecha, dia),
+      getPrevSession(user.id, dia, fecha)
+    ]).then(([current, prev]) => {
+      if(current.data) {
+        setReg(current.data.ejercicios || {});
+        try { const n = JSON.parse(current.data.notas||'{}'); setMeta(m=>({...m,...n})); } catch {}
       } else {
         setReg({});
-        setMeta({inicio:'',fin:'',sueno:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',obs:'',coach:''});
+        setMeta({inicio:'',fin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
+      }
+      // Sesi\u00f3n anterior para peso sugerido
+      if(prev) {
+        setPrevReg(prev.ejercicios || null);
+        setPrevFecha(prev.fecha || '');
+      } else {
+        setPrevReg(null);
+        setPrevFecha('');
       }
       setLoading(false);
     }).catch(err => {
@@ -1446,7 +2079,7 @@ function TabEntreno({user, cfg}) {
   if(loading) {
     return (
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:40,color:G.mu}}>
-        <span style={{animation:'spin 1s linear infinite'}}>⟳</span> Cargando sesion...
+        <span style={{animation:'spin 1s linear infinite'}}>{'\u{27F3}'}</span> Cargando sesion...
       </div>
     );
   }
@@ -1478,6 +2111,101 @@ function TabEntreno({user, cfg}) {
         </div>
       </Sec>
 
+      {React.createElement(StreakBadge, {streak:streak})}
+      {React.createElement(SessionDashboard, {prog:prog, dia:dia, periodo:getSemPeriodo(fecha)})}
+      {React.createElement(PRBanner, {prevReg:prevReg, reg:reg, prog:prog})}
+
+      {/* ─── SLEEP ANALYSIS PANEL ─── */}
+      {(() => {
+        const sa = sleepAnalysis(meta, prog, getSemPeriodo(fecha), dia);
+        return (
+        <Sec title={'\u{1F634} AN\u00C1LISIS DE SUE\u00D1O'} color={sa.color || '#6366f1'}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
+            <div>
+              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Horas sue\u00F1o</div>
+              <Inp type="number" min="0" max="12" step="0.5" value={meta.sueno} onChange={e=>updMeta('sueno',e.target.value)} placeholder="7.5" style={{textAlign:'center'}} />
+            </div>
+            <div>
+              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Calidad (1-10)</div>
+              <Inp type="number" min="1" max="10" step="1" value={meta.suenoCalidad} onChange={e=>updMeta('suenoCalidad',e.target.value)} placeholder="7" style={{textAlign:'center'}} />
+            </div>
+            <div>
+              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Despertares</div>
+              <Inp type="number" min="0" max="10" step="1" value={meta.despertares} onChange={e=>updMeta('despertares',e.target.value)} placeholder="0" style={{textAlign:'center'}} />
+            </div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            <div>
+              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Hora acostarse</div>
+              <Inp type="time" value={meta.horaAcostarse} onChange={e=>updMeta('horaAcostarse',e.target.value)} />
+            </div>
+            <div>
+              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Horas ayuno</div>
+              <Inp type="number" min="0" max="24" step="0.5" value={meta.ayuno} onChange={e=>updMeta('ayuno',e.target.value)} placeholder="12" style={{textAlign:'center'}} />
+            </div>
+          </div>
+          {/* Resumen */}
+          {sa.resumen && <div style={{background:sa.color+'15',border:'1px solid '+sa.color+'44',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:sa.color}}>{sa.resumen}</div>}
+          {/* Barra de fases de sue\u00F1o */}
+          {sa.phases && (
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>Fases estimadas del sue\u00F1o:</div>
+              <div style={{display:'flex',borderRadius:6,overflow:'hidden',height:22}}>
+                {[['deep',sa.phases.deep],['rem',sa.phases.rem],['light',sa.phases.light],['awake',sa.phases.awake]].map(([k,mins]) => {
+                  const total = sa.phases.deep+sa.phases.rem+sa.phases.light+sa.phases.awake;
+                  const pct = total>0 ? (mins/total*100) : 0;
+                  const ph = SLEEP_PHASES[k];
+                  return pct > 0 ? <div key={k} title={ph.name+': '+mins+'min'} style={{width:pct+'%',background:ph.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'#fff',fontWeight:700,minWidth:pct>8?'auto':0}}>{pct>12?(mins+'m'):''}</div> : null;
+                })}
+              </div>
+              <div style={{display:'flex',gap:8,marginTop:4,flexWrap:'wrap'}}>
+                {Object.entries(SLEEP_PHASES).map(([k,ph]) => (
+                  <span key={k} style={{fontSize:9,color:ph.color,display:'flex',alignItems:'center',gap:2}}>
+                    <span style={{width:8,height:8,borderRadius:2,background:ph.color,display:'inline-block'}}></span>
+                    {ph.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Energ\u00EDa predicha */}
+          {sa.energyPrediction.pct && (
+            <div style={{background:'#0f172a',borderRadius:8,padding:'8px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:40,height:40,borderRadius:'50%',border:'3px solid '+(sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'),display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'}}>{sa.energyPrediction.pct}%</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#e2e8f0'}}>{'\u{26A1}'} {sa.energyPrediction.msg}</div>
+                <div style={{fontSize:9,color:G.mu,marginTop:2}}>Basado en sue\u00F1o, calidad, despertares y estado pre-entreno</div>
+              </div>
+            </div>
+          )}
+          {/* Impacto en entrenamiento */}
+          {sa.impacto.length > 0 && (
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F3CB}'} Impacto en tu entrenamiento hoy:</div>
+              {sa.impacto.map((r,i) => (
+                <div key={i} style={{background:r.color+'11',borderLeft:'3px solid '+r.color,borderRadius:'0 6px 6px 0',padding:'6px 10px',marginBottom:4,fontSize:11,color:'#e2e8f0',lineHeight:1.4}}>{r.icon} {r.txt}</div>
+              ))}
+            </div>
+          )}
+          {/* Recomendaci\u00F3n de siesta */}
+          {sa.siesta.msg && (
+            <div style={{background:sa.siesta.recomendada?'#6366f115':'#10b98111',border:'1px solid '+(sa.siesta.recomendada?'#6366f144':'#10b98144'),borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:11,color:'#e2e8f0',lineHeight:1.4}}>
+              {sa.siesta.msg}
+            </div>
+          )}
+          {/* Consejos para esta noche */}
+          {sa.consejosNoche.length > 0 && (
+            <details style={{marginBottom:6}}>
+              <summary style={{fontSize:11,color:'#a855f7',cursor:'pointer',fontWeight:600,marginBottom:6}}>{'\u{1F319}'} Consejos para esta noche ({sa.consejosNoche.length-1} tips)</summary>
+              {sa.consejosNoche.map((c,i) => (
+                <div key={i} style={{background:c.isHeader?c.color+'22':c.color+'0a',borderLeft:c.isHeader?'3px solid '+c.color:'2px solid '+c.color+'44',borderRadius:'0 6px 6px 0',padding:c.isHeader?'6px 10px':'5px 10px',marginBottom:3,fontSize:c.isHeader?11:10,color:c.isHeader?c.color:'#cbd5e1',fontWeight:c.isHeader?700:400,lineHeight:1.4}}>{c.icon} {c.txt}</div>
+              ))}
+            </details>
+          )}
+        </Sec>
+        );
+      })()}
+
       <Sec title="PRE-ENTRENO" color={G.acc}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
           <div>
@@ -1487,14 +2215,6 @@ function TabEntreno({user, cfg}) {
           <div>
             <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Hora fin {dur&&<span style={{color:G.acc,fontFamily:'monospace'}}>({dur}h)</span>}</div>
             <Inp type="time" value={meta.fin} onChange={e=>updMeta('fin',e.target.value)} />
-          </div>
-          <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Horas sueno</div>
-            <Inp type="number" min="0" max="12" step="0.5" value={meta.sueno} onChange={e=>updMeta('sueno',e.target.value)} placeholder="7.5" style={{textAlign:'center'}} />
-          </div>
-          <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Horas ayuno</div>
-            <Inp type="number" min="0" max="24" step="0.5" value={meta.ayuno} onChange={e=>updMeta('ayuno',e.target.value)} placeholder="12" style={{textAlign:'center'}} />
           </div>
         </div>
         <Rating label="Energia pre" value={meta.ePre} onChange={v=>updMeta('ePre',v)} color={G.acc} onSave={forceManualSave} />
@@ -1562,25 +2282,47 @@ function TabEntreno({user, cfg}) {
                         '\u{25B6}\uFE0F} Ver video del ejercicio'
                       )
                     )}
-                    <div style={{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}}>
-                      {['#','PESO kg','REPS','CADENCIA','RIR','RPE','NOTAS'].map(h => (
-                        <span key={h} style={{fontSize:7,color:G.mu,textAlign:'center',fontFamily:'monospace'}}>{h}</span>
-                      ))}
-                    </div>
-                    {Array.from({length:ej.sets}).map((_,si) => {
-                      const s = reg[key]?.[si] || {};
-                      return (
-                        <div key={si} style={{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}}>
-                          <div style={{fontSize:10,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}>{si+1}</div>
-                          <Inp value={s.peso||''} onChange={e=>updSet(key,si,'peso',e.target.value)} placeholder="—" style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
-                          <Inp value={s.reps||''} onChange={e=>updSet(key,si,'reps',e.target.value)} placeholder={ej.reps} style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
-                          <Inp value={s.cadencia||''} onChange={e=>updSet(key,si,'cadencia',e.target.value)} placeholder={ej.cadencia} style={{textAlign:'center',padding:'5px 2px',fontSize:10}} />
-                          <Inp value={s.rir||''} onChange={e=>updSet(key,si,'rir',e.target.value)} placeholder={ej.rir} style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
-                          <Inp value={s.rpe||''} onChange={e=>updSet(key,si,'rpe',e.target.value)} placeholder="8" style={{textAlign:'center',padding:'5px 2px',fontSize:12}} />
-                          <Inp value={s.notas||''} onChange={e=>updSet(key,si,'notas',e.target.value)} placeholder="..." style={{textAlign:'center',padding:'5px 2px',fontSize:10}} />
-                        </div>
+                    {(() => {
+                      // Peso anterior y sugerido
+                      const prevSets = prevReg && prevReg[key] ? prevReg[key] : null;
+                      const prevBest = prevSets ? Object.values(prevSets).reduce((best,s) => {
+                        const w=parseFloat(s.peso), r=parseInt(s.reps);
+                        if(w && r && calc1RM(w,r) > (best.rm||0)) return {peso:w, reps:r, rm:calc1RM(w,r), rir:s.rir, rpe:s.rpe};
+                        return best;
+                      }, {}) : null;
+                      const periodo = getSemPeriodo(fecha);
+                      const sug = prevBest && prevBest.peso ? suggestWeight(prevBest.peso, prevBest.reps, periodo) : null;
+                      return React.createElement(React.Fragment, null,
+                        prevBest && prevBest.peso && React.createElement('div', {style:{background:G.acc+'11',border:'1px solid '+G.acc+'33',borderRadius:6,padding:'5px 8px',marginBottom:6,fontSize:10,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
+                          React.createElement('span', {style:{color:G.acc,fontFamily:'monospace',fontWeight:700}}, '\u{1F4CA} Anterior: '+prevBest.peso+'kg \u00d7'+prevBest.reps+(prevBest.rir?' RIR'+prevBest.rir:'')+(prevBest.rpe?' RPE'+prevBest.rpe:'')),
+                          React.createElement('span', {style:{color:G.mu,fontSize:9}}, '1RM\u2248'+prevBest.rm+'kg'),
+                          prevFecha && React.createElement('span', {style:{color:G.mu,fontSize:8,marginLeft:'auto'}}, prevFecha)
+                        ),
+                        sug && React.createElement('div', {style:{background:G.ok+'11',border:'1px solid '+G.ok+'33',borderRadius:6,padding:'4px 8px',marginBottom:6,fontSize:10,color:G.ok,fontFamily:'monospace'}},
+                          '\u{1F3AF} Sugerido hoy: '+sug.peso+'kg '+sug.label
+                        ),
+                        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}},
+                          ['#','PESO kg','REPS','CADENCIA','RIR','RPE','NOTAS'].map(h =>
+                            React.createElement('span', {key:h,style:{fontSize:7,color:G.mu,textAlign:'center',fontFamily:'monospace'}}, h)
+                          )
+                        ),
+                        Array.from({length:ej.sets}).map((_,si) => {
+                          const s = reg[key]?.[si] || {};
+                          const prevS = prevSets && prevSets[si] ? prevSets[si] : null;
+                          const phPeso = prevS && prevS.peso ? prevS.peso : (sug ? String(sug.peso) : '\u2014');
+                          return React.createElement('div', {key:si, style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
+                            React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
+                            React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
+                            React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
+                            React.createElement(Inp, {value:s.cadencia||'',onChange:e=>updSet(key,si,'cadencia',e.target.value),placeholder:ej.cadencia,style:{textAlign:'center',padding:'5px 2px',fontSize:10}}),
+                            React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
+                            React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
+                            React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:10}})
+                          );
+                        })
                       );
-                    })}
+                    })()}
+                    {React.createElement(RestTimer, {btipo:bloque.btipo, esBiserie:esBi})}
                     <div style={{marginTop:10,padding:'8px 10px',background:G.bg,borderRadius:8,border:'1px solid '+G.bor}}>
                       <div style={{fontSize:8,color:G.mu,fontFamily:'monospace',marginBottom:6}}>AL TERMINAR ESTE EJERCICIO</div>
                       <Rating label="Energia (auto POST)" value={ejm.e||''} onChange={v=>updEjMeta(key,'e',v)} color={G.acc} small onSave={forceManualSave} />
@@ -1601,6 +2343,45 @@ function TabEntreno({user, cfg}) {
         <Rating label="Fatiga post (auto)" value={meta.fPost} onChange={v=>updMeta('fPost',v)} color={G.bad} onSave={forceManualSave} />
         <Rating label="Hambre post" value={meta.hPost} onChange={v=>updMeta('hPost',v)} color={G.warn} onSave={forceManualSave} />
         <Rating label="Ansiedad post" value={meta.aPost} onChange={v=>updMeta('aPost',v)} color={G.coa} onSave={forceManualSave} />
+      </Sec>
+
+      {/* ─── ENERGY CHECK-IN: mid-day y end-of-day ─── */}
+      <Sec title={'\u{26A1} ENERG\u00CDA DURANTE EL D\u00CDA'} color={'#f59e0b'}>
+        <div style={{fontSize:10,color:'#f59e0b',marginBottom:8,fontFamily:'monospace'}}>Registra tu energ\u00EDa a lo largo del d\u00EDa para consejos personalizados</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:10}}>
+          <div>
+            <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} Medio d\u00EDa (~12-2PM)</div>
+            <Rating label="Energ\u00EDa mid-day" value={meta.eMid} onChange={v=>updMeta('eMid',v)} color={'#f59e0b'} onSave={forceManualSave} />
+          </div>
+          <div>
+            <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F319}'} Final del d\u00EDa (~8-10PM)</div>
+            <Rating label="Energ\u00EDa end-day" value={meta.eEnd} onChange={v=>updMeta('eEnd',v)} color={'#6366f1'} onSave={forceManualSave} />
+          </div>
+        </div>
+        {/* Consejos mid-day */}
+        {meta.eMid && (() => {
+          const midTips = energyCheckInAdvice('midday', meta.eMid, meta.sueno, meta);
+          return midTips.length > 0 ? (
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:'#f59e0b',fontWeight:600,marginBottom:4}}>{'\u{1F31E}'} Consejos medio d\u00EDa:</div>
+              {midTips.map((t,i) => (
+                <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:'#cbd5e1',fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
+              ))}
+            </div>
+          ) : null;
+        })()}
+        {/* Consejos end-day */}
+        {meta.eEnd && (() => {
+          const endTips = energyCheckInAdvice('endday', meta.eEnd, meta.sueno, meta);
+          return endTips.length > 0 ? (
+            <div>
+              <div style={{fontSize:11,color:'#6366f1',fontWeight:600,marginBottom:4}}>{'\u{1F319}'} Consejos para cerrar el d\u00EDa:</div>
+              {endTips.map((t,i) => (
+                <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:'#cbd5e1',fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
+              ))}
+            </div>
+          ) : null;
+        })()}
       </Sec>
 
       <Sec title={'\u{1F4CB} C\u00D3MO FUE LA SESI\u00D3N'} color={G.coa}>
