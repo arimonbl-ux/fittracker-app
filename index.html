@@ -491,37 +491,71 @@ const PLANES_M = {
 
 // ─── BASE DE DATOS ALIMENTOS (macros por 100g salvo u:unidad) ───────────────
 const ALIMENTOS = {
-  // Proteinas
+  // ── Prote\u00EDnas ──
   pollo:{n:'Pechuga pollo',p:31,c:0,g:3.6,s:10,cat:'prot'},
   res:{n:'Carne res',p:26,c:0,g:15,s:10,cat:'prot'},
+  res_molida:{n:'Carne molida',p:17,c:0,g:20,s:10,cat:'prot'},
   tilapia:{n:'Tilapia',p:26,c:0,g:2.7,s:10,cat:'prot'},
   salmon:{n:'Salm\u00F3n',p:20,c:0,g:13,s:10,cat:'prot'},
   cerdo:{n:'Cerdo lomo',p:27,c:0,g:8,s:10,cat:'prot'},
+  costilla_cerdo:{n:'Costilla cerdo',p:20,c:0,g:21,s:10,cat:'prot'},
+  patas_cerdo:{n:'Patas de cerdo',p:22,c:0,g:16,s:10,cat:'prot'},
   huevo:{n:'Huevo',p:13,c:1,g:10,s:1,cat:'prot',u:'ud',pu:50},
   atun:{n:'At\u00FAn lata',p:26,c:0,g:1,s:10,cat:'prot'},
   jamon:{n:'Jam\u00F3n pavo',p:13,c:3,g:2,s:10,cat:'prot'},
-  // Carbos
-  arroz:{n:'Arroz cocido',p:2.7,c:28,g:0.3,s:10,cat:'carb'},
+  lengua_res:{n:'Lengua de res',p:16,c:0,g:17,s:10,cat:'prot'},
+  higado_res:{n:'H\u00EDgado de res',p:20,c:3.9,g:3.6,s:10,cat:'prot'},
+  menudos_pollo:{n:'Menudos/v\u00EDsceras pollo',p:18,c:0.5,g:5,s:10,cat:'prot'},
+  patas_pollo:{n:'Patas de pollo',p:19,c:0,g:15,s:10,cat:'prot'},
+  chicharron:{n:'Chicharr\u00F3n',p:22,c:0,g:31,s:10,cat:'prot'},
+  chorizo:{n:'Chorizo',p:14,c:2,g:29,s:10,cat:'prot'},
+  salchicha:{n:'Salchicha',p:12,c:2,g:26,s:1,cat:'prot',u:'ud',pu:50},
+  camarones:{n:'Camarones',p:24,c:0.2,g:0.3,s:10,cat:'prot'},
+  sardina:{n:'Sardina lata',p:25,c:0,g:11,s:10,cat:'prot'},
+  // ── Carbohidratos ──
+  arroz:{n:'Arroz blanco cocido',p:2.7,c:28,g:0.3,s:10,cat:'carb'},
+  arroz_int:{n:'Arroz integral cocido',p:2.6,c:23,g:0.9,s:10,cat:'carb'},
   papa:{n:'Papa',p:2,c:17,g:0.1,s:10,cat:'carb'},
   camote:{n:'Camote',p:1.6,c:20,g:0.1,s:10,cat:'carb'},
   frijoles:{n:'Frijoles negros',p:8.9,c:24,g:0.5,s:10,cat:'carb'},
+  frijoles_rojos:{n:'Frijoles rojos',p:8.7,c:22,g:0.5,s:10,cat:'carb'},
+  lentejas:{n:'Lentejas cocidas',p:9,c:20,g:0.4,s:10,cat:'carb'},
+  garbanzos:{n:'Garbanzos',p:8.9,c:27,g:2.6,s:10,cat:'carb'},
   yuca:{n:'Yuca',p:1.4,c:38,g:0.3,s:10,cat:'carb'},
   platano:{n:'Pl\u00E1tano maduro',p:1.3,c:32,g:0.4,s:10,cat:'carb'},
+  platano_verde:{n:'Pl\u00E1tano verde',p:1.3,c:31,g:0.4,s:10,cat:'carb'},
+  patacones:{n:'Patacones (fritos)',p:1.5,c:33,g:10,s:1,cat:'carb',u:'ud',pu:60},
   tortilla:{n:'Tortilla ma\u00EDz',p:6,c:44,g:3,s:1,cat:'carb',u:'ud',pu:30},
+  tortilla_harina:{n:'Tortilla harina',p:8,c:49,g:8,s:1,cat:'carb',u:'ud',pu:45},
   pan:{n:'Pan integral',p:13,c:41,g:3.4,s:1,cat:'carb',u:'reb',pu:30},
+  pan_blanco:{n:'Pan blanco',p:9,c:49,g:3.2,s:1,cat:'carb',u:'reb',pu:30},
   avena:{n:'Avena',p:13,c:66,g:7,s:10,cat:'carb'},
-  // Grasas
+  pasta:{n:'Pasta cocida',p:5,c:25,g:0.9,s:10,cat:'carb'},
+  pizza:{n:'Pizza (porci\u00F3n)',p:11,c:33,g:10,s:1,cat:'carb',u:'reb',pu:107},
+  cereal:{n:'Cereal',p:7,c:77,g:2,s:10,cat:'carb'},
+  granola:{n:'Granola',p:10,c:62,g:18,s:10,cat:'carb'},
+  maiz_dulce:{n:'Ma\u00EDz dulce',p:3.3,c:19,g:1.5,s:10,cat:'carb'},
+  galleta_keto:{n:'Galleta keto almendra',p:10,c:6,g:40,s:1,cat:'carb',u:'ud',pu:30},
+  empanada:{n:'Empanada',p:6,c:26,g:12,s:1,cat:'carb',u:'ud',pu:80},
+  gallo_pinto:{n:'Gallo pinto',p:5,c:22,g:2,s:10,cat:'carb'},
+  // ── Grasas ──
   aguacate:{n:'Aguacate',p:2,c:8.5,g:15,s:10,cat:'gras'},
   aceite_oliva:{n:'Aceite oliva',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:14},
   manteca:{n:'Manteca cerdo',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:13},
   aceite_coco:{n:'Aceite coco',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:14},
+  mantequilla:{n:'Mantequilla',p:0.9,c:0.1,g:81,s:1,cat:'gras',u:'cda',pu:14},
   queso_crema:{n:'Queso crema',p:6,c:4,g:34,s:10,cat:'gras'},
   queso:{n:'Queso',p:25,c:1.3,g:33,s:10,cat:'gras'},
+  queso_mozza:{n:'Mozzarella',p:22,c:2.2,g:22,s:10,cat:'gras'},
   nueces:{n:'Nueces',p:15,c:14,g:65,s:5,cat:'gras'},
   almendras:{n:'Almendras',p:21,c:22,g:49,s:5,cat:'gras'},
   mani:{n:'Man\u00ED/cacahuate',p:26,c:16,g:49,s:5,cat:'gras'},
   mantequilla_mani:{n:'Mantequilla man\u00ED',p:25,c:20,g:50,s:1,cat:'gras',u:'cda',pu:16},
-  // Vegetales
+  mantequilla_alm:{n:'Mantequilla almendra',p:21,c:19,g:56,s:1,cat:'gras',u:'cda',pu:16},
+  cacao_puro:{n:'Cacao puro polvo',p:20,c:58,g:14,s:1,cat:'gras',u:'cda',pu:7},
+  coco_rallado:{n:'Coco rallado',p:3.3,c:6.2,g:33,s:10,cat:'gras'},
+  natilla:{n:'Natilla (CR)',p:2.5,c:4,g:20,s:1,cat:'gras',u:'cda',pu:15},
+  // ── Vegetales ──
   espinaca:{n:'Espinaca',p:2.9,c:3.6,g:0.4,s:10,cat:'veg'},
   brocoli:{n:'Br\u00F3coli',p:2.8,c:7,g:0.4,s:10,cat:'veg'},
   vegetales:{n:'Vegetales mixtos',p:2,c:5,g:0.3,s:10,cat:'veg'},
@@ -530,7 +564,13 @@ const ALIMENTOS = {
   tomate:{n:'Tomate',p:0.9,c:3.9,g:0.2,s:10,cat:'veg'},
   pepino:{n:'Pepino',p:0.7,c:3.6,g:0.1,s:10,cat:'veg'},
   apio:{n:'Apio',p:0.7,c:3,g:0.2,s:10,cat:'veg'},
-  // Suplementos
+  chile:{n:'Chile/pimiento',p:0.9,c:6,g:0.3,s:10,cat:'veg'},
+  zanahoria:{n:'Zanahoria',p:0.9,c:10,g:0.2,s:10,cat:'veg'},
+  chayote:{n:'Chayote',p:0.8,c:4.5,g:0.1,s:10,cat:'veg'},
+  lechuga:{n:'Lechuga',p:1.4,c:2.9,g:0.2,s:10,cat:'veg'},
+  hongos:{n:'Hongos/champi\u00F1ones',p:3.1,c:3.3,g:0.3,s:10,cat:'veg'},
+  coliflor:{n:'Coliflor',p:1.9,c:5,g:0.3,s:10,cat:'veg'},
+  // ── Suplementos ──
   carnivor:{n:'Carnivor (scoop)',p:23,c:1,g:0,s:1,cat:'sup',u:'sc',pu:35},
   whey:{n:'Whey protein (sc)',p:24,c:3,g:1.5,s:1,cat:'sup',u:'sc',pu:32},
   plant_prot:{n:'Prote\u00EDna plant',p:20,c:4,g:2,s:1,cat:'sup',u:'sc',pu:35},
@@ -538,33 +578,230 @@ const ALIMENTOS = {
   colageno_s:{n:'Col\u00E1geno',p:90,c:0,g:0,s:1,cat:'sup'},
   creatina_s:{n:'Creatina',p:0,c:0,g:0,s:1,cat:'sup'},
   glutamina_s:{n:'Glutamina',p:0,c:0,g:0,s:1,cat:'sup'},
-  // Extras
+  // ── Frutas ──
+  banano:{n:'Banano',p:1.1,c:23,g:0.3,s:1,cat:'fru',u:'ud',pu:120},
+  manzana:{n:'Manzana',p:0.3,c:14,g:0.2,s:1,cat:'fru',u:'ud',pu:180},
+  fresas:{n:'Fresas',p:0.7,c:8,g:0.3,s:10,cat:'fru'},
+  pina:{n:'Pi\u00F1a',p:0.5,c:13,g:0.1,s:10,cat:'fru'},
+  mango:{n:'Mango',p:0.8,c:15,g:0.4,s:10,cat:'fru'},
+  sandia:{n:'Sand\u00EDa',p:0.6,c:8,g:0.2,s:10,cat:'fru'},
+  papaya:{n:'Papaya',p:0.5,c:11,g:0.3,s:10,cat:'fru'},
+  naranja:{n:'Naranja',p:0.9,c:12,g:0.1,s:1,cat:'fru',u:'ud',pu:130},
+  aguacate_f:{n:'Aguacate (fruta)',p:2,c:8.5,g:15,s:10,cat:'fru'},
+  arandanos:{n:'Ar\u00E1ndanos',p:0.7,c:14,g:0.3,s:10,cat:'fru'},
+  limon:{n:'Lim\u00F3n/lima',p:0.4,c:6,g:0.1,s:1,cat:'fru',u:'ud',pu:60},
+  // ── Bebidas (incluye alcohol) ──
+  cerveza:{n:'Cerveza regular',p:0.5,c:3.6,g:0,s:1,cat:'beb',u:'lata',pu:355,alc:5},
+  cerveza_light:{n:'Cerveza light',p:0.3,c:1.3,g:0,s:1,cat:'beb',u:'lata',pu:355,alc:4.2},
+  cerveza_artesanal:{n:'Cerveza artesanal/IPA',p:0.5,c:5,g:0,s:1,cat:'beb',u:'lata',pu:355,alc:6.5},
+  vino_tinto:{n:'Vino tinto',p:0.1,c:2.6,g:0,s:1,cat:'beb',u:'copa',pu:150,alc:13.5},
+  vino_blanco:{n:'Vino blanco',p:0.1,c:2.6,g:0,s:1,cat:'beb',u:'copa',pu:150,alc:12},
+  vodka:{n:'Vodka',p:0,c:0,g:0,s:1,cat:'beb',u:'shot',pu:44,alc:40},
+  ron:{n:'Ron',p:0,c:0,g:0,s:1,cat:'beb',u:'shot',pu:44,alc:40},
+  whisky:{n:'Whisky',p:0,c:0,g:0,s:1,cat:'beb',u:'shot',pu:44,alc:40},
+  tequila:{n:'Tequila',p:0,c:0,g:0,s:1,cat:'beb',u:'shot',pu:44,alc:40},
+  guaro:{n:'Guaro (Cacique)',p:0,c:0,g:0,s:1,cat:'beb',u:'shot',pu:44,alc:30},
+  gin:{n:'Gin',p:0,c:0,g:0,s:1,cat:'beb',u:'shot',pu:44,alc:40},
+  michelada:{n:'Michelada',p:0.5,c:8,g:0,s:1,cat:'beb',u:'vaso',pu:400,alc:4},
+  margarita:{n:'Margarita',p:0,c:11,g:0,s:1,cat:'beb',u:'copa',pu:225,alc:13},
+  pina_colada:{n:'Pi\u00F1a colada',p:0.4,c:22,g:5,s:1,cat:'beb',u:'copa',pu:225,alc:12},
+  gaseosa:{n:'Gaseosa/refresco',p:0,c:11,g:0,s:1,cat:'beb',u:'lata',pu:355},
+  jugo_natural:{n:'Jugo natural',p:0.5,c:11,g:0.1,s:1,cat:'beb',u:'vaso',pu:250},
+  agua_coco:{n:'Agua de coco',p:0.7,c:3.7,g:0.2,s:1,cat:'beb',u:'vaso',pu:240},
+  // ── Extras ──
   cafe:{n:'Caf\u00E9 negro',p:0,c:0,g:0,s:1,cat:'ext',u:'taza',pu:240},
+  cafe_leche:{n:'Caf\u00E9 con leche',p:3,c:5,g:3,s:1,cat:'ext',u:'taza',pu:240},
   miel:{n:'Miel',p:0.3,c:82,g:0,s:1,cat:'ext'},
-  chia:{n:'Ch\u00EDa',p:17,c:42,g:31,s:1,cat:'ext'},
-  linaza:{n:'Linaza molida',p:18,c:29,g:42,s:1,cat:'ext'},
+  chia:{n:'Ch\u00EDa',p:17,c:42,g:31,s:1,cat:'ext',u:'cda',pu:12},
+  linaza:{n:'Linaza molida',p:18,c:29,g:42,s:1,cat:'ext',u:'cda',pu:10},
   sal:{n:'Sal de mar',p:0,c:0,g:0,s:1,cat:'ext'},
   stevia:{n:'Stevia',p:0,c:0,g:0,s:1,cat:'ext'},
-  canela:{n:'Canela',p:4,c:81,g:1.2,s:1,cat:'ext'}
+  canela:{n:'Canela',p:4,c:81,g:1.2,s:1,cat:'ext',u:'cdta',pu:3},
+  salsa_tomate:{n:'Salsa tomate/ketchup',p:1,c:27,g:0.1,s:1,cat:'ext',u:'cda',pu:17},
+  salsa_soya:{n:'Salsa soya',p:6,c:5,g:0,s:1,cat:'ext',u:'cda',pu:16},
+  mayonesa:{n:'Mayonesa',p:0.9,c:0.6,g:75,s:1,cat:'ext',u:'cda',pu:14},
+  mostaza:{n:'Mostaza',p:4,c:6,g:4,s:1,cat:'ext',u:'cda',pu:5},
+  leche_entera:{n:'Leche entera',p:3.2,c:4.8,g:3.3,s:1,cat:'ext',u:'vaso',pu:240},
+  leche_almendra:{n:'Leche almendra',p:0.6,c:0.3,g:1.1,s:1,cat:'ext',u:'vaso',pu:240},
+  yogurt:{n:'Yogurt natural',p:10,c:3.6,g:0.7,s:1,cat:'ext',u:'vaso',pu:150},
+  helado:{n:'Helado',p:3.5,c:24,g:11,s:1,cat:'ext',u:'bola',pu:66},
+  // ── Snacks / Chocolates / Golosinas ──
+  // Chocolates por % cacao (por 100g / por barra ~40g)
+  choco_50:{n:'Chocolate 50% cacao',p:5,c:50,g:35,s:1,cat:'snk',u:'barra',pu:40},
+  choco_60:{n:'Chocolate 60% cacao',p:6,c:43,g:38,s:1,cat:'snk',u:'barra',pu:40},
+  choco_70:{n:'Chocolate 70% cacao',p:8,c:35,g:43,s:1,cat:'snk',u:'barra',pu:40},
+  choco_80:{n:'Chocolate 80% cacao',p:9,c:27,g:44,s:1,cat:'snk',u:'barra',pu:40},
+  choco_85:{n:'Chocolate 85% cacao',p:10,c:22,g:46,s:1,cat:'snk',u:'barra',pu:40},
+  choco_90:{n:'Chocolate 90% cacao',p:9,c:20,g:44,s:1,cat:'snk',u:'barra',pu:40},
+  choco_100:{n:'Chocolate 100% cacao',p:12,c:1,g:55,s:1,cat:'snk',u:'barra',pu:40},
+  choco_leche:{n:'Chocolate con leche',p:7,c:58,g:30,s:1,cat:'snk',u:'barra',pu:40},
+  choco_blanco:{n:'Chocolate blanco',p:6,c:59,g:32,s:1,cat:'snk',u:'barra',pu:40},
+  choco_keto:{n:'Chocolate keto/sin az\u00FAcar',p:9,c:4,g:33,s:1,cat:'snk',u:'barra',pu:40},
+  // Marcas populares CR (por barra/paquete)
+  snickers:{n:'Snickers',p:10,c:53,g:29,s:1,cat:'snk',u:'barra',pu:52},
+  kitkat:{n:'Kit Kat',p:6,c:64,g:28,s:1,cat:'snk',u:'barra',pu:42},
+  mm_mani:{n:'M&M man\u00ED',p:4,c:71,g:21,s:1,cat:'snk',u:'bolsa',pu:45},
+  gallito:{n:'Gallito chocolate (CR)',p:6,c:60,g:28,s:1,cat:'snk',u:'barra',pu:35},
+  milky_way:{n:'Milky Way',p:4,c:66,g:17,s:1,cat:'snk',u:'barra',pu:52},
+  twix:{n:'Twix',p:5,c:64,g:25,s:1,cat:'snk',u:'barra',pu:50},
+  ferrero:{n:'Ferrero Rocher',p:9,c:43,g:42,s:1,cat:'snk',u:'ud',pu:13},
+  nutella:{n:'Nutella',p:6,c:58,g:31,s:1,cat:'snk',u:'cda',pu:15},
+  // Galletas
+  galleta_keto_choc:{n:'Galleta keto chocolate',p:10,c:5,g:38,s:1,cat:'snk',u:'ud',pu:30},
+  galleta_keto_coco:{n:'Galleta keto coco',p:8,c:6,g:35,s:1,cat:'snk',u:'ud',pu:30},
+  galleta_maria:{n:'Galleta Mar\u00EDa',p:7,c:75,g:11,s:1,cat:'snk',u:'ud',pu:6},
+  galleta_oreo:{n:'Galleta Oreo',p:4,c:69,g:20,s:1,cat:'snk',u:'ud',pu:11},
+  galleta_integral:{n:'Galleta integral',p:8,c:68,g:15,s:1,cat:'snk',u:'ud',pu:10},
+  // Golosinas CR
+  gomitas:{n:'Gomitas',p:4,c:77,g:0,s:1,cat:'snk',u:'bolsa',pu:30},
+  dulce_leche:{n:'Dulce de leche/cajeta',p:7,c:56,g:7,s:1,cat:'snk',u:'cda',pu:20},
+  turron:{n:'Turr\u00F3n',p:10,c:52,g:27,s:10,cat:'snk'},
+  malvavisco:{n:'Malvavisco/marshmallow',p:2,c:81,g:0,s:1,cat:'snk',u:'ud',pu:7},
+  algodon_azucar:{n:'Algod\u00F3n de az\u00FAcar',p:0,c:100,g:0,s:1,cat:'snk',u:'bolsa',pu:28},
+  palomitas:{n:'Palomitas ma\u00EDz',p:10,c:58,g:28,s:10,cat:'snk'},
+  papas_fritas:{n:'Papas fritas/chips',p:6,c:53,g:33,s:1,cat:'snk',u:'bolsa',pu:30},
+  barrita_cereal:{n:'Barrita de cereal',p:5,c:70,g:12,s:1,cat:'snk',u:'ud',pu:25},
+  barrita_prot:{n:'Barrita prote\u00EDca',p:33,c:30,g:10,s:1,cat:'snk',u:'ud',pu:60},
+  churros:{n:'Churros',p:4,c:58,g:18,s:1,cat:'snk',u:'ud',pu:40},
+  donut:{n:'Donut/dona',p:5,c:51,g:22,s:1,cat:'snk',u:'ud',pu:60}
 };
 const AL_CATS = [
   {id:'prot',n:'Prote\u00EDnas',c:'#a5b4fc'},
   {id:'carb',n:'Carbohidratos',c:'#fcd34d'},
   {id:'gras',n:'Grasas',c:'#d8b4fe'},
   {id:'veg',n:'Vegetales',c:'#6ee7b7'},
+  {id:'fru',n:'Frutas',c:'#f472b6'},
+  {id:'beb',n:'Bebidas',c:'#facc15'},
+  {id:'snk',n:'Snacks/Golosinas',c:'#e879f9'},
   {id:'sup',n:'Suplementos',c:'#38bdf8'},
   {id:'ext',n:'Extras',c:'#fb923c'}
 ];
-// Calcula macros de un alimento segun cantidad
+
+// ── SEMAFORO NUTRICIONAL POR PROTOCOLO ──────────────────────────────────────
+// Clasifica cada alimento como: 'v' (verde/libre), 'a' (amarillo/moderado), 'r' (rojo/restringido)
+// Reglas basadas en: macros del alimento, protocolo keto, % grasa corporal, objetivo del usuario
+const getSemaforo = (alId, userId, dayType) => {
+  const al = ALIMENTOS[alId];
+  if(!al) return {luz:'v',msg:''};
+  const esAriel = userId === ARIEL_ID;
+  const carbsPer100 = al.c;
+  const tieneAlcohol = al.alc > 0;
+  const cat = al.cat;
+
+  // ── REGLAS UNIVERSALES (ambos usuarios keto) ──
+  // Alcohol siempre rojo
+  if(tieneAlcohol) return {luz:'r',msg:'Alcohol: inhibe cetosis 24-48h, bloquea oxidaci\u00F3n de grasa, afecta sue\u00F1o y recuperaci\u00F3n muscular'};
+  // Suplementos siempre verde
+  if(cat==='sup') return {luz:'v',msg:'Suplemento aprobado en tu protocolo'};
+
+  if(esAriel) {
+    // ── ARIEL: Keto flexible, 8.5% BF, recomposicion corporal ──
+    // Proteinas: siempre verde (base del protocolo)
+    if(cat==='prot') return {luz:'v',msg:'Prote\u00EDna: base de tu protocolo. Libre.'};
+    // Grasas saludables: verde
+    if(cat==='gras') {
+      if(['cacao_puro','aceite_oliva','aceite_coco','aguacate','nueces','almendras','mani'].includes(alId))
+        return {luz:'v',msg:'Grasa saludable: excelente para keto. Libre.'};
+      return {luz:'v',msg:'Grasa: compatible con keto. Controlar cantidad por calor\u00EDas.'};
+    }
+    // Vegetales: siempre verde
+    if(cat==='veg') return {luz:'v',msg:'Vegetal: libre en keto. Fibra + micronutrientes.'};
+    // Frutas: amarillo/rojo segun fructosa
+    if(cat==='fru') {
+      if(['fresas','arandanos','limon','aguacate_f'].includes(alId))
+        return {luz:'a',msg:'Fruta baja en az\u00FAcar: ok en moderaci\u00F3n. M\u00E1x 1 porci\u00F3n/d\u00EDa.'};
+      return {luz:'r',msg:'Fruta alta en fructosa: puede sacar de cetosis. Reservar para d\u00EDas de recarga o post-CrossFit.'};
+    }
+    // Carbos: depende del dia de entrenamiento
+    if(cat==='carb') {
+      // Galleta keto y similares low-carb
+      if(['galleta_keto'].includes(alId)) return {luz:'v',msg:'Snack keto: bajo en carbos, compatible.'};
+      // Dias de alta intensidad o CrossFit: carbos estrategicos en amarillo
+      if(dayType==='alta' || dayType==='crossfit') {
+        if(carbsPer100 <= 30) return {luz:'a',msg:'Carbo moderado: aceptable en d\u00EDa de alta intensidad. Consumir peri-entreno.'};
+        return {luz:'r',msg:'Carbo alto ('+carbsPer100+'g/100g): excede l\u00EDmite keto. Solo si es recarga programada.'};
+      }
+      // Dias normales o descanso
+      if(carbsPer100 <= 10) return {luz:'a',msg:'Carbo muy bajo: peque\u00F1a porci\u00F3n aceptable.'};
+      return {luz:'r',msg:'Carbo alto: rompe cetosis en d\u00EDa de baja intensidad/descanso. Evitar o m\u00EDnima porci\u00F3n.'};
+    }
+    // Snacks/Golosinas
+    if(cat==='snk') {
+      if(['choco_85','choco_90','choco_100','choco_keto','galleta_keto_choc','galleta_keto_coco','barrita_prot'].includes(alId))
+        return {luz:'v',msg:'Snack keto-compatible: bajo en az\u00FAcar. Libre con moderaci\u00F3n.'};
+      if(['choco_70','choco_80','ferrero','palomitas'].includes(alId))
+        return {luz:'a',msg:'Snack moderado: controlar porci\u00F3n. M\u00E1x 1 porci\u00F3n/d\u00EDa.'};
+      return {luz:'r',msg:'Golosina alta en az\u00FAcar ('+carbsPer100+'g carbos/100g): spike de insulina, sale de cetosis. Suma directo a macros.'};
+    }
+    // Bebidas sin alcohol
+    if(cat==='beb') {
+      if(['agua_coco'].includes(alId)) return {luz:'a',msg:'Electrolitos naturales. Ok post-entreno.'};
+      if(['gaseosa','jugo_natural'].includes(alId)) return {luz:'r',msg:'Bebida azucarada: pico de insulina, rompe cetosis.'};
+      return {luz:'v',msg:'Bebida sin az\u00FAcar: ok.'};
+    }
+    // Extras
+    if(cat==='ext') {
+      if(['cafe','sal','stevia','canela','cafe_leche','leche_almendra'].includes(alId)) return {luz:'v',msg:'Libre en keto.'};
+      if(['mayonesa','yogurt','leche_entera','chocolate'].includes(alId)) return {luz:'a',msg:'Moderaci\u00F3n: tiene algo de carbos o calor\u00EDas. Controlar cantidad.'};
+      if(['miel'].includes(alId)) return {luz:'r',msg:'Az\u00FAcar pura: 82g carbos/100g. Rompe cetosis.'};
+      return {luz:'a',msg:'Extra: verificar porci\u00F3n.'};
+    }
+  } else {
+    // ── MELISSA: Keto fase 2, 30% BF, objetivo bajar peso ──
+    // Protocolo mas estricto en carbos que Ariel
+    if(cat==='prot') return {luz:'v',msg:'Prote\u00EDna: esencial para tonificar y saciar. Libre.'};
+    if(cat==='gras') {
+      if(al.c > 10) return {luz:'a',msg:'Grasa con algo de carbos: controlar porci\u00F3n.'};
+      return {luz:'v',msg:'Grasa saludable: base de energ\u00EDa en keto. Libre.'};
+    }
+    if(cat==='veg') return {luz:'v',msg:'Vegetal: libre. Priorizar en cada comida.'};
+    if(cat==='fru') {
+      if(['fresas','arandanos','limon'].includes(alId)) return {luz:'a',msg:'Fruta baja GI: m\u00E1x \u00BD taza/d\u00EDa para no salir de cetosis.'};
+      return {luz:'r',msg:'Fruta alta en az\u00FAcar: no recomendada en Fase 2 keto. Esperar Fase 3.'};
+    }
+    if(cat==='carb') {
+      if(['galleta_keto'].includes(alId)) return {luz:'a',msg:'Keto-friendly pero controlar: las calor\u00EDas cuentan.'};
+      return {luz:'r',msg:'Carbohidrato: NO compatible con keto Fase 2 (meta <20g carbos/d\u00EDa). Rompe cetosis.'};
+    }
+    if(cat==='snk') {
+      if(['choco_90','choco_100','choco_keto','galleta_keto_choc','galleta_keto_coco','barrita_prot'].includes(alId))
+        return {luz:'a',msg:'Snack keto: ok con moderaci\u00F3n. Controlar calor\u00EDas.'};
+      return {luz:'r',msg:'Golosina: az\u00FAcar + carbos altos. Inhibe p\u00E9rdida de peso. Registra y el coach ajusta.'};
+    }
+    if(cat==='beb') {
+      if(['gaseosa','jugo_natural','agua_coco'].includes(alId)) return {luz:'r',msg:'Bebida con az\u00FAcar/carbos: evitar en Fase 2.'};
+      return {luz:'v',msg:'Bebida ok.'};
+    }
+    if(cat==='ext') {
+      if(['cafe','sal','stevia','canela','leche_almendra'].includes(alId)) return {luz:'v',msg:'Libre en keto Fase 2.'};
+      if(['miel','salsa_tomate'].includes(alId)) return {luz:'r',msg:'Alto en az\u00FAcar: evitar.'};
+      return {luz:'a',msg:'Controlar cantidad.'};
+    }
+  }
+  return {luz:'a',msg:'Verificar porci\u00F3n.'};
+};
+const SEM_COLORS = {v:'#22c55e',a:'#eab308',r:'#ef4444'};
+const SEM_LABELS = {v:'\u{2705}',a:'\u{26A0}\u{FE0F}',r:'\u{1F6D1}'};
+const SEM_NAMES = {v:'Libre',a:'Moderado',r:'Restringido'};
+
+// Calcula macros de un alimento segun cantidad (incluye alcohol: 7kcal/g)
 const calcAlMacros = (alId, qty) => {
   const al = ALIMENTOS[alId];
-  if(!al) return {p:0,c:0,g:0,k:0};
+  if(!al) return {p:0,c:0,g:0,k:0,alcG:0};
   const grams = al.u ? qty * (al.pu||1) : qty;
   const factor = grams / 100;
   const p = Math.round(al.p * factor * 10) / 10;
   const c = Math.round(al.c * factor * 10) / 10;
   const gr = Math.round(al.g * factor * 10) / 10;
-  return {p, c, g:gr, k:Math.round(p*4+c*4+gr*9)};
+  // Alcohol: calcular gramos de etanol y calorias extra (7 kcal/g alcohol)
+  let alcG = 0, alcK = 0;
+  if(al.alc) {
+    // alc = % ABV. Gramos etanol = ml * (ABV/100) * 0.789 (densidad etanol)
+    const ml = grams; // para bebidas, grams = ml aprox
+    alcG = Math.round(ml * (al.alc/100) * 0.789 * 10) / 10;
+    alcK = Math.round(alcG * 7);
+  }
+  return {p, c, g:gr, k:Math.round(p*4+c*4+gr*9+alcK), alcG};
 };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -807,6 +1044,117 @@ const autoCoachAnalysis = (meta, prog, periodo, motivArr, meditArr) => {
   tips.push('\u{1F9D8} ' + meditArr[(seed + 7) % meditArr.length]);
 
   return tips;
+};
+
+// ─── MOTOR HOLISTICO: alimentos consumidos → impacto SNC/sue\u00F1o/ansiedad/temblores → ajuste entreno ───
+const holisticFoodCoach = (planData, userId, dayType, ingesta, sueno, meta) => {
+  const recs = [];
+  if(!planData) return recs;
+  const realMeals = planData.real || {};
+  const realSups = planData.sup_real || {};
+  // Recolectar todos los alimentos consumidos con su sem\u00E1foro
+  const consumed = [];
+  [realMeals, realSups].forEach(src => {
+    Object.values(src).forEach(items => {
+      Object.entries(items).forEach(([alId, qty]) => {
+        if(qty > 0 && ALIMENTOS[alId]) {
+          const sem = getSemaforo(alId, userId, dayType);
+          consumed.push({alId, qty, al:ALIMENTOS[alId], sem});
+        }
+      });
+    });
+  });
+  if(consumed.length === 0) return recs;
+
+  const reds = consumed.filter(c => c.sem.luz === 'r');
+  const yellows = consumed.filter(c => c.sem.luz === 'a');
+  const alcItems = consumed.filter(c => c.al.alc > 0);
+  const totalAlcG = alcItems.reduce((s,c) => s + (calcAlMacros(c.alId, c.qty).alcG || 0), 0);
+  const highSugar = consumed.filter(c => ['snk','fru'].includes(c.al.cat) && c.sem.luz !== 'v');
+  const totalSugarCarbs = highSugar.reduce((s,c) => s + calcAlMacros(c.alId, c.qty).c, 0);
+  const suenoH = parseFloat(sueno) || 0;
+  const aPre = parseInt(meta.aPre) || 0;
+  const fPost = parseInt(meta.fPost) || 0;
+
+  // ── 1. An\u00E1lisis SNC: Activaci\u00F3n simp\u00E1tica por az\u00FAcar/alcohol ──
+  if(totalAlcG > 0 || totalSugarCarbs > 30) {
+    let sncMsg = '\u{1F9E0} Activaci\u00F3n simp\u00E1tica detectada: ';
+    const triggers = [];
+    if(totalAlcG > 0) triggers.push('alcohol ' + Math.round(totalAlcG) + 'g');
+    if(totalSugarCarbs > 30) triggers.push('az\u00FAcares/carbs r\u00E1pidos ~' + Math.round(totalSugarCarbs) + 'g');
+    sncMsg += triggers.join(' + ') + '. ';
+    if(totalAlcG > 20) {
+      sncMsg += 'El alcohol eleva cortisol nocturno y fragmenta fase REM. ';
+    }
+    if(totalSugarCarbs > 50) {
+      sncMsg += 'Picos de glucosa → respuesta insulina → rebote hipogluc\u00E9mico → cortisol de rescate. ';
+    }
+    sncMsg += 'Esto activa el eje HPA y desplaza el sistema hacia tono simp\u00E1tico (fight-or-flight).';
+    recs.push({icon:'\u{1F9E0}', txt:sncMsg, color:'#f97316'});
+  }
+
+  // ── 2. Impacto en temblor esencial ──
+  if(userId === ARIEL_ID && (totalAlcG > 10 || totalSugarCarbs > 40 || aPre > 5)) {
+    let tremMsg = '\u{270B} Temblor esencial: ';
+    const factors = [];
+    if(totalAlcG > 10) factors.push('alcohol (rebote adren\u00E9rgico post-etanol)');
+    if(totalSugarCarbs > 40) factors.push('az\u00FAcar (oscilaciones gluc\u00E9micas → excitabilidad neuronal)');
+    if(aPre > 5) factors.push('ansiedad basal elevada (' + aPre + '/10)');
+    tremMsg += factors.join(' + ') + ' pueden exacerbar temblor. ';
+    tremMsg += 'Ma\u00F1ana: reducir carga en ejercicios de precisi\u00F3n (curls, laterales). ';
+    tremMsg += 'Agregar magnesio bisglicinato extra 200mg esta noche.';
+    recs.push({icon:'\u{270B}', txt:tremMsg, color:'#ef4444'});
+  }
+
+  // ── 3. Impacto en sue\u00F1o ──
+  if(totalAlcG > 15 || totalSugarCarbs > 60) {
+    let sleepMsg = '\u{1F31C} Predicci\u00F3n sue\u00F1o comprometido: ';
+    if(totalAlcG > 15) sleepMsg += 'Alcohol >15g reduce REM 20-40% (Ebrahim et al. 2013). ';
+    if(totalSugarCarbs > 60) sleepMsg += 'Exceso de az\u00FAcar aumenta despertares nocturnos (St-Onge et al. 2016). ';
+    sleepMsg += 'Protocolo nocturno: magnesio 400mg + ashwagandha 600mg + apagar pantallas 1h antes. Sin cafe\u00EDna post 12PM.';
+    recs.push({icon:'\u{1F31C}', txt:sleepMsg, color:'#a855f7'});
+    if(suenoH > 0 && suenoH < 6.5) {
+      recs.push({icon:'\u{1F6A8}', txt:'Sue\u00F1o ya bajo (' + suenoH + 'h) + consumo problem\u00E1tico = alto riesgo de catabolismo y desregulaci\u00F3n HPA. Ma\u00F1ana OBLIGATORIO bajar volumen 30%.', color:G.bad});
+    }
+  }
+
+  // ── 4. Impacto en ansiedad ──
+  if(aPre > 4 && (totalAlcG > 0 || reds.length > 2 || totalSugarCarbs > 30)) {
+    let anxMsg = '\u{1F4AD} Ansiedad + alimentos inflamatorios: ';
+    if(totalAlcG > 0) anxMsg += 'alcohol es ansiol\u00EDtico agudo pero ansiog\u00E9nico por rebote (horas 4-12). ';
+    if(reds.length > 2) anxMsg += reds.length + ' alimentos en rojo consumidos (procesados/az\u00FAcares → inflamaci\u00F3n sist\u00E9mica → neuroinflamaci\u00F3n → ansiedad). ';
+    anxMsg += 'Compensar: omega-3 EPA 2g, respiraci\u00F3n 4-7-8 pre-sue\u00F1o, caminata 15min post-cena.';
+    recs.push({icon:'\u{1F4AD}', txt:anxMsg, color:'#f59e0b'});
+  }
+
+  // ── 5. Ajuste de entreno del d\u00EDa siguiente ──
+  const needsAdj = totalAlcG > 20 || totalSugarCarbs > 60 || (suenoH > 0 && suenoH < 6) || (reds.length > 3 && fPost > 6);
+  if(needsAdj) {
+    let adjMsg = '\u{1F4AA} AJUSTE ENTRENO MA\u00D1ANA: ';
+    const mods = [];
+    if(totalAlcG > 20) mods.push('reducir carga 20-30% (s\u00EDntesis proteica inhibida por alcohol)');
+    if(suenoH > 0 && suenoH < 6) mods.push('bajar volumen 30% (recuperaci\u00F3n insuficiente)');
+    if(totalSugarCarbs > 60) mods.push('evitar HIIT/CrossFit (cortisol ya elevado por oscilaciones gluc\u00E9micas)');
+    if(reds.length > 3 && fPost > 6) mods.push('priorizar t\u00E9cnica sobre intensidad (fatiga + inflamaci\u00F3n)');
+    if(mods.length === 0) mods.push('mantener sesi\u00F3n pero con RPE tope 7');
+    adjMsg += mods.join('; ') + '. ';
+    adjMsg += 'Priorizar: hidrataci\u00F3n (3L), EAA pre-entreno, prote\u00EDna >40g post.';
+    recs.push({icon:'\u{1F4AA}', txt:adjMsg, color:'#3b82f6'});
+  }
+
+  // ── 6. Resumen sem\u00E1foro ──
+  if(reds.length > 0) {
+    const redNames = reds.map(r => ALIMENTOS[r.alId].n).slice(0, 5);
+    recs.push({icon:'\u{1F6D1}', txt:'Alimentos en ROJO consumidos: ' + redNames.join(', ') + (reds.length > 5 ? ' (+' + (reds.length-5) + ' m\u00E1s)' : '') + '. Ya contabilizados en macros. El sem\u00E1foro es gu\u00EDa, no prohibici\u00F3n — pero acumular rojos impacta objetivos.', color:'#ef4444'});
+  }
+  if(yellows.length > 0 && reds.length === 0) {
+    recs.push({icon:'\u{26A0}\u{FE0F}', txt:yellows.length + ' alimentos en amarillo. Dentro de lo aceptable si el balance macro global est\u00E1 en rango. Monitorear tendencia semanal.', color:G.warn});
+  }
+  if(reds.length === 0 && yellows.length <= 2 && consumed.length > 3) {
+    recs.push({icon:'\u{2705}', txt:'Selecci\u00F3n alimentaria \u00F3ptima: mayormente verde, alineada con protocolo. Sistema parasimp\u00E1tico favorecido — buena recuperaci\u00F3n esperada.', color:G.ok});
+  }
+
+  return recs;
 };
 
 const getRirColor = rir => {
@@ -1310,7 +1658,7 @@ function TabEntreno({user, cfg}) {
 }
 
 // ─── PLAN DEL DIA COMPONENTS ──────────────────────────────────────────────────
-function SupChecklist({timing, label, color, checked, onChange, suplementos, realItems, onRealUpdate}) {
+function SupChecklist({timing, label, color, checked, onChange, suplementos, realItems, onRealUpdate, userId, dayType}) {
   const items = (suplementos||SUPLEMENTOS)[timing] || [];
   const [showTracker, setShowTracker] = useState(false);
   const ri = realItems || {};
@@ -1367,7 +1715,8 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
               const upd = {...ri};
               delete upd[alId];
               onRealUpdate(upd);
-            }
+            },
+            userId:userId, dayType:dayType
           })
         ),
         React.createElement(AddFoodSelector, {
@@ -1375,7 +1724,8 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
             const upd = {...ri, [alId]: (ri[alId]||0) + defaultQty};
             onRealUpdate(upd);
           },
-          exclude: Object.keys(ri)
+          exclude: Object.keys(ri),
+          userId:userId, dayType:dayType
         })
       )
     )
@@ -1407,14 +1757,18 @@ function StepToggle({step, setStep}) {
 }
 
 // ─── FOOD ITEM ROW: alimento + qty + macros calculados ───
-function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride}) {
+function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride, userId, dayType}) {
   const al = ALIMENTOS[alId];
   if(!al) return null;
   const [step, setStep] = useState(stepOverride || al.s || 10);
+  const [showTip, setShowTip] = useState(false);
   const m = calcAlMacros(alId, qty);
   const unit = al.u || 'g';
-  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:G.alt,borderRadius:8,marginBottom:4,flexWrap:'wrap'}},
-    React.createElement('div', {style:{flex:'1 1 90px',fontSize:12,color:'#e2e8f0',fontWeight:600,minWidth:80}}, al.n),
+  const sem = getSemaforo(alId, userId, dayType);
+  const semCol = SEM_COLORS[sem.luz];
+  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:G.alt,borderRadius:8,marginBottom:4,flexWrap:'wrap',borderLeft:'3px solid '+semCol}},
+    React.createElement('div', {onClick:()=>setShowTip(!showTip), style:{cursor:'pointer',fontSize:11,lineHeight:1}}, SEM_LABELS[sem.luz]),
+    React.createElement('div', {style:{flex:'1 1 80px',fontSize:12,color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontWeight:600,minWidth:70}}, al.n),
     React.createElement(QtyControl, {value:qty, onChange:onQtyChange, step:step, min:0, unit:unit}),
     React.createElement(StepToggle, {step, setStep}),
     React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',color:G.dim,minWidth:100,textAlign:'right'}},
@@ -1424,36 +1778,52 @@ function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride}) {
       ' ',
       React.createElement('span', {style:{color:G.coa}}, 'G:'+Math.round(m.g)),
       ' ',
-      React.createElement('span', {style:{color:G.mu}}, m.k+'k')
+      React.createElement('span', {style:{color:G.mu}}, m.k+'k'),
+      m.alcG>0 ? [' ', React.createElement('span', {key:'alc',style:{color:'#ef4444'}}, '\u{1F37A}'+Math.round(m.alcG)+'g')] : null
     ),
-    React.createElement('button', {onClick:onRemove, style:{background:'none',border:'none',color:G.mu,fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0}}, '\u00D7')
+    React.createElement('button', {onClick:onRemove, style:{background:'none',border:'none',color:G.mu,fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0}}, '\u00D7'),
+    showTip && React.createElement('div', {style:{width:'100%',padding:'4px 8px',fontSize:10,color:semCol,background:semCol+'15',borderRadius:6,marginTop:2}}, sem.msg)
   );
 }
 
-// ─── ADD FOOD SELECTOR: dropdown por categoria ───
-function AddFoodSelector({onAdd, exclude}) {
+// ─── ADD FOOD SELECTOR: dropdown por categoria con semaforo ───
+function AddFoodSelector({onAdd, exclude, userId, dayType}) {
   const [open, setOpen] = useState(false);
   const [cat, setCat] = useState(null);
+  const [filter, setFilter] = useState('all'); // all, v, a, r
   const exc = exclude || [];
   if(!open) return React.createElement('button', {onClick:()=>setOpen(true), style:{background:G.acc+'22',border:'1px dashed '+G.acc+'66',borderRadius:8,padding:'8px 12px',fontSize:11,color:G.acc,cursor:'pointer',width:'100%',fontWeight:600}}, '+ Agregar alimento');
   const items = cat ? Object.entries(ALIMENTOS).filter(([id,a])=>a.cat===cat && !exc.includes(id)) : [];
+  // Ordenar por semaforo: verde primero, luego amarillo, luego rojo
+  const sorted = items.map(([id,al])=>({id,al,sem:getSemaforo(id,userId,dayType)})).sort((a,b)=>{
+    const ord={v:0,a:1,r:2}; return (ord[a.sem.luz]||0)-(ord[b.sem.luz]||0);
+  }).filter(x=> filter==='all' || x.sem.luz===filter);
   return React.createElement('div', {style:{background:G.alt,borderRadius:10,padding:10,border:'1px solid '+G.bor}},
-    React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:cat?8:0}},
+    React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}},
       AL_CATS.map(c =>
         React.createElement('button', {key:c.id, onClick:()=>setCat(cat===c.id?null:c.id), style:{padding:'4px 10px',borderRadius:6,border:cat===c.id?'1px solid '+c.c:'1px solid '+G.bor,background:cat===c.id?c.c+'22':'transparent',color:cat===c.id?c.c:G.mu,fontSize:10,fontWeight:600,cursor:'pointer'}}, c.n)
       ),
       React.createElement('button', {onClick:()=>{setOpen(false);setCat(null);}, style:{marginLeft:'auto',background:'none',border:'none',color:G.mu,fontSize:12,cursor:'pointer'}}, '\u2715 Cerrar')
     ),
-    cat && React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,maxHeight:180,overflowY:'auto'}},
-      items.map(([id,al]) =>
-        React.createElement('button', {key:id, onClick:()=>{onAdd(id, al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?1:100));setOpen(false);setCat(null);}, style:{background:G.sur,border:'1px solid '+G.bor,borderRadius:8,padding:'6px 8px',color:'#e2e8f0',fontSize:11,cursor:'pointer',textAlign:'left',fontWeight:500}}, al.n)
+    cat && React.createElement('div', {style:{display:'flex',gap:4,marginBottom:6}},
+      [{id:'all',l:'Todos',c:G.mu},{id:'v',l:'\u{2705} Libres',c:SEM_COLORS.v},{id:'a',l:'\u{26A0}\u{FE0F} Moderados',c:SEM_COLORS.a},{id:'r',l:'\u{1F6D1} Restringidos',c:SEM_COLORS.r}].map(f=>
+        React.createElement('button',{key:f.id,onClick:()=>setFilter(f.id),style:{padding:'2px 8px',borderRadius:5,border:'1px solid '+(filter===f.id?f.c:G.bor),background:filter===f.id?f.c+'22':'transparent',color:filter===f.id?f.c:G.mu,fontSize:9,cursor:'pointer',fontWeight:600}},f.l)
       )
-    )
+    ),
+    cat && React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,maxHeight:200,overflowY:'auto'}},
+      sorted.map(({id,al,sem}) =>
+        React.createElement('button', {key:id, onClick:()=>{onAdd(id, al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?1:100));setOpen(false);setCat(null);setFilter('all');}, style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontSize:11,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',alignItems:'center',gap:4}},
+          React.createElement('span',{style:{fontSize:10}},SEM_LABELS[sem.luz]),
+          al.n
+        )
+      )
+    ),
+    cat && sorted.length===0 && React.createElement('div',{style:{textAlign:'center',padding:12,color:G.mu,fontSize:11}},'No hay alimentos en esta categor\u00EDa con este filtro')
   );
 }
 
 // ─── PLAN MEAL BLOCK ENHANCED: recomendado + tracker real ───
-function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate}) {
+function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, userId, dayType}) {
   const [expanded, setExpanded] = useState(false);
   if(!comida.macros && comida.id==='ayuno') {
     return React.createElement('div', {style:{background:'#22c55e11',border:'1px dashed #22c55e44',borderRadius:10,padding:'12px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:10}},
@@ -1526,7 +1896,8 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate}) {
             const upd = {...ri};
             delete upd[alId];
             onRealUpdate(comida.id, upd);
-          }
+          },
+          userId:userId, dayType:dayType
         })
       ),
       // Macro total for this meal
@@ -1543,13 +1914,14 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate}) {
           const upd = {...ri, [alId]: (ri[alId]||0) + defaultQty};
           onRealUpdate(comida.id, upd);
         },
-        exclude: Object.keys(ri)
+        exclude: Object.keys(ri),
+        userId:userId, dayType:dayType
       })
     )
   );
 }
 
-function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
+function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
   const tipo = cfg.getDayType(dia);
   const plan = cfg.planes[tipo];
   if(!plan) return null;
@@ -1635,7 +2007,8 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
       onChange:(v)=>onUpdate({...planData, sup_am:v}),
       suplementos:cfg.suplementos,
       realItems:supReal['am']||{},
-      onRealUpdate:(items)=>updateSupReal('am', items)
+      onRealUpdate:(items)=>updateSupReal('am', items),
+      userId:userId, dayType:tipo
     }),
 
     // ─── COMIDAS DEL DIA con tracker real ───
@@ -1648,7 +2021,9 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
           isChecked:checkedMeals.includes(comida.id),
           onCheck:()=>toggleMeal(comida.id),
           realItems:realData[comida.id]||{},
-          onRealUpdate:(mealId, items)=>updateReal(mealId, items)
+          onRealUpdate:(mealId, items)=>updateReal(mealId, items),
+          userId:userId,
+          dayType:tipo
         })
       )
     ),
@@ -1660,7 +2035,8 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
       onChange:(v)=>onUpdate({...planData, sup_post:v}),
       suplementos:cfg.suplementos,
       realItems:supReal['post']||{},
-      onRealUpdate:(items)=>updateSupReal('post', items)
+      onRealUpdate:(items)=>updateSupReal('post', items),
+      userId:userId, dayType:tipo
     }),
 
     // CrossFit: suplementos AM reubicados
@@ -1670,7 +2046,8 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
       onChange:(v)=>onUpdate({...planData, sup_am:v}),
       suplementos:cfg.suplementos,
       realItems:supReal['am']||{},
-      onRealUpdate:(items)=>updateSupReal('am', items)
+      onRealUpdate:(items)=>updateSupReal('am', items),
+      userId:userId, dayType:tipo
     }),
 
     // ─── SUPLEMENTOS PM con tracker real ───
@@ -1680,7 +2057,8 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg}) {
       onChange:(v)=>onUpdate({...planData, sup_pm:v}),
       suplementos:cfg.suplementos,
       realItems:supReal['pm']||{},
-      onRealUpdate:(items)=>updateSupReal('pm', items)
+      onRealUpdate:(items)=>updateSupReal('pm', items),
+      userId:userId, dayType:tipo
     }),
 
     // ─── RESUMEN CONSUMIDO HOY ───
@@ -1942,7 +2320,7 @@ function TabNutricion({user, cfg}) {
 
       {/* ─── VISTA: PLAN DEL DIA ─── */}
       {vista==='plan' && (
-        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} cfg={cfg} />
+        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} cfg={cfg} userId={user.id} />
       )}
 
       {/* ─── VISTA: REGISTRO ACTUAL ─── */}
@@ -2171,8 +2549,9 @@ const calcIngesta = (nutriData, planData, plan, cfg) => {
   let prot=0, carbs=0, grasa=0, kcal=0, fuente='ninguna';
 
   // PRIORIDAD 1: Datos del tracker real (alimentos con gramos exactos)
+  let totalAlcG = 0;
   if(planData && (planData.real || planData.sup_real)) {
-    let rp=0, rc=0, rg=0;
+    let rp=0, rc=0, rg=0, rAlc=0;
     const realMeals = planData.real || {};
     const realSups = planData.sup_real || {};
     const hasAny = Object.values(realMeals).some(m=>Object.keys(m).length>0) || Object.values(realSups).some(m=>Object.keys(m).length>0);
@@ -2180,13 +2559,14 @@ const calcIngesta = (nutriData, planData, plan, cfg) => {
       [realMeals, realSups].forEach(src => {
         Object.values(src).forEach(items => {
           Object.entries(items).forEach(([alId,qty]) => {
-            if(qty>0){ const m=calcAlMacros(alId,qty); rp+=m.p; rc+=m.c; rg+=m.g; }
+            if(qty>0){ const m=calcAlMacros(alId,qty); rp+=m.p; rc+=m.c; rg+=m.g; rAlc+=(m.alcG||0); }
           });
         });
       });
-      if(rp>0||rc>0||rg>0) {
+      if(rp>0||rc>0||rg>0||rAlc>0) {
         prot=Math.round(rp); carbs=Math.round(rc); grasa=Math.round(rg);
-        kcal=Math.round(rp*4+rc*4+rg*9);
+        totalAlcG=Math.round(rAlc);
+        kcal=Math.round(rp*4+rc*4+rg*9+rAlc*7);
         fuente='tracker';
       }
     }
@@ -2222,7 +2602,7 @@ const calcIngesta = (nutriData, planData, plan, cfg) => {
     }
   }
 
-  return {prot,carbs,grasa,kcal,fuente};
+  return {prot,carbs,grasa,kcal,fuente,alcG:totalAlcG};
 };
 
 // \u2500\u2500\u2500 TAB BALANCE (GASTO vs INGESTA) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -2234,6 +2614,7 @@ function TabBalance({user, cfg}) {
   const [meta, setMeta] = useState({});
   const [loading, setLoading] = useState(true);
   const [weekData, setWeekData] = useState([]);
+  const [planDataBal, setPlanDataBal] = useState({});
 
   const perfil = cfg.perfil;
   const prog = cfg.prog[dia] || cfg.prog[1];
@@ -2263,6 +2644,7 @@ function TabBalance({user, cfg}) {
       setGasto(g);
       setIngesta(i);
       setMeta(parsedMeta);
+      setPlanDataBal(planData);
       setLoading(false);
     };
     loadDay();
@@ -2375,7 +2757,30 @@ function TabBalance({user, cfg}) {
   else if(balance>300) recs.push({icon:'\u{26A1}',txt:'Super\u00E1vit de +'+balance+' kcal. Cuidar si el objetivo es mantener definici\u00F3n.',color:G.warn});
   if(sueno>0 && sueno<6) recs.push({icon:'\u{1F634}',txt:'Sue\u00F1o cr\u00EDtico ('+sueno+'h). La recuperaci\u00F3n muscular requiere m\u00EDnimo 7h. Magnesio + ashwagandha PM.',color:G.bad});
   else if(sueno>0 && sueno<7) recs.push({icon:'\u{1F31C}',txt:'Sue\u00F1o bajo ('+sueno+'h). Vigilar fatiga acumulada esta semana.',color:G.warn});
-  if(protBalance>=0 && balance>=-300 && sueno>=7) recs.push({icon:'\u{2705}',txt:'\u{1F4AA} Excelente d\u00EDa. Prote\u00EDna cubierta, balance energ\u00E9tico ok, sue\u00F1o adecuado.',color:G.ok});
+  // ── Coach nutricional: Alcohol ──
+  if(ingesta.alcG>0) {
+    const alcKcal = Math.round(ingesta.alcG*7);
+    const alcPct = Math.round(alcKcal/ingesta.kcal*100);
+    recs.push({icon:'\u{1F37A}',txt:'Consumo de alcohol: '+ingesta.alcG+'g ('+alcKcal+' kcal, '+alcPct+'% del total). El alcohol inhibe s\u00EDntesis proteica hasta 24h y afecta calidad de sue\u00F1o.',color:'#ef4444'});
+    if(ingesta.alcG>30) recs.push({icon:'\u{1F6A8}',txt:'Consumo elevado de alcohol (>30g). Ma\u00F1ana reducir carga de entreno 20-30%. Priorizar hidrataci\u00F3n y electrolitos.',color:G.bad});
+    if(ingesta.alcG>15 && gasto.setsN>0) recs.push({icon:'\u{1F4A7}',txt:'Alcohol + entreno intenso = recuperaci\u00F3n comprometida. Tomar 500ml agua extra + glutamina + zinc antes de dormir.',color:G.warn});
+  }
+  // ── Coach nutricional: Balance macros ──
+  if(ingesta.fuente!=='ninguna' && ingesta.kcal>0) {
+    const protPct = Math.round(ingesta.prot*4/ingesta.kcal*100);
+    const carbPct = Math.round(ingesta.carbs*4/ingesta.kcal*100);
+    const grasaPct = Math.round(ingesta.grasa*9/ingesta.kcal*100);
+    if(protPct<20) recs.push({icon:'\u{1F969}',txt:'Prote\u00EDna solo '+protPct+'% de calor\u00EDas (ideal >25% para mantener m\u00FAsculo). Agrega prote\u00EDna en pr\u00F3xima comida.',color:G.warn});
+    if(carbPct>55 && cfg.metas.tipo!=='bulk') recs.push({icon:'\u{1F35E}',txt:'Carbohidratos al '+carbPct+'% (elevado). Considerar reducir porciones de arroz/pasta y aumentar vegetales.',color:G.warn});
+    if(grasaPct>50) recs.push({icon:'\u{1F9C8}',txt:'Grasa al '+grasaPct+'% de calor\u00EDas. Dentro de rango keto si es intencional, pero vigilar calor\u00EDas totales.',color:G.mu});
+    if(ingesta.kcal>0 && ingesta.prot>=protDemand && ingesta.kcal<=gasto.tdee+100 && (ingesta.alcG||0)===0) {
+      recs.push({icon:'\u{2705}',txt:'\u{1F4AA} D\u00EDa s\u00F3lido. Prote\u00EDna cubierta ('+ingesta.prot+'g/'+protDemand+'g), balance energ\u00E9tico correcto, sin alcohol.',color:G.ok});
+    }
+  }
+  if(protBalance>=0 && balance>=-300 && sueno>=7 && (ingesta.alcG||0)===0) recs.push({icon:'\u{1F31F}',txt:'Excelente d\u00EDa integral: macros, energ\u00EDa y sue\u00F1o alineados. Mant\u00E9n esta consistencia.',color:G.ok});
+
+  // ── Coach Hol\u00EDstico: alimentos → SNC/sue\u00F1o/ansiedad/temblores → ajuste entreno ──
+  const holisticRecs = holisticFoodCoach(planDataBal, user.id, dayType, ingesta, sueno, meta);
 
   return React.createElement('div',null,
     React.createElement(NavSemana,{fecha,setFecha,dia,setDia}),
@@ -2418,15 +2823,20 @@ function TabBalance({user, cfg}) {
       ingesta.fuente==='ninguna'
         ? React.createElement('div',{style:{textAlign:'center',padding:16,color:G.mu,fontSize:12}},'Sin datos. Registra en NUTRICI\u00D3N \u{2192} Plan del D\u00EDa')
         : React.createElement('div',null,
-            React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center',marginBottom:10}},
-              [{l:'Prote\u00EDna',v:ingesta.prot,u:'g',c:G.acc},{l:'Carbos',v:ingesta.carbs,u:'g',c:G.warn},{l:'Grasa',v:ingesta.grasa,u:'g',c:G.coa},{l:'Kcal',v:ingesta.kcal,u:'',c:G.dim}].map((x,i) =>
-                React.createElement('div',{key:i,style:{background:G.bg,borderRadius:10,padding:'10px 6px',border:'1px solid '+G.bor}},
-                  React.createElement('div',{style:{fontSize:18,fontWeight:800,color:x.c,fontFamily:'monospace'}},x.v),
+            React.createElement('div',{style:{display:'grid',gridTemplateColumns:ingesta.alcG>0?'1fr 1fr 1fr 1fr 1fr':'1fr 1fr 1fr 1fr',gap:8,textAlign:'center',marginBottom:10}},
+              [{l:'Prote\u00EDna',v:ingesta.prot,u:'g',c:G.acc},{l:'Carbos',v:ingesta.carbs,u:'g',c:G.warn},{l:'Grasa',v:ingesta.grasa,u:'g',c:G.coa},{l:'Kcal',v:ingesta.kcal,u:'',c:G.dim}].concat(
+                ingesta.alcG>0?[{l:'Alcohol',v:ingesta.alcG,u:'g',c:'#ef4444'}]:[]
+              ).map((x,i) =>
+                React.createElement('div',{key:i,style:{background:G.bg,borderRadius:10,padding:'10px 6px',border:'1px solid '+(x.l==='Alcohol'?'#ef4444':G.bor)}},
+                  React.createElement('div',{style:{fontSize:ingesta.alcG>0?15:18,fontWeight:800,color:x.c,fontFamily:'monospace'}},x.v),
                   React.createElement('div',{style:{fontSize:8,color:G.mu,marginTop:2}},x.l+(x.u?' ('+x.u+')':''))
                 )
               )
             ),
-            React.createElement('div',{style:{fontSize:9,color:G.mu,textAlign:'center',fontFamily:'monospace'}},'Fuente: '+(ingesta.fuente==='plan'?'Plan del D\u00EDa (checklist)':'Registro manual'))
+            ingesta.alcG>0 && React.createElement('div',{style:{background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:10,color:'#fca5a5',textAlign:'center'}},
+              '\u{26A0}\u{FE0F} Alcohol: '+ingesta.alcG+'g = '+Math.round(ingesta.alcG*7)+' kcal vac\u00EDas (no aportan nutrientes, inhiben recuperaci\u00F3n muscular)'
+            ),
+            React.createElement('div',{style:{fontSize:9,color:G.mu,textAlign:'center',fontFamily:'monospace'}},'Fuente: '+(ingesta.fuente==='tracker'?'Tracker de alimentos':ingesta.fuente==='plan'?'Plan del D\u00EDa (checklist)':'Registro manual'))
           )
     ),
 
@@ -2487,6 +2897,16 @@ function TabBalance({user, cfg}) {
       recs.map((r,i) => React.createElement('div',{key:i,style:{display:'flex',gap:8,alignItems:'flex-start',marginBottom:6,padding:'6px 8px',background:G.bg,borderRadius:8,border:'1px solid '+r.color+'44'}},
         React.createElement('span',{style:{fontSize:14,flexShrink:0}},r.icon),
         React.createElement('span',{style:{fontSize:11,color:r.color,lineHeight:'1.4'}},r.txt)
+      ))
+    ),
+
+    // COACH HOLISTICO: SNC / Sue\u00F1o / Ansiedad / Temblores
+    holisticRecs.length>0 && React.createElement(Sec,{color:'#a855f7'},
+      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:'#a855f7',fontWeight:700,marginBottom:4}},'\u{1F9E0} AN\u00C1LISIS HOL\u00CDSTICO'),
+      React.createElement('div',{style:{fontSize:9,color:G.mu,marginBottom:10}},'Impacto de alimentos consumidos en SNC, sue\u00F1o, ansiedad y temblor'),
+      holisticRecs.map((r,i) => React.createElement('div',{key:'h'+i,style:{display:'flex',gap:8,alignItems:'flex-start',marginBottom:8,padding:'8px 10px',background:G.bg,borderRadius:10,border:'1px solid '+r.color+'33',borderLeft:'3px solid '+r.color}},
+        React.createElement('span',{style:{fontSize:14,flexShrink:0}},r.icon),
+        React.createElement('span',{style:{fontSize:11,color:r.color==='#ef4444'?'#fca5a5':r.color===G.ok?'#86efac':r.color,lineHeight:'1.5'}},r.txt)
       ))
     )
   );
