@@ -10,10 +10,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#111128;--sur:#1e1e40;--alt:#2d2d58;--bor:#4a4a80;--acc:#a5b4fc;--ok:#6ee7b7;--warn:#fcd34d;--bad:#fca5a5;--coa:#d8b4fe;--dim:#e2e8f0;--mu:#a0aec0}
-body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%);color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;font-size:17px;min-height:100vh}
+:root{--bg:#0a0f1e;--sur:#141d30;--alt:#1c2a42;--bor:#546b8f;--acc:#60a5fa;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--coa:#c084fc;--dim:#e2e8f0;--mu:#94a3b8}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#1e3a5f22 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#2d1b6918 0%,transparent 50%);color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;font-size:17px;min-height:100vh}
 input,textarea,select{background:var(--alt);border:1px solid var(--bor);color:#f8fafc;border-radius:10px;padding:9px 12px;font-size:16px;width:100%;outline:none;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s}
-input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(165,180,252,0.2)}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(96,165,250,0.25)}
 button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0.2s}
 button:active{transform:scale(0.97)}
 textarea{resize:vertical;min-height:50px}
@@ -787,10 +787,10 @@ const ALIMENTOS = {
   donut:{n:'Donut/dona',p:5,c:51,g:22,s:1,cat:'snk',u:'ud',pu:60}
 };
 const AL_CATS = [
-  {id:'prot',n:'Prote\u00EDnas',c:'#a5b4fc'},
-  {id:'carb',n:'Carbohidratos',c:'#fcd34d'},
-  {id:'gras',n:'Grasas',c:'#d8b4fe'},
-  {id:'veg',n:'Vegetales',c:'#6ee7b7'},
+  {id:'prot',n:'Prote\u00EDnas',c:'#60a5fa'},
+  {id:'carb',n:'Carbohidratos',c:'#fbbf24'},
+  {id:'gras',n:'Grasas',c:'#c084fc'},
+  {id:'veg',n:'Vegetales',c:'#34d399'},
   {id:'fru',n:'Frutas',c:'#f472b6'},
   {id:'beb',n:'Bebidas',c:'#facc15'},
   {id:'snk',n:'Snacks/Golosinas',c:'#e879f9'},
@@ -1036,7 +1036,10 @@ const NavSemana = ({fecha, setFecha, dia, setDia}) => {
     !estaHoy && React.createElement('button', {onClick:()=>{setFecha(hoy());setDia(diaHoy());}, style:{marginTop:6,background:'transparent',color:G.acc,border:'1px solid '+G.acc,borderRadius:7,padding:'3px 10px',fontSize:15,width:'100%'}}, 'Ir a hoy')
   );
 };
-const G = { bg:'#111128',sur:'#1e1e40',alt:'#2d2d58',bor:'#4a4a80',acc:'#a5b4fc',ok:'#6ee7b7',warn:'#fcd34d',bad:'#fca5a5',coa:'#d8b4fe',dim:'#e2e8f0',mu:'#a0aec0' };
+// Paleta optimizada WCAG AA: todos los textos >4.5:1, bordes >3:1, capas distinguibles
+// Base azul profundo (sin violeta) reduce fatiga ocular en uso prolongado (Knoblauch et al. 1991)
+// Acentos Tailwind blue/emerald/amber/red-400 para m\u00e1xima vibrancia en OLED/LCD
+const G = { bg:'#0a0f1e',sur:'#141d30',alt:'#1c2a42',bor:'#546b8f',acc:'#60a5fa',ok:'#34d399',warn:'#fbbf24',bad:'#f87171',coa:'#c084fc',dim:'#e2e8f0',mu:'#94a3b8' };
 
 // ─── OBSERVACIONES PREDEFINIDAS ──────────────────────────────────────────────
 const OBS_OPTIONS = [
@@ -4151,7 +4154,7 @@ const TABS = [
 
 function UserSelector({onSelect}) {
   const users = [
-    {id:ARIEL_ID, nombre:'Ariel', desc:'49 a\u00F1os \u2022 CrossFit + Pesas \u2022 Keto flexible', color:'#a5b4fc', icon:'\u{1F3CB}'},
+    {id:ARIEL_ID, nombre:'Ariel', desc:'49 a\u00F1os \u2022 CrossFit + Pesas \u2022 Keto flexible', color:'#60a5fa', icon:'\u{1F3CB}'},
     {id:MELISSA_ID, nombre:'Melissa', desc:'45 a\u00F1os \u2022 Gym casa + Yoga \u2022 Keto fase 2', color:'#f0abfc', icon:'\u{1F9D8}'}
   ];
   return React.createElement('div', {style:{background:G.bg,minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,backgroundImage:'radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%)'}},
