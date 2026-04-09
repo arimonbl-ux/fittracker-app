@@ -1574,10 +1574,22 @@ const getRirLabel = rir => {
 // ─── UI HELPERS ──────────────────────────────────────────────────────────────
 const Inp = ({style, ...props}) => <input {...props} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none',...style}} />;
 
-function Rating({label, value, onChange, color, small, onSave, warnAt}) {
+// Gradiente sem\u00e1ntico: cada barra cambia de color seg\u00fan su posici\u00f3n
+// mode='positive': 1=rojo(malo) \u2192 5=amarillo \u2192 10=verde(bueno) — Energ\u00eda, Pump
+// mode='negative': 1=verde(bueno) \u2192 5=amarillo \u2192 10=rojo(malo) — Fatiga, Ansiedad, Hambre
+// mode='neutral': color fijo (fallback)
+const GRAD_POS = ['#ef4444','#ef4444','#f97316','#f97316','#eab308','#eab308','#84cc16','#22c55e','#10b981','#059669'];
+const GRAD_NEG = ['#059669','#10b981','#22c55e','#84cc16','#eab308','#eab308','#f97316','#f97316','#ef4444','#ef4444'];
+function Rating({label, value, onChange, color, small, onSave, warnAt, mode}) {
   const v = parseInt(value) || 0;
   const baseC = color || G.acc;
-  const c = warnAt && v >= warnAt ? '#ef4444' : baseC;
+  const getBarColor = (n) => {
+    if(mode==='positive') return GRAD_POS[n-1];
+    if(mode==='negative') return GRAD_NEG[n-1];
+    if(warnAt && n >= warnAt) return '#ef4444';
+    return baseC;
+  };
+  const displayC = v ? getBarColor(v) : G.mu;
   const handleClick = (n) => {
     onChange(v===n?'':String(n));
     if(onSave) setTimeout(() => onSave(), 100);
@@ -1586,15 +1598,15 @@ function Rating({label, value, onChange, color, small, onSave, warnAt}) {
     <div style={{marginBottom:small?6:8}}>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
         <span style={{fontSize:15,color:G.mu}}>{label}</span>
-        <span style={{fontSize:15,fontWeight:700,fontFamily:'monospace',color:v?c:G.mu}}>{v||'-'}<span style={{fontSize:15,color:G.mu}}>/10</span></span>
+        <span style={{fontSize:15,fontWeight:700,fontFamily:'monospace',color:displayC}}>{v||'-'}<span style={{fontSize:15,color:G.mu}}>/10</span></span>
       </div>
       <div style={{display:'flex',gap:3}}>
         {[1,2,3,4,5,6,7,8,9,10].map(n => {
-          const barC = warnAt && n >= warnAt ? '#ef4444' : baseC;
+          const barC = getBarColor(n);
           const filled = n <= v;
           return (
             <button key={n} onClick={()=>handleClick(n)}
-              style={{flex:1,height:small?22:26,borderRadius:4,background:filled?barC:'rgba(255,255,255,0.08)',border:filled?'1px solid '+barC+'88':'1px solid rgba(255,255,255,0.15)',opacity:1,transition:'background 0.15s'}} />
+              style={{flex:1,height:small?22:26,borderRadius:4,background:filled?barC:'rgba(255,255,255,0.08)',border:filled?'1px solid '+barC+'44':'1px solid rgba(255,255,255,0.12)',opacity:1,transition:'background 0.15s'}} />
           );
         })}
       </div>
@@ -2309,10 +2321,10 @@ function TabEntreno({user, cfg}) {
             <Inp type="time" value={meta.fin} onChange={e=>updMeta('fin',e.target.value)} />
           </div>
         </div>
-        <Rating label="Energia pre" value={meta.ePre} onChange={v=>updMeta('ePre',v)} color={G.acc} onSave={forceManualSave} />
-        <Rating label="Fatiga pre" value={meta.fPre} onChange={v=>updMeta('fPre',v)} color={G.bad} onSave={forceManualSave} />
-        <Rating label="Hambre pre" value={meta.hPre} onChange={v=>updMeta('hPre',v)} color={G.warn} onSave={forceManualSave} />
-        <Rating label="Ansiedad pre" value={meta.aPre} onChange={v=>updMeta('aPre',v)} color={G.coa} onSave={forceManualSave} />
+        <Rating label="Energia pre" value={meta.ePre} onChange={v=>updMeta('ePre',v)} color={G.acc} onSave={forceManualSave} mode="positive" />
+        <Rating label="Fatiga pre" value={meta.fPre} onChange={v=>updMeta('fPre',v)} color={G.bad} onSave={forceManualSave} mode="negative" />
+        <Rating label="Hambre pre" value={meta.hPre} onChange={v=>updMeta('hPre',v)} color={G.warn} onSave={forceManualSave} mode="negative" />
+        <Rating label="Ansiedad pre" value={meta.aPre} onChange={v=>updMeta('aPre',v)} color={G.coa} onSave={forceManualSave} mode="negative" />
       </Sec>
 
       {React.createElement('div', {style:{background:wkTimer.running?G.acc+'15':G.sur,border:'2px solid '+(wkTimer.running?G.acc:wkTimer.elapsed>0?G.ok:G.bor),borderRadius:16,padding:'16px 20px',marginBottom:14,textAlign:'center',transition:'all 0.3s'}},
@@ -2457,8 +2469,8 @@ function TabEntreno({user, cfg}) {
                       return (
                         <div style={{marginTop:10,padding:'10px 12px',background:barBg,borderRadius:10,border:'1px solid '+barBorder,transition:'all 0.3s'}}>
                           <div style={{fontSize:15,color:barLabel,fontFamily:'monospace',marginBottom:8,fontWeight:600}}>{hasData ? '\u2705 EJERCICIO REGISTRADO' : '\u{1F3CB}\uFE0F AL TERMINAR ESTE EJERCICIO'}</div>
-                          <Rating label="Energia" value={ejm.e||''} onChange={v=>updEjMeta(key,'e',v)} color={G.acc} small onSave={forceManualSave} />
-                          <Rating label="Fatiga" value={ejm.f||''} onChange={v=>updEjMeta(key,'f',v)} color={G.warn} small onSave={forceManualSave} warnAt={6} />
+                          <Rating label="Energia" value={ejm.e||''} onChange={v=>updEjMeta(key,'e',v)} color={G.acc} small onSave={forceManualSave} mode="positive" />
+                          <Rating label="Fatiga" value={ejm.f||''} onChange={v=>updEjMeta(key,'f',v)} color={G.warn} small onSave={forceManualSave} mode="negative" />
                         </div>
                       );
                     })()}
@@ -2473,11 +2485,11 @@ function TabEntreno({user, cfg}) {
 
       <Sec title="POST-ENTRENO" color={G.ok}>
         <div style={{fontSize:15,color:G.ok,marginBottom:10,fontFamily:'monospace'}}>Energia y Fatiga se calculan con promedio de ejercicios</div>
-        <Rating label="Energia post (auto)" value={meta.ePost} onChange={v=>updMeta('ePost',v)} color={G.acc} onSave={forceManualSave} />
-        <Rating label="Pump" value={meta.pump} onChange={v=>updMeta('pump',v)} color={G.coa} onSave={forceManualSave} />
-        <Rating label="Fatiga post (auto)" value={meta.fPost} onChange={v=>updMeta('fPost',v)} color={G.bad} onSave={forceManualSave} />
-        <Rating label="Hambre post" value={meta.hPost} onChange={v=>updMeta('hPost',v)} color={G.warn} onSave={forceManualSave} />
-        <Rating label="Ansiedad post" value={meta.aPost} onChange={v=>updMeta('aPost',v)} color={G.coa} onSave={forceManualSave} />
+        <Rating label="Energia post (auto)" value={meta.ePost} onChange={v=>updMeta('ePost',v)} color={G.acc} onSave={forceManualSave} mode="positive" />
+        <Rating label="Pump" value={meta.pump} onChange={v=>updMeta('pump',v)} color={G.coa} onSave={forceManualSave} mode="positive" />
+        <Rating label="Fatiga post (auto)" value={meta.fPost} onChange={v=>updMeta('fPost',v)} color={G.bad} onSave={forceManualSave} mode="negative" />
+        <Rating label="Hambre post" value={meta.hPost} onChange={v=>updMeta('hPost',v)} color={G.warn} onSave={forceManualSave} mode="negative" />
+        <Rating label="Ansiedad post" value={meta.aPost} onChange={v=>updMeta('aPost',v)} color={G.coa} onSave={forceManualSave} mode="negative" />
       </Sec>
 
       {/* ─── ENERGY CHECK-IN: mid-day y end-of-day ─── */}
@@ -2486,11 +2498,11 @@ function TabEntreno({user, cfg}) {
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:10}}>
           <div>
             <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} Medio d\u00EDa (~12-2PM)</div>
-            <Rating label="Energ\u00EDa mid-day" value={meta.eMid} onChange={v=>updMeta('eMid',v)} color={'#f59e0b'} onSave={forceManualSave} />
+            <Rating label="Energ\u00EDa mid-day" value={meta.eMid} onChange={v=>updMeta('eMid',v)} color={'#f59e0b'} onSave={forceManualSave} mode="positive" />
           </div>
           <div>
             <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F319}'} Final del d\u00EDa (~8-10PM)</div>
-            <Rating label="Energ\u00EDa end-day" value={meta.eEnd} onChange={v=>updMeta('eEnd',v)} color={'#6366f1'} onSave={forceManualSave} />
+            <Rating label="Energ\u00EDa end-day" value={meta.eEnd} onChange={v=>updMeta('eEnd',v)} color={'#6366f1'} onSave={forceManualSave} mode="positive" />
           </div>
         </div>
         {/* Consejos mid-day */}
@@ -3373,7 +3385,7 @@ function TabNutricion({user, cfg}) {
           <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Agua (litros)</div>
           <Inp type="number" step="0.5" value={data.agua||''} onChange={e=>upd('agua',e.target.value)} placeholder="3.5" style={{textAlign:'center'}} />
         </div>
-        <Rating label="Hambre general" value={data.hambre||''} onChange={v=>upd('hambre',v)} color={G.warn} />
+        <Rating label="Hambre general" value={data.hambre||''} onChange={v=>upd('hambre',v)} color={G.warn} mode="negative" />
         <div style={{marginTop:8}}>
           <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Digestion</div>
           <select value={data.digestion||''} onChange={e=>upd('digestion',e.target.value)} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none'}}>
