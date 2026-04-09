@@ -1604,7 +1604,7 @@ function Rating({label, value, onChange, color, small, onSave, warnAt}) {
 // Aislamiento: 45-90s
 // Warmup/pump: 30-60s
 const REST_SECS = {fuerza:150,aislamiento:75,tecnico:120,metcon:60,warmup:45,pump:30};
-function RestTimer({btipo, esBiserie}) {
+function RestTimer({btipo, esBiserie, compact}) {
   const [running, setRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [total, setTotal] = useState(0);
@@ -1618,7 +1618,6 @@ function RestTimer({btipo, esBiserie}) {
         if(prev <= 1) {
           clearInterval(intervalRef.current); intervalRef.current = null;
           setRunning(false);
-          // Vibrar si es m\u00f3vil
           if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
           return 0;
         }
@@ -1633,22 +1632,49 @@ function RestTimer({btipo, esBiserie}) {
   const pct = total > 0 ? ((total-timeLeft)/total)*100 : 0;
   const isLast10 = running && timeLeft <= 10 && timeLeft > 0;
   const isDone = !running && total > 0 && timeLeft === 0;
-  return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginTop:6,flexWrap:'wrap'}},
-    !running && React.createElement('button', {onClick:()=>start(sugSecs),
-      style:{background:isDone?G.ok+'33':G.acc+'22',border:'1px solid '+(isDone?G.ok:G.acc)+'44',borderRadius:6,padding:'4px 10px',fontSize:15,color:isDone?G.ok:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer'}},
-      isDone ? '\u{2705} LISTO \u2014 Siguiente serie' : '\u{23F1}\uFE0F '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60+' Descanso'),
-    !running && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
-      style:{background:G.warn+'22',border:'1px solid '+G.warn+'33',borderRadius:6,padding:'4px 8px',fontSize:15,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
-      'R\u00e1pido'),
-    !running && React.createElement('button', {onClick:()=>start(sugSecs+30),
-      style:{background:G.alt,border:'1px solid '+G.bor,borderRadius:6,padding:'4px 8px',fontSize:15,color:G.mu,fontFamily:'monospace',cursor:'pointer'}},
-      '+30s'),
-    running && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
-      React.createElement('div', {style:{position:'relative',width:120,height:20,background:G.alt,borderRadius:10,overflow:'hidden'}},
-        React.createElement('div', {style:{position:'absolute',left:0,top:0,height:'100%',width:pct+'%',background:isLast10?G.bad:G.acc,borderRadius:10,transition:'width 1s linear'}}),
-        React.createElement('span', {style:{position:'absolute',width:'100%',textAlign:'center',lineHeight:'20px',fontSize:15,fontFamily:'monospace',fontWeight:700,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}, mm+':'+ss)
+  // Compact mode: between sets (smaller, inline)
+  if(compact) {
+    return React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'6px 0',borderTop:'1px dashed '+G.bor+'66',borderBottom:'1px dashed '+G.bor+'66',margin:'4px 0'}},
+      !running && !isDone && React.createElement('button', {onClick:()=>start(sugSecs),
+        style:{background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:20,padding:'6px 16px',fontSize:15,color:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6}},
+        '\u{23F1}\uFE0F DESCANSO '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60),
+      !running && !isDone && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
+        style:{background:G.warn+'15',border:'1px solid '+G.warn+'33',borderRadius:20,padding:'6px 10px',fontSize:15,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
+        '\u{26A1}'),
+      isDone && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'4px 14px',background:G.ok+'22',borderRadius:20,border:'1px solid '+G.ok+'44'}},
+        React.createElement('span', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:G.ok}}, '\u{2705} SIGUIENTE SERIE'),
+        React.createElement('button', {onClick:()=>{setTotal(0);setTimeLeft(0);},style:{background:'transparent',border:'none',color:G.mu,fontSize:15,cursor:'pointer'}}, '\u{2716}')
       ),
-      React.createElement('button', {onClick:stop,style:{background:G.bad+'33',border:'1px solid '+G.bad+'44',borderRadius:6,padding:'3px 8px',fontSize:15,color:G.bad,cursor:'pointer'}}, '\u{25A0} Stop')
+      running && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'4px 12px',background:isLast10?G.bad+'22':G.acc+'15',borderRadius:20,border:'1px solid '+(isLast10?G.bad:G.acc)+'44',transition:'background 0.3s'}},
+        React.createElement('div', {style:{position:'relative',width:100,height:18,background:G.alt,borderRadius:10,overflow:'hidden'}},
+          React.createElement('div', {style:{position:'absolute',left:0,top:0,height:'100%',width:pct+'%',background:isLast10?G.bad:G.acc,borderRadius:10,transition:'width 1s linear'}}),
+          React.createElement('span', {style:{position:'absolute',width:'100%',textAlign:'center',lineHeight:'18px',fontSize:16,fontFamily:'monospace',fontWeight:700,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}, mm+':'+ss)
+        ),
+        React.createElement('button', {onClick:stop,style:{background:'transparent',border:'none',color:G.bad,fontSize:15,cursor:'pointer',fontWeight:700}}, '\u{25A0}')
+      )
+    );
+  }
+  // Full mode: after exercise (bi-serie end)
+  return React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'center',gap:6,marginTop:8,padding:'8px 0',background:G.acc+'08',borderRadius:8,border:'1px solid '+G.acc+'22'}},
+    !running && !isDone && React.createElement('button', {onClick:()=>start(sugSecs),
+      style:{background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:20,padding:'8px 20px',fontSize:16,color:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer'}},
+      '\u{23F1}\uFE0F DESCANSO '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60),
+    !running && !isDone && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
+      style:{background:G.warn+'22',border:'1px solid '+G.warn+'33',borderRadius:20,padding:'8px 12px',fontSize:15,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
+      'R\u00e1pido'),
+    !running && !isDone && React.createElement('button', {onClick:()=>start(sugSecs+30),
+      style:{background:G.alt,border:'1px solid '+G.bor,borderRadius:20,padding:'8px 12px',fontSize:15,color:G.mu,fontFamily:'monospace',cursor:'pointer'}},
+      '+30s'),
+    isDone && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'6px 18px',background:G.ok+'22',borderRadius:20,border:'1px solid '+G.ok+'44'}},
+      React.createElement('span', {style:{fontSize:16,fontWeight:700,fontFamily:'monospace',color:G.ok}}, '\u{2705} LISTO \u2014 Siguiente serie'),
+      React.createElement('button', {onClick:()=>{setTotal(0);setTimeLeft(0);},style:{background:'transparent',border:'none',color:G.mu,fontSize:15,cursor:'pointer'}}, '\u{2716}')
+    ),
+    running && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:10}},
+      React.createElement('div', {style:{position:'relative',width:140,height:24,background:G.alt,borderRadius:12,overflow:'hidden'}},
+        React.createElement('div', {style:{position:'absolute',left:0,top:0,height:'100%',width:pct+'%',background:isLast10?G.bad:G.acc,borderRadius:12,transition:'width 1s linear'}}),
+        React.createElement('span', {style:{position:'absolute',width:'100%',textAlign:'center',lineHeight:'24px',fontSize:18,fontFamily:'monospace',fontWeight:700,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}, mm+':'+ss)
+      ),
+      React.createElement('button', {onClick:stop,style:{background:G.bad+'33',border:'1px solid '+G.bad+'44',borderRadius:8,padding:'4px 10px',fontSize:15,color:G.bad,cursor:'pointer',fontWeight:700}}, '\u{25A0} Stop')
     )
   );
 }
@@ -2340,19 +2366,26 @@ function TabEntreno({user, cfg}) {
                           const s = reg[key]?.[si] || {};
                           const prevS = prevSets && prevSets[si] ? prevSets[si] : null;
                           const phPeso = prevS && prevS.peso ? prevS.peso : (sug ? String(sug.peso) : '\u2014');
-                          return React.createElement('div', {key:si, style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
-                            React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
-                            React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
-                            React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
-                            React.createElement(Inp, {value:s.cadencia||'',onChange:e=>updSet(key,si,'cadencia',e.target.value),placeholder:ej.cadencia,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
-                            React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
-                            React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
-                            React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:15}})
+                          const isLastSet = si === ej.sets - 1;
+                          const isLastEjInBi = esBi && (bloque.ejercicios.indexOf(ej) === bloque.ejercicios.length - 1);
+                          const showTimerAfter = !isLastSet || (isLastSet && isLastEjInBi);
+                          return React.createElement(React.Fragment, {key:si},
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
+                              React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
+                              React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                              React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                              React.createElement(Inp, {value:s.cadencia||'',onChange:e=>updSet(key,si,'cadencia',e.target.value),placeholder:ej.cadencia,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                              React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                              React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                              React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:15}})
+                            ),
+                            !isLastSet && React.createElement(RestTimer, {key:'rt'+si, btipo:bloque.btipo, esBiserie:false, compact:true}),
+                            isLastSet && esBi && !isLastEjInBi && React.createElement('div', {key:'bi'+si, style:{textAlign:'center',padding:'4px 0',fontSize:15,color:G.warn,fontFamily:'monospace',fontWeight:700}}, '\u{26A1} SIN DESCANSO \u2014 Siguiente ejercicio bi-serie'),
+                            isLastSet && (!esBi || isLastEjInBi) && React.createElement(RestTimer, {key:'rtf'+si, btipo:bloque.btipo, esBiserie:false, compact:false})
                           );
                         })
                       );
                     })()}
-                    {React.createElement(RestTimer, {btipo:bloque.btipo, esBiserie:esBi})}
                     {(() => {
                       const hasData = ejm.e || ejm.f;
                       const barBg = hasData ? G.ok+'15' : G.acc+'0a';
