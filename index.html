@@ -655,7 +655,11 @@ const ALIMENTOS = {
   hongos:{n:'Hongos/champi\u00F1ones',p:3.1,c:3.3,g:0.3,s:10,cat:'veg'},
   coliflor:{n:'Coliflor',p:1.9,c:5,g:0.3,s:10,cat:'veg'},
   // ── Suplementos (por porci\u00F3n/dosis est\u00E1ndar) ──
-  carnivor:{n:'Carnivor polvo',p:23,c:1,g:0,s:1,cat:'sup',u:'scoop',pu:35},
+  carnivor_choc:{n:'Carnivor Chocolate',p:64,c:11,g:0,s:1,cat:'sup',u:'scoop',pu:36},
+  carnivor_choc_pb:{n:'Carnivor Choc PeanutButter',p:64,c:11,g:0,s:1,cat:'sup',u:'scoop',pu:36},
+  carnivor_van:{n:'Carnivor Vanilla Caramel',p:64,c:11,g:0,s:1,cat:'sup',u:'scoop',pu:36},
+  carnivor_straw:{n:'Carnivor Strawberry',p:64,c:11,g:0,s:1,cat:'sup',u:'scoop',pu:36},
+  carnivor_fruit:{n:'Carnivor Fruit Punch',p:64,c:11,g:0,s:1,cat:'sup',u:'scoop',pu:36},
   carnivor_rtd:{n:'Carnivor RTD 500ml',p:8,c:1,g:0,s:1,cat:'sup',u:'botella',pu:500},
   whey:{n:'Whey protein',p:24,c:3,g:1.5,s:1,cat:'sup',u:'scoop',pu:32},
   plant_prot:{n:'Prote\u00EDna plant',p:20,c:4,g:2,s:1,cat:'sup',u:'scoop',pu:35},
@@ -3170,7 +3174,7 @@ function TabNutricion({user, cfg}) {
         </div>
         {/* TOGGLE PLAN / REGISTRO */}
         <div style={{display:'flex',gap:0,marginBottom:10,background:G.alt,borderRadius:10,padding:3,border:'1px solid '+G.bor}}>
-          {[['plan','PLAN DEL D\u00CDA','\u{1F4CB}'],['actual','REGISTRO ACTUAL','\u{1F4DD}']].map(([v,l,ic]) => (
+          {[['plan','PLAN','\u{1F4CB}'],['actual','REGISTRO','\u{1F4DD}'],['recetas','RECETARIO','\u{1F373}']].map(([v,l,ic]) => (
             <button key={v} onClick={()=>setVista(v)} style={{flex:1,background:vista===v?G.acc:'transparent',color:vista===v?'#fff':G.dim,border:'none',borderRadius:8,padding:'8px 10px',fontSize:15,fontWeight:700,fontFamily:'monospace',letterSpacing:0.5,cursor:'pointer',transition:'all 0.2s'}}>
               {ic} {l}
             </button>
@@ -3285,6 +3289,273 @@ function TabNutricion({user, cfg}) {
           </select>
         </div>
       </Sec>
+      </>}
+
+      {/* ─── VISTA: RECETARIO KETO ─── */}
+      {vista==='recetas' && (() => {
+        const RECETAS = [
+          {
+            id:'gel_jamaica',
+            nombre:'Gelatina de Jamaica con Col\u00e1geno y EAA',
+            tags:['snack','post-entreno','pre-sue\u00f1o'],
+            tiempo:'15 min + 3h refrigerar',
+            porciones:4,
+            rompeAyuno:true,
+            nota:'Col\u00e1geno y EAA aportan amino\u00e1cidos que activan mTOR. Ideal post-entreno o como snack, no en ventana de ayuno estricto.',
+            ingredientes:[
+              {nombre:'Gelatina sin sabor',cant:'14g (2 sobres)',macros:{p:12,c:0,g:0}},
+              {nombre:'Flor de Jamaica',cant:'30g (2 cdas)',macros:{p:0,c:1,g:0}},
+              {nombre:'Col\u00e1geno Multi',cant:'10g (1 dosis)',macros:{p:9,c:0,g:0}},
+              {nombre:'EAA',cant:'10g (1 dosis)',macros:{p:10,c:0,g:0}},
+              {nombre:'Canela en raja',cant:'2 rajas',macros:{p:0,c:0,g:0}},
+              {nombre:'Clavo de olor',cant:'3-4 clavos',macros:{p:0,c:0,g:0}},
+              {nombre:'Stevia/monk fruit',cant:'al gusto',macros:{p:0,c:0,g:0}},
+              {nombre:'Agua',cant:'750ml',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Hervir 750ml agua con jamaica, canela y clavo por 8 min.',
+              'Colar y dejar enfriar a ~60\u00b0C (no hirviendo).',
+              'Disolver gelatina sin sabor en 3 cdas agua fr\u00eda, luego mezclar con el t\u00e9 tibio.',
+              'Agregar col\u00e1geno y EAA, mezclar bien.',
+              'Endulzar con stevia al gusto.',
+              'Refrigerar 3+ horas hasta cuajar.'
+            ],
+            macroPorcion:{p:8,c:0,g:0,k:32}
+          },
+          {
+            id:'huevos_nube',
+            nombre:'Cloud Eggs (Huevos Nube)',
+            tags:['desayuno','comida'],
+            tiempo:'15 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Alto en prote\u00edna, cero carbos. Perfecto para comida 1 post-entreno.',
+            ingredientes:[
+              {nombre:'Huevos enteros',cant:'4 unidades',macros:{p:26,c:2,g:22}},
+              {nombre:'Sal y pimienta',cant:'al gusto',macros:{p:0,c:0,g:0}},
+              {nombre:'Queso parmesano',cant:'20g',macros:{p:7,c:0,g:6}}
+            ],
+            pasos:[
+              'Separar claras de yemas. Batir claras a punto de nieve firme.',
+              'Incorporar queso parmesano rallado y sal.',
+              'Formar nidos en bandeja con papel horno. Hornear 180\u00b0C 5 min.',
+              'Colocar yema en centro de cada nido. Hornear 3 min m\u00e1s.',
+              'Servir inmediatamente.'
+            ],
+            macroPorcion:{p:16,c:1,g:14,k:198}
+          },
+          {
+            id:'tortilla_atun',
+            nombre:'Tortilla de At\u00fan con Queso',
+            tags:['almuerzo','cena'],
+            tiempo:'10 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'R\u00e1pida, alta prote\u00edna. Ideal cuando no hay tiempo de cocinar.',
+            ingredientes:[
+              {nombre:'Huevos',cant:'2 unidades',macros:{p:13,c:1,g:11}},
+              {nombre:'At\u00fan en agua (lata)',cant:'120g',macros:{p:30,c:0,g:1}},
+              {nombre:'Queso mozzarella',cant:'30g',macros:{p:7,c:1,g:7}},
+              {nombre:'Espinaca fresca',cant:'30g',macros:{p:1,c:1,g:0}},
+              {nombre:'Aceite oliva',cant:'5ml (1 cdta)',macros:{p:0,c:0,g:5}}
+            ],
+            pasos:[
+              'Batir huevos con sal y pimienta.',
+              'Verter en sart\u00e9n caliente con aceite de oliva.',
+              'A\u00f1adir at\u00fan escurrido, espinaca y queso.',
+              'Cocinar a fuego medio 3 min, doblar y servir.'
+            ],
+            macroPorcion:{p:51,c:3,g:24,k:432}
+          },
+          {
+            id:'ensalada_pollo_aguacate',
+            nombre:'Ensalada Keto Pollo y Aguacate',
+            tags:['almuerzo','cena'],
+            tiempo:'15 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Equilibrio perfecto de prote\u00edna y grasa saludable.',
+            ingredientes:[
+              {nombre:'Pechuga pollo cocida',cant:'200g',macros:{p:62,c:0,g:7}},
+              {nombre:'Aguacate',cant:'80g (medio)',macros:{p:2,c:2,g:12}},
+              {nombre:'Lechuga mixta',cant:'60g',macros:{p:1,c:1,g:0}},
+              {nombre:'Aceite oliva',cant:'10ml (1 cda)',macros:{p:0,c:0,g:10}},
+              {nombre:'Queso parmesano',cant:'15g',macros:{p:5,c:0,g:4}},
+              {nombre:'Lim\u00f3n + sal',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Cortar pollo en tiras o cubos.',
+              'Mezclar con lechuga, aguacate en cubos.',
+              'Ali\u00f1ar con aceite de oliva, lim\u00f3n y sal.',
+              'Espolvorear parmesano rallado encima.'
+            ],
+            macroPorcion:{p:70,c:3,g:33,k:603}
+          },
+          {
+            id:'cafe_bulletproof',
+            nombre:'Caf\u00e9 Bulletproof Keto',
+            tags:['pre-entreno','desayuno'],
+            tiempo:'5 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Energ\u00eda r\u00e1pida de MCT. Puede usarse como "desayuno" en d\u00edas de ayuno corto.',
+            ingredientes:[
+              {nombre:'Caf\u00e9 negro',cant:'240ml (1 taza)',macros:{p:0,c:0,g:0}},
+              {nombre:'Aceite de coco',cant:'15ml (1 cda)',macros:{p:0,c:0,g:14}},
+              {nombre:'Mantequilla',cant:'10g',macros:{p:0,c:0,g:8}}
+            ],
+            pasos:[
+              'Preparar caf\u00e9 negro fuerte.',
+              'A\u00f1adir aceite de coco y mantequilla.',
+              'Licuar 20 segundos hasta que quede cremoso.',
+              'Servir caliente.'
+            ],
+            macroPorcion:{p:0,c:0,g:22,k:198}
+          },
+          {
+            id:'cloud_bread',
+            nombre:'Cloud Bread (Pan Nube Keto)',
+            tags:['snack','acompa\u00f1amiento'],
+            tiempo:'25 min',
+            porciones:6,
+            rompeAyuno:true,
+            nota:'Solo 3 ingredientes. Sustituye pan en cualquier comida.',
+            ingredientes:[
+              {nombre:'Huevos',cant:'3 unidades',macros:{p:20,c:2,g:17}},
+              {nombre:'Queso crema',cant:'90g (3 cdas)',macros:{p:5,c:4,g:31}},
+              {nombre:'Bicarbonato',cant:'1/4 cdta',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Separar claras y yemas.',
+              'Batir yemas con queso crema hasta suave.',
+              'Batir claras con bicarbonato a punto de nieve.',
+              'Incorporar yemas a claras con movimientos envolventes.',
+              'Formar c\u00edrculos en bandeja. Hornear 150\u00b0C 25 min.',
+              'Dejar enfriar antes de retirar.'
+            ],
+            macroPorcion:{p:4,c:1,g:8,k:94}
+          },
+          {
+            id:'wrap_lechuga',
+            nombre:'Wraps de Lechuga con Carne',
+            tags:['almuerzo','cena'],
+            tiempo:'15 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Sin tortilla, pura prote\u00edna. Perfecto para cena ligera.',
+            ingredientes:[
+              {nombre:'Carne molida res',cant:'200g',macros:{p:40,c:0,g:30}},
+              {nombre:'Lechuga romana',cant:'4 hojas grandes',macros:{p:1,c:1,g:0}},
+              {nombre:'Aguacate',cant:'60g',macros:{p:1,c:1,g:9}},
+              {nombre:'Queso crema Dos Pinos',cant:'30g',macros:{p:1,c:2,g:10}},
+              {nombre:'Sal, comino, ajo',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Dorar carne molida con sal, comino y ajo.',
+              'Lavar y secar hojas de lechuga.',
+              'Rellenar cada hoja con carne, aguacate y queso crema.',
+              'Enrollar y servir.'
+            ],
+            macroPorcion:{p:22,c:2,g:25,k:325}
+          },
+          {
+            id:'salmon_brocoli',
+            nombre:'Salm\u00f3n al Horno con Br\u00f3coli',
+            tags:['almuerzo','cena'],
+            tiempo:'25 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Omega-3 + fibra. Ideal para d\u00edas de entrenamiento fuerte.',
+            ingredientes:[
+              {nombre:'Filete salm\u00f3n',cant:'200g',macros:{p:40,c:0,g:26}},
+              {nombre:'Br\u00f3coli',cant:'150g',macros:{p:4,c:5,g:0}},
+              {nombre:'Aceite oliva',cant:'10ml',macros:{p:0,c:0,g:10}},
+              {nombre:'Lim\u00f3n + ajo + sal',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Precalentar horno a 200\u00b0C.',
+              'Colocar salm\u00f3n y br\u00f3coli en bandeja.',
+              'Rociar con aceite, lim\u00f3n, ajo y sal.',
+              'Hornear 18-20 min.'
+            ],
+            macroPorcion:{p:44,c:5,g:36,k:524}
+          }
+        ];
+
+        const [openRec, setOpenRec] = React.useState(null);
+        const [filtroTag, setFiltroTag] = React.useState('todas');
+
+        const allTags = ['todas',...[...new Set(RECETAS.flatMap(r=>r.tags))]];
+        const filtered = filtroTag==='todas' ? RECETAS : RECETAS.filter(r=>r.tags.includes(filtroTag));
+
+        return React.createElement(React.Fragment, null,
+          React.createElement(Sec, {title:'\u{1F373} RECETARIO KETO', color:G.acc},
+            React.createElement('div', {style:{fontSize:15,color:G.mu,marginBottom:10,fontStyle:'italic'}}, 'Recetas calculadas con los macros de la app. Toc\u00e1 una para ver detalle.'),
+            // Filtro por tags
+            React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:12}},
+              allTags.map(t =>
+                React.createElement('button', {key:t, onClick:()=>setFiltroTag(t), style:{padding:'4px 12px',fontSize:15,fontWeight:600,border:'1px solid '+(filtroTag===t?G.acc:G.bor),borderRadius:20,background:filtroTag===t?G.acc+'22':'transparent',color:filtroTag===t?G.acc:G.mu,cursor:'pointer'}}, t)
+              )
+            ),
+            // Lista de recetas
+            filtered.map(r => {
+              const isOpen = openRec === r.id;
+              return React.createElement('div', {key:r.id, style:{marginBottom:8,border:'1px solid '+(isOpen?G.acc+'55':G.bor),borderRadius:10,overflow:'hidden',background:isOpen?G.acc+'08':G.sur,transition:'all 0.2s'}},
+                // Header receta
+                React.createElement('div', {onClick:()=>setOpenRec(isOpen?null:r.id), style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',cursor:'pointer'}},
+                  React.createElement('div', null,
+                    React.createElement('div', {style:{fontSize:15,fontWeight:700,color:'#e2e8f0'}}, r.nombre),
+                    React.createElement('div', {style:{display:'flex',gap:6,marginTop:4,flexWrap:'wrap'}},
+                      r.tags.map(t => React.createElement('span', {key:t, style:{fontSize:15,background:G.acc+'15',color:G.acc,borderRadius:10,padding:'1px 8px',fontWeight:600}}, t)),
+                      React.createElement('span', {style:{fontSize:15,color:G.mu}}, '\u{23F1}\uFE0F '+r.tiempo)
+                    )
+                  ),
+                  React.createElement('div', {style:{textAlign:'right',flexShrink:0}},
+                    React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:G.ok}}, r.macroPorcion.k+'kcal'),
+                    React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:G.mu}}, 'P:'+r.macroPorcion.p+' C:'+r.macroPorcion.c+' G:'+r.macroPorcion.g),
+                    React.createElement('div', {style:{fontSize:15,color:G.dim}}, isOpen?'\u25B2':'\u25BC')
+                  )
+                ),
+                // Detalle expandido
+                isOpen && React.createElement('div', {style:{padding:'0 14px 14px'}},
+                  // Porciones
+                  React.createElement('div', {style:{fontSize:15,color:G.mu,marginBottom:8}}, '\u{1F372} Rinde: '+r.porciones+' porciones | Macros mostrados por porci\u00f3n'),
+                  // Nota
+                  r.nota && React.createElement('div', {style:{fontSize:15,color:G.warn,background:G.warn+'11',border:'1px solid '+G.warn+'33',borderRadius:8,padding:'6px 10px',marginBottom:10}}, '\u{1F4A1} '+r.nota),
+                  // Rompe ayuno?
+                  React.createElement('div', {style:{fontSize:15,color:r.rompeAyuno?'#ef4444':G.ok,fontWeight:600,marginBottom:8}}, r.rompeAyuno ? '\u{26A0}\uFE0F Rompe ayuno (contiene calor\u00edas/amino\u00e1cidos)' : '\u{2705} Compatible con ayuno'),
+                  // Ingredientes
+                  React.createElement('div', {style:{fontWeight:700,fontSize:15,color:'#e2e8f0',marginBottom:6}}, '\u{1F6D2} Ingredientes:'),
+                  r.ingredientes.map((ing,i) =>
+                    React.createElement('div', {key:i, style:{display:'flex',justifyContent:'space-between',fontSize:15,color:G.mu,padding:'3px 0',borderBottom:'1px solid '+G.bor+'44'}},
+                      React.createElement('span', null, ing.nombre+' \u2014 '+ing.cant),
+                      React.createElement('span', {style:{fontFamily:'monospace',color:G.dim,flexShrink:0}}, (ing.macros.p||ing.macros.c||ing.macros.g) ? 'P:'+ing.macros.p+' C:'+ing.macros.c+' G:'+ing.macros.g : '')
+                    )
+                  ),
+                  // Pasos
+                  React.createElement('div', {style:{fontWeight:700,fontSize:15,color:'#e2e8f0',marginTop:10,marginBottom:6}}, '\u{1F468}\u200D\u{1F373} Preparaci\u00f3n:'),
+                  r.pasos.map((paso,i) =>
+                    React.createElement('div', {key:i, style:{fontSize:15,color:G.mu,padding:'3px 0',display:'flex',gap:8}},
+                      React.createElement('span', {style:{fontWeight:700,color:G.acc,flexShrink:0}}, (i+1)+'.'),
+                      React.createElement('span', null, paso)
+                    )
+                  ),
+                  // Macro resumen total receta
+                  React.createElement('div', {style:{marginTop:10,padding:'8px 12px',background:G.ok+'11',borderRadius:8,border:'1px solid '+G.ok+'33',display:'flex',justifyContent:'space-around',textAlign:'center'}},
+                    [{l:'Prot',v:r.macroPorcion.p,c:G.acc},{l:'Carbs',v:r.macroPorcion.c,c:G.warn},{l:'Grasa',v:r.macroPorcion.g,c:G.coa},{l:'Kcal',v:r.macroPorcion.k,c:G.ok}].map(x =>
+                      React.createElement('div', {key:x.l},
+                        React.createElement('div', {style:{fontSize:18,fontWeight:700,fontFamily:'monospace',color:x.c}}, x.v),
+                        React.createElement('div', {style:{fontSize:15,color:G.mu}}, x.l)
+                      )
+                    )
+                  )
+                )
+              );
+            })
+          )
+        );
+      })()}
+
       </>}
     </div>
   );
