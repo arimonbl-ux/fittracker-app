@@ -193,7 +193,9 @@ const TC = {alta:'#ef4444', media:'#f59e0b', baja:'#22c55e'};
 // Tipos de bloque: fuerza, tecnico, metcon, pump, aislamiento
 // Gradiente de intensidad por temperatura de color (Mehta & Zhu 2009):
 // Rojo(max) \u2192 Naranja(alto) \u2192 \u00c1mbar(medio) \u2192 Verde(bajo-medio) \u2192 Azul(t\u00e9cnico/foco) \u2192 Teal(calma)
-const BT = {fuerza:'#ef4444',metcon:'#f97316',aislamiento:'#eab308',tecnico:'#3b82f6',pump:'#22c55e',warmup:'#14b8a6'};
+const BT = {fuerza:'#dc2626',metcon:'#ea580c',aislamiento:'#d97706',tecnico:'#7c3aed',pump:'#059669',warmup:'#0891b2'};
+const BT_EMOJI = {fuerza:'\u{1F4A5}',metcon:'\u{1F3C3}',aislamiento:'\u{1F3AF}',tecnico:'\u{1F9E0}',pump:'\u{1F49A}',warmup:'\u{1F321}\uFE0F'};
+const BT_LABEL = {fuerza:'FUERZA',metcon:'METCON',aislamiento:'AISLAMIENTO',tecnico:'T\u00c9CNICO',pump:'PUMP',warmup:'WARMUP'};
 // Esfuerzo percibido
 const EP = {
   max:{label:'MAXIMO',color:'#ef4444',emoji:'\u{1F525}',desc:'Al limite, RPE 9-10'},
@@ -1629,25 +1631,33 @@ function RestTimer({btipo, esBiserie, compact}) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [total, setTotal] = useState(0);
   const intervalRef = useRef(null);
+  const endTsRef = useRef(null);
   const sugSecs = esBiserie ? TRANSITION_SECS : (REST_SECS[btipo] || 90);
   const transLabel = esBiserie ? '\u{1F3C3} CAMBIO ESTACI\u00d3N' : '\u{23F1}\uFE0F DESCANSO';
+  const tick = () => {
+    const now = Date.now();
+    const remaining = Math.max(0, Math.ceil((endTsRef.current - now) / 1000));
+    if(remaining <= 0) {
+      if(intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setTimeLeft(0); setRunning(false);
+      if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+    } else {
+      setTimeLeft(remaining);
+    }
+  };
   const start = (secs) => {
     if(intervalRef.current) clearInterval(intervalRef.current);
+    endTsRef.current = Date.now() + secs * 1000;
     setTotal(secs); setTimeLeft(secs); setRunning(true);
-    intervalRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if(prev <= 1) {
-          clearInterval(intervalRef.current); intervalRef.current = null;
-          setRunning(false);
-          if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    intervalRef.current = setInterval(tick, 250);
   };
-  const stop = () => { if(intervalRef.current) clearInterval(intervalRef.current); intervalRef.current=null; setRunning(false); setTimeLeft(0); };
-  useEffect(() => () => { if(intervalRef.current) clearInterval(intervalRef.current); }, []);
+  const stop = () => { if(intervalRef.current) clearInterval(intervalRef.current); intervalRef.current=null; endTsRef.current=null; setRunning(false); setTimeLeft(0); };
+  useEffect(() => {
+    const onVis = () => { if(document.visibilityState==='visible' && endTsRef.current) tick(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { if(intervalRef.current) clearInterval(intervalRef.current); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
   const mm = String(Math.floor(timeLeft/60)).padStart(2,'0');
   const ss = String(timeLeft%60).padStart(2,'0');
   const pct = total > 0 ? ((total-timeLeft)/total)*100 : 0;
@@ -1938,11 +1948,27 @@ function TabEntreno({user, cfg}) {
   const [streak, setStreak] = useState({weeks:0,totalSessions:0,thisWeek:0});
   const [openEj, setOpenEj] = useState(null); // key del ejercicio expandido (null=todos cerrados)
   const [showTec, setShowTec] = useState({}); // keys de tecnica expandida
+  const [warmupDone, setWarmupDone] = useState(false); // warmup completado
+  const [warmupTimer, setWarmupTimer] = useState({running:false,endTs:null,left:0});
+  const warmupIntRef = useRef(null);
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
   // Cron\u00f3metro general de rutina
   const [wkTimer, setWkTimer] = useState({running:false, startTs:null, elapsed:0});
   const wkIntervalRef = useRef(null);
+
+  // Warmup timer helpers
+  const startWarmup = (secs) => {
+    if(warmupIntRef.current) clearInterval(warmupIntRef.current);
+    const end = Date.now() + secs * 1000;
+    setWarmupTimer({running:true,endTs:end,left:secs});
+    warmupIntRef.current = setInterval(()=>{
+      const rem = Math.max(0, Math.ceil((end - Date.now())/1000));
+      if(rem <= 0){ clearInterval(warmupIntRef.current); warmupIntRef.current=null; setWarmupTimer({running:false,endTs:null,left:0}); setWarmupDone(true); if(navigator.vibrate) navigator.vibrate([200,100,200]); }
+      else setWarmupTimer(p=>({...p,left:rem}));
+    }, 250);
+  };
+  const skipWarmup = () => { if(warmupIntRef.current) clearInterval(warmupIntRef.current); warmupIntRef.current=null; setWarmupTimer({running:false,endTs:null,left:0}); setWarmupDone(true); };
 
   const prog = cfg.prog[dia] || cfg.prog[1];
 
@@ -2092,7 +2118,15 @@ function TabEntreno({user, cfg}) {
     wkIntervalRef.current = null;
     setWkTimer({running:false, startTs:null, elapsed:0});
   };
-  useEffect(() => () => { if(wkIntervalRef.current) clearInterval(wkIntervalRef.current); }, []);
+  useEffect(() => {
+    const onVisWk = () => {
+      if(document.visibilityState==='visible') {
+        setWkTimer(prev => prev.running && prev.startTs ? {...prev, elapsed: Math.floor((Date.now()-prev.startTs)/1000)} : prev);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisWk);
+    return () => { if(wkIntervalRef.current) clearInterval(wkIntervalRef.current); document.removeEventListener('visibilitychange', onVisWk); };
+  }, []);
   const fmtElapsed = (s) => {
     const h = Math.floor(s/3600);
     const m = Math.floor((s%3600)/60);
@@ -2352,10 +2386,11 @@ function TabEntreno({user, cfg}) {
         const ep = EP[bloque.esfuerzo] || EP.medio;
         const hasPrecaucion = bloque.ejercicios.some(e => e.precaucion);
         return (
-          <div key={bi} style={{background:G.sur,border:'1px solid '+bt+'55',borderRadius:12,overflow:'hidden',marginBottom:12}}>
-            <div style={{padding:'8px 14px',background:bt+'15',borderBottom:'2px solid '+bt+'44',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          <div key={bi} style={{background:G.sur,border:'1px solid '+bt+'66',borderRadius:12,overflow:'hidden',marginBottom:12,borderLeft:'4px solid '+bt}}>
+            <div style={{padding:'8px 14px',background:bt+'22',borderBottom:'2px solid '+bt+'55',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              <span style={{fontSize:15}}>{BT_EMOJI[bloque.btipo]||''}</span>
               <span style={{fontSize:15,fontFamily:'monospace',fontWeight:700,color:bt,letterSpacing:1}}>{bloque.nombre}</span>
-              <span style={{background:bt+'33',color:bt,borderRadius:4,padding:'2px 7px',fontSize:15,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(bloque.btipo||'').toUpperCase()}</span>
+              <span style={{background:bt+'44',color:'#fff',borderRadius:4,padding:'2px 7px',fontSize:12,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{BT_LABEL[bloque.btipo]||(bloque.btipo||'').toUpperCase()}</span>
               <span style={{background:ep.color+'22',color:ep.color,borderRadius:4,padding:'2px 7px',fontSize:15,fontFamily:'monospace',fontWeight:700}}>{ep.emoji} {ep.label}</span>
               {esBi && <span style={{background:G.warn+'22',color:G.warn,borderRadius:3,padding:'2px 5px',fontSize:15,fontFamily:'monospace'}}>BISERIE</span>}
               {hasPrecaucion && <span style={{background:'#ef444422',color:'#ef4444',borderRadius:3,padding:'2px 5px',fontSize:15,fontFamily:'monospace'}}>{'\u26A0\uFE0F'} OJO</span>}
@@ -2376,12 +2411,18 @@ function TabEntreno({user, cfg}) {
                   <div style={{padding:'0',borderLeft:'3px solid '+rc}}>
                     <div onClick={()=>setOpenEj(openEj===key?null:key)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',cursor:'pointer',userSelect:'none',background:openEj===key?rc+'0d':'transparent',transition:'background 0.2s'}}>
                       <div style={{flex:1}}>
-                        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2,flexWrap:'wrap'}}>
                           <div style={{width:10,height:10,borderRadius:'50%',background:rc,flexShrink:0}}/>
                           <span style={{fontWeight:700,fontSize:15}}>{ej.nombre}</span>
+                          {bloque.btipo==='warmup' && ej.musculo==='Cardiovascular' && <span style={{background:'#ef444433',color:'#ef4444',borderRadius:4,padding:'1px 6px',fontSize:11,fontWeight:700,fontFamily:'monospace'}}>{'\u{2764}\uFE0F'} CARDIO Z1-2</span>}
+                          {bloque.btipo==='warmup' && (ej.musculo==='Articular'||ej.musculo==='Cardio') && ej.musculo==='Articular' && <span style={{background:'#7c3aed33',color:'#7c3aed',borderRadius:4,padding:'1px 6px',fontSize:11,fontWeight:700,fontFamily:'monospace'}}>{'\u{1F9D8}'} MOVILIDAD</span>}
+                          {bloque.btipo==='warmup' && ej.musculo==='Cardio' && <span style={{background:'#ef444433',color:'#ef4444',borderRadius:4,padding:'1px 6px',fontSize:11,fontWeight:700,fontFamily:'monospace'}}>{'\u{2764}\uFE0F'} CARDIO Z2</span>}
                           <span style={{fontSize:15,color:G.mu,marginLeft:4,transition:'transform 0.2s',display:'inline-block',transform:openEj===key?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
                         </div>
-                        <div style={{fontSize:15,color:G.mu,marginLeft:16}}>{ej.musculo} {reg[key] && Object.keys(reg[key]).length>0 ? ' \u2705' : ''}</div>
+                        <div style={{fontSize:15,color:G.mu,marginLeft:16}}>
+                          {ej.musculo} {reg[key] && Object.keys(reg[key]).length>0 ? ' \u2705' : ''}
+                          {bloque.btipo==='warmup' && ej.musculo==='Cardiovascular' && <span style={{marginLeft:6,fontSize:11,color:'#ef4444'}}>FC 100-120 bpm</span>}
+                        </div>
                       </div>
                       <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
                         <div style={{fontSize:15,fontWeight:700,fontFamily:'monospace',color:rc}}>{ej.sets}x{ej.reps}</div>
@@ -2389,7 +2430,7 @@ function TabEntreno({user, cfg}) {
                         {rl && <div style={{fontSize:15,background:rc+'22',color:rc,borderRadius:3,padding:'1px 5px',marginTop:2,fontFamily:'monospace'}}>{rl}</div>}
                       </div>
                     </div>
-                    {openEj===key && <div style={{padding:'8px 14px 12px'}}>
+                    {(openEj===key || bloque.btipo==='warmup') && <div style={{padding:'8px 14px 12px'}}>
                     {(ej.tecnica || ej.precaucion) && (
                       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
                         {ej.tecnica && (
@@ -2404,7 +2445,7 @@ function TabEntreno({user, cfg}) {
                         )}
                       </div>
                     )}
-                    {showTec[key+'_t'] && ej.tecnica && (
+                    {(showTec[key+'_t'] || bloque.btipo==='warmup') && ej.tecnica && (
                       <div style={{padding:'8px 12px',fontSize:15,color:G.dim,lineHeight:1.7,background:rc+'08',borderRadius:8,marginBottom:8}}>{ej.tecnica}</div>
                     )}
                     {showTec[key+'_p'] && ej.precaucion && (
@@ -2435,7 +2476,7 @@ function TabEntreno({user, cfg}) {
                           '\u{1F3AF} Sugerido hoy: '+sug.peso+'kg '+sug.label
                         ),
                         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}},
-                          ['#','PESO kg','REPS','CADENCIA','RIR','RPE','NOTAS'].map(h =>
+                          ['#','PESO kg/lbs','REPS','CAD','RIR','RPE','NOTAS'].map(h =>
                             React.createElement('span', {key:h,style:{fontSize:15,color:G.mu,textAlign:'center',fontFamily:'monospace'}}, h)
                           )
                         ),
@@ -2449,7 +2490,10 @@ function TabEntreno({user, cfg}) {
                           return React.createElement(React.Fragment, {key:si},
                             React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
                               React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
-                              React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                              React.createElement('div',{style:{position:'relative'}},
+                                React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                                s.peso && parseFloat(s.peso)>0 && React.createElement('div',{style:{fontSize:10,color:G.mu,textAlign:'center',marginTop:-2,lineHeight:1}}, Math.round(parseFloat(s.peso)*2.205)+'lbs')
+                              ),
                               React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
                               React.createElement(Inp, {value:s.cadencia||'',onChange:e=>updSet(key,si,'cadencia',e.target.value),placeholder:ej.cadencia,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
                               React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
@@ -2481,6 +2525,33 @@ function TabEntreno({user, cfg}) {
                 </div>
               );
             })}
+            {bloque.btipo==='warmup' && (
+              <div style={{padding:'10px 14px',background:warmupDone?'#05966922':'#0891b211',borderTop:'1px solid '+(warmupDone?'#05966944':'#0891b233')}}>
+                {warmupDone ? (
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <span style={{fontSize:20}}>{'\u2705'}</span>
+                    <span style={{fontSize:14,fontWeight:700,color:'#059669',fontFamily:'monospace'}}>WARMUP COMPLETO</span>
+                    <button onClick={()=>setWarmupDone(false)} style={{marginLeft:'auto',background:'none',border:'1px solid #059669',color:'#059669',borderRadius:6,padding:'3px 10px',fontSize:12,cursor:'pointer'}}>Resetear</button>
+                  </div>
+                ) : warmupTimer.running ? (
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{flex:1,background:'#1e293b',borderRadius:8,height:8,overflow:'hidden'}}>
+                      <div style={{height:'100%',background:'#0891b2',borderRadius:8,transition:'width 0.3s',width:Math.max(0,100-warmupTimer.left/6)+'%'}}/>
+                    </div>
+                    <span style={{fontSize:18,fontWeight:700,color:'#0891b2',fontFamily:'monospace',minWidth:50}}>{Math.floor(warmupTimer.left/60)}:{String(warmupTimer.left%60).padStart(2,'0')}</span>
+                    <button onClick={skipWarmup} style={{background:'#059669',border:'none',color:'#fff',borderRadius:6,padding:'6px 14px',fontSize:13,fontWeight:700,cursor:'pointer'}}>{'\u2705'} Listo</button>
+                  </div>
+                ) : (
+                  <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                    <span style={{fontSize:13,color:'#0891b2',fontWeight:600}}>{'\u{23F1}\uFE0F'} Timer warmup:</span>
+                    {[5,8,10].map(m=>(
+                      <button key={m} onClick={()=>startWarmup(m*60)} style={{background:'#0891b222',border:'1px solid #0891b244',color:'#0891b2',borderRadius:6,padding:'5px 12px',fontSize:13,fontWeight:700,cursor:'pointer'}}>{m} min</button>
+                    ))}
+                    <button onClick={skipWarmup} style={{background:'#05966922',border:'1px solid #05966944',color:'#059669',borderRadius:6,padding:'5px 12px',fontSize:13,fontWeight:700,cursor:'pointer',marginLeft:'auto'}}>{'\u2705'} Ya lo hice</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
@@ -3255,6 +3326,17 @@ function TabNutricion({user, cfg}) {
     const m = parseMacros(data[field]||'');
     return { p: acc.p+m.p, c: acc.c+m.c, g: acc.g+m.g };
   }, { p:0, c:0, g:0 });
+  // Sumar macros reales de suplementos + comidas del Plan del D\u00EDa
+  if(planData) {
+    const srcs = [planData.sup_real||{}, planData.real||{}];
+    srcs.forEach(src => {
+      Object.values(src).forEach(items => {
+        Object.entries(items||{}).forEach(([alId,qty]) => {
+          if(qty>0){ const m=calcAlMacros(alId,qty); totales.p+=Math.round(m.p); totales.c+=Math.round(m.c); totales.g+=Math.round(m.g); }
+        });
+      });
+    });
+  }
   totales.kcal = totales.p*4 + totales.c*4 + totales.g*9;
 
   const pctP = Math.min(100, Math.round(totales.p/METAS.prot*100));
