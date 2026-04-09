@@ -1213,6 +1213,18 @@ const autoCoachAnalysis = (meta, prog, periodo, motivArr, meditArr) => {
   if(obs.includes('Incompleta')) tips.push('\u{1F504} Sesi\u00F3n incompleta. Completar lo pendiente el s\u00E1bado en bloque Pendientes.');
   if(obs.includes('insomnio') || obs.includes('sue\u00F1o')) tips.push('\u{1F31C} Afectado por sue\u00F1o. Esta noche: magnesio 400mg + apagar pantallas 1h antes. Sin caf\u00E9 despu\u00E9s de medio d\u00EDa.');
 
+  // ─── AN\u00C1LISIS DE NOTAS DEL USUARIO (userNotes + coach legacy) ───
+  const userTxt = ((meta.userNotes||'') + ' ' + (meta.coach||'')).toLowerCase();
+  if(userTxt.length > 5) {
+    if(userTxt.includes('ansiedad') || userTxt.includes('ansioso')) tips.push('\u{1F9E0} Reportaste ansiedad. Respiraci\u00F3n 4-7-8, ashwagandha 600mg, limitar cafe\u00EDna. El entrenamiento ayuda a regular cortisol \u2014 priorizalo.');
+    if(userTxt.includes('cansancio') || userTxt.includes('cansado') || userTxt.includes('agotado')) tips.push('\u{1F50B} Cansancio reportado. Verificar: sue\u00F1o, hidrataci\u00F3n, hierro, cortisol. Si es mental > f\u00EDsico, el entreno ayuda como reset neurol\u00F3gico.');
+    if(userTxt.includes('mental') && (userTxt.includes('carga') || userTxt.includes('agota') || userTxt.includes('golpea'))) tips.push('\u{1F9E0} Carga mental alta impacta rendimiento v\u00EDa eje HPA \u2192 cortisol \u2192 fatiga. Meditar 5 min pre-entreno. L-Teanina + Ashwagandha.');
+    if(userTxt.includes('motivaci\u00F3n') || userTxt.includes('motivacion') || userTxt.includes('ganas')) tips.push('\u{1F525} Baja motivaci\u00F3n = se\u00F1al de fatiga SNC o estr\u00E9s acumulado. No forzar intensidad, pero S\u00CD entrenar: el movimiento genera energ\u00EDa.');
+    if(userTxt.includes('estr\u00E9s') || userTxt.includes('estres') || userTxt.includes('trabajo')) tips.push('\u{26A1} Estr\u00E9s externo detectado. El entreno es tu v\u00E1lvula de escape \u2014 pero ajustar volumen si la fatiga acumulada es alta.');
+    if(userTxt.includes('tarde') && (userTxt.includes('inici\u00F3') || userTxt.includes('inicio') || userTxt.includes('empec\u00E9'))) tips.push('\u{23F0} Entrenamiento tard\u00EDo. Evitar estimulantes post-4PM. Cenar liviano y suplementar melatonina si pasaste de las 8PM.');
+    if(userTxt.includes('dolor') || userTxt.includes('molestia') || userTxt.includes('lesion') || userTxt.includes('lesi\u00F3n')) tips.push('\u{1F3E5} Dolor/molestia reportado. Reducir carga en esa zona. Hielo 15min post + antiinflamatorio natural (c\u00FArcuma, omega-3).');
+  }
+
   // Periorizaci\u00F3n
   if(periodo) {
     if(periodo === 3 && fPost > 7) tips.push('\u{1F4CA} Semana intensificaci\u00F3n + fatiga alta = respuesta normal. Semana que viene es DESCARGA.');
@@ -2178,7 +2190,7 @@ function TabEntreno({user, cfg}) {
     <p style="color:#888;font-size:12px;margin-bottom:12px">Tipo: ${(prog.tipo||'').toUpperCase()} | Carbos: ${prog.carbos} | Inicio: ${meta.inicio||'--'} | Fin: ${meta.fin||'--'} | ${duracion()?duracion()+'h':''}</p>
     ${bloqueHtml}
     ${meta.obs?`<div style="margin-top:12px"><b>Observaciones:</b><p>${meta.obs}</p></div>`:''}
-    ${meta.coach?`<div style="margin-top:8px"><b>Coach:</b><p style="color:#7c3aed">${meta.coach}</p></div>`:''}
+    ${(meta.userNotes||meta.coach)?`<div style="margin-top:8px"><b>Mis notas:</b><p style="color:#7c3aed">${meta.userNotes||meta.coach}</p></div>`:''}
     </body></html>`);
     w.document.close();
   };
@@ -2647,12 +2659,9 @@ function TabEntreno({user, cfg}) {
                 </div>
               ))}
               <div style={{marginTop:10}}>
-                <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Nota adicional del coach (manual)</div>
-                <textarea value={meta.coach||''} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes manuales, observaciones especiales..." style={{background:G.alt,border:'1px solid '+G.acc,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:45}} />
-              </div>
-              <div style={{marginTop:10}}>
-                <div style={{fontSize:15,color:G.warn,marginBottom:4,fontWeight:600}}>{'\u{1F4DD}'} Mis notas / Feedback / Mejoras</div>
-                <textarea value={meta.userNotes||''} onChange={e=>updMeta('userNotes',e.target.value)} placeholder="Escrib\u00ED c\u00F3mo te sentiste, ideas de mejora, qu\u00E9 ajustar\u00EDas, c\u00F3mo estuvo el d\u00EDa..." style={{background:G.alt,border:'1px solid '+G.warn+'66',color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:70}} />
+                <div style={{fontSize:15,color:G.warn,marginBottom:4,fontWeight:600}}>{'\u{1F4DD}'} {'Mis notas del d\u00EDa'}</div>
+                <div style={{fontSize:15,color:G.mu,marginBottom:6}}>{'Escrib\u00ED c\u00F3mo te sentiste, estado mental, ajustes, ideas. El coach analiza esto autom\u00E1ticamente.'}</div>
+                <textarea value={meta.userNotes||meta.coach||''} onChange={e=>updMeta('userNotes',e.target.value)} placeholder={'C\u00F3mo me sent\u00ED, qu\u00E9 ajustar\u00EDa, estado de \u00E1nimo, ideas de mejora...'} style={{background:G.alt,border:'1px solid '+G.warn+'66',color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:80}} />
               </div>
             </div>
           );
