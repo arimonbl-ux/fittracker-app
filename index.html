@@ -11,8 +11,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#111128;--sur:#1e1e40;--alt:#2d2d58;--bor:#4a4a80;--acc:#a5b4fc;--ok:#6ee7b7;--warn:#fcd34d;--bad:#fca5a5;--coa:#d8b4fe;--dim:#e2e8f0;--mu:#a0aec0}
-body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%);color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;font-size:15px;min-height:100vh}
-input,textarea,select{background:var(--alt);border:1px solid var(--bor);color:#f8fafc;border-radius:10px;padding:9px 12px;font-size:14px;width:100%;outline:none;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%);color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;font-size:17px;min-height:100vh}
+input,textarea,select{background:var(--alt);border:1px solid var(--bor);color:#f8fafc;border-radius:10px;padding:9px 12px;font-size:16px;width:100%;outline:none;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s}
 input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(165,180,252,0.2)}
 button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0.2s}
 button:active{transform:scale(0.97)}
@@ -1007,21 +1007,21 @@ const NavSemana = ({fecha, setFecha, dia, setDia}) => {
   const cambiarDia = (d) => { setDia(d); setFecha(getWeekDate(fecha, d)); };
   return React.createElement('div', {style:{marginBottom:12}},
     React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-      React.createElement('button', {onClick:()=>{const nf=shiftWeek(fecha,-1);setFecha(nf);setDia(new Date(nf+'T12:00').getDay());}, style:{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'4px 10px',fontSize:11}}, '\u{25C0} Sem ant'),
-      React.createElement('span', {style:{fontSize:11,color:estaHoy?G.acc:G.dim,fontWeight:600}}, fmtSemana(fecha)),
-      React.createElement('button', {onClick:()=>{const nf=shiftWeek(fecha,1);setFecha(nf);setDia(new Date(nf+'T12:00').getDay());}, style:{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'4px 10px',fontSize:11}}, 'Sem sig \u{25B6}')
+      React.createElement('button', {onClick:()=>{const nf=shiftWeek(fecha,-1);setFecha(nf);setDia(new Date(nf+'T12:00').getDay());}, style:{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'4px 10px',fontSize:15}}, '\u{25C0} Sem ant'),
+      React.createElement('span', {style:{fontSize:15,color:estaHoy?G.acc:G.dim,fontWeight:600}}, fmtSemana(fecha)),
+      React.createElement('button', {onClick:()=>{const nf=shiftWeek(fecha,1);setFecha(nf);setDia(new Date(nf+'T12:00').getDay());}, style:{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'4px 10px',fontSize:15}}, 'Sem sig \u{25B6}')
     ),
     React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap'}},
       [1,2,3,4,5,6,0].map(d => {
         const f = getWeekDate(fecha, d);
         const esHoy = f === hoy();
         const esSel = dia === d;
-        return React.createElement('button', {key:d, onClick:()=>cambiarDia(d), style:{background:esSel?G.acc:G.alt,color:esSel?'#fff':esHoy?G.acc:G.dim,border:'1px solid '+(esSel?G.acc:esHoy?G.acc:G.bor),borderRadius:8,padding:'4px 8px',fontSize:10,fontWeight:600,flex:1,minWidth:38,textAlign:'center'}},
+        return React.createElement('button', {key:d, onClick:()=>cambiarDia(d), style:{background:esSel?G.acc:G.alt,color:esSel?'#fff':esHoy?G.acc:G.dim,border:'1px solid '+(esSel?G.acc:esHoy?G.acc:G.bor),borderRadius:8,padding:'4px 8px',fontSize:15,fontWeight:600,flex:1,minWidth:38,textAlign:'center'}},
           DIAS[d] + ' ' + new Date(f+'T12:00').getDate()
         );
       })
     ),
-    !estaHoy && React.createElement('button', {onClick:()=>{setFecha(hoy());setDia(diaHoy());}, style:{marginTop:6,background:'transparent',color:G.acc,border:'1px solid '+G.acc,borderRadius:7,padding:'3px 10px',fontSize:10,width:'100%'}}, 'Ir a hoy')
+    !estaHoy && React.createElement('button', {onClick:()=>{setFecha(hoy());setDia(diaHoy());}, style:{marginTop:6,background:'transparent',color:G.acc,border:'1px solid '+G.acc,borderRadius:7,padding:'3px 10px',fontSize:15,width:'100%'}}, 'Ir a hoy')
   );
 };
 const G = { bg:'#111128',sur:'#1e1e40',alt:'#2d2d58',bor:'#4a4a80',acc:'#a5b4fc',ok:'#6ee7b7',warn:'#fcd34d',bad:'#fca5a5',coa:'#d8b4fe',dim:'#e2e8f0',mu:'#a0aec0' };
@@ -1555,26 +1555,31 @@ const getRirLabel = rir => {
 // Auth eliminado — acceso directo sin clave
 
 // ─── UI HELPERS ──────────────────────────────────────────────────────────────
-const Inp = ({style, ...props}) => <input {...props} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:13,width:'100%',outline:'none',...style}} />;
+const Inp = ({style, ...props}) => <input {...props} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none',...style}} />;
 
-function Rating({label, value, onChange, color, small, onSave}) {
+function Rating({label, value, onChange, color, small, onSave, warnAt}) {
   const v = parseInt(value) || 0;
-  const c = color || G.acc;
+  const baseC = color || G.acc;
+  const c = warnAt && v >= warnAt ? '#ef4444' : baseC;
   const handleClick = (n) => {
     onChange(v===n?'':String(n));
     if(onSave) setTimeout(() => onSave(), 100);
   };
   return (
-    <div style={{marginBottom:small?4:8}}>
+    <div style={{marginBottom:small?6:8}}>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
-        <span style={{fontSize:small?9:11,color:G.mu}}>{label}</span>
-        <span style={{fontSize:small?11:13,fontWeight:700,fontFamily:'monospace',color:v?c:G.mu}}>{v||'-'}<span style={{fontSize:11,color:G.mu}}>/10</span></span>
+        <span style={{fontSize:15,color:G.mu}}>{label}</span>
+        <span style={{fontSize:15,fontWeight:700,fontFamily:'monospace',color:v?c:G.mu}}>{v||'-'}<span style={{fontSize:15,color:G.mu}}>/10</span></span>
       </div>
-      <div style={{display:'flex',gap:2}}>
-        {[1,2,3,4,5,6,7,8,9,10].map(n => (
-          <button key={n} onClick={()=>handleClick(n)}
-            style={{flex:1,height:small?14:18,borderRadius:2,background:n<=v?c:G.alt,border:'none',opacity:n<=v?1:0.3}} />
-        ))}
+      <div style={{display:'flex',gap:3}}>
+        {[1,2,3,4,5,6,7,8,9,10].map(n => {
+          const barC = warnAt && n >= warnAt ? '#ef4444' : baseC;
+          const filled = n <= v;
+          return (
+            <button key={n} onClick={()=>handleClick(n)}
+              style={{flex:1,height:small?22:26,borderRadius:4,background:filled?barC:'rgba(255,255,255,0.08)',border:filled?'1px solid '+barC+'88':'1px solid rgba(255,255,255,0.15)',opacity:1,transition:'background 0.15s'}} />
+          );
+        })}
       </div>
     </div>
   );
@@ -1618,20 +1623,20 @@ function RestTimer({btipo, esBiserie}) {
   const isDone = !running && total > 0 && timeLeft === 0;
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginTop:6,flexWrap:'wrap'}},
     !running && React.createElement('button', {onClick:()=>start(sugSecs),
-      style:{background:isDone?G.ok+'33':G.acc+'22',border:'1px solid '+(isDone?G.ok:G.acc)+'44',borderRadius:6,padding:'4px 10px',fontSize:10,color:isDone?G.ok:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer'}},
+      style:{background:isDone?G.ok+'33':G.acc+'22',border:'1px solid '+(isDone?G.ok:G.acc)+'44',borderRadius:6,padding:'4px 10px',fontSize:15,color:isDone?G.ok:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer'}},
       isDone ? '\u{2705} LISTO \u2014 Siguiente serie' : '\u{23F1}\uFE0F '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60+' Descanso'),
     !running && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
-      style:{background:G.warn+'22',border:'1px solid '+G.warn+'33',borderRadius:6,padding:'4px 8px',fontSize:9,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
+      style:{background:G.warn+'22',border:'1px solid '+G.warn+'33',borderRadius:6,padding:'4px 8px',fontSize:15,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
       'R\u00e1pido'),
     !running && React.createElement('button', {onClick:()=>start(sugSecs+30),
-      style:{background:G.alt,border:'1px solid '+G.bor,borderRadius:6,padding:'4px 8px',fontSize:9,color:G.mu,fontFamily:'monospace',cursor:'pointer'}},
+      style:{background:G.alt,border:'1px solid '+G.bor,borderRadius:6,padding:'4px 8px',fontSize:15,color:G.mu,fontFamily:'monospace',cursor:'pointer'}},
       '+30s'),
     running && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
       React.createElement('div', {style:{position:'relative',width:120,height:20,background:G.alt,borderRadius:10,overflow:'hidden'}},
         React.createElement('div', {style:{position:'absolute',left:0,top:0,height:'100%',width:pct+'%',background:isLast10?G.bad:G.acc,borderRadius:10,transition:'width 1s linear'}}),
-        React.createElement('span', {style:{position:'absolute',width:'100%',textAlign:'center',lineHeight:'20px',fontSize:14,fontFamily:'monospace',fontWeight:700,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}, mm+':'+ss)
+        React.createElement('span', {style:{position:'absolute',width:'100%',textAlign:'center',lineHeight:'20px',fontSize:15,fontFamily:'monospace',fontWeight:700,color:'#fff',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}, mm+':'+ss)
       ),
-      React.createElement('button', {onClick:stop,style:{background:G.bad+'33',border:'1px solid '+G.bad+'44',borderRadius:6,padding:'3px 8px',fontSize:9,color:G.bad,cursor:'pointer'}}, '\u{25A0} Stop')
+      React.createElement('button', {onClick:stop,style:{background:G.bad+'33',border:'1px solid '+G.bad+'44',borderRadius:6,padding:'3px 8px',fontSize:15,color:G.bad,cursor:'pointer'}}, '\u{25A0} Stop')
     )
   );
 }
@@ -1713,7 +1718,7 @@ function SessionDashboard({prog, dia, periodo}) {
     React.createElement('div', {style:{position:'absolute',bottom:-15,left:-15,width:80,height:80,background:'radial-gradient(circle, #3b82f622 0%, transparent 70%)',borderRadius:'50%'}}),
     // Header
     React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4,marginBottom:10}},
-      React.createElement('span', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:'#7c3aed',fontWeight:700}}, 'SESSION PREVIEW'),
+      React.createElement('span', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:'#7c3aed',fontWeight:700}}, 'SESSION PREVIEW'),
       React.createElement('div', {style:{flex:1,height:1,background:'linear-gradient(90deg, #7c3aed44, transparent)',marginLeft:8}})
     ),
     // Content: stats + muscle map
@@ -1729,35 +1734,35 @@ function SessionDashboard({prog, dia, periodo}) {
           // Ejercicios
           React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
             React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#a78bfa'}}, totalEjercicios),
-            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'EJERCICIOS')
+            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'EJERCICIOS')
           ),
           // Sets
           React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
             React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#60a5fa'}}, totalSets),
-            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'SETS TOTALES')
+            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'SETS TOTALES')
           ),
           // Tiempo
           React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
             React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#34d399'}}, estMinutes + '\''),
-            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'ESTIMADO')
+            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'ESTIMADO')
           ),
           // Dificultad
           React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
-            React.createElement('div', {style:{fontSize:14,fontWeight:800,fontFamily:'monospace'}},
+            React.createElement('div', {style:{fontSize:15,fontWeight:800,fontFamily:'monospace'}},
               Array.from({length:3}).map((_,i) =>
                 React.createElement('span', {key:i, style:{color:i < difficultyLevel ? (difficultyLevel===3?'#ef4444':difficultyLevel===2?'#f59e0b':'#22c55e') : '#334155'}}, '\u{25CF} ')
               )
             ),
-            React.createElement('div', {style:{fontSize:8,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, difficultyLevel===3?'ALTA':difficultyLevel===2?'MEDIA':'BAJA')
+            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, difficultyLevel===3?'ALTA':difficultyLevel===2?'MEDIA':'BAJA')
           )
         ),
         // Muscles pills
         React.createElement('div', {style:{display:'flex',gap:3,flexWrap:'wrap'}},
           primaryMuscles.map(m =>
-            React.createElement('span', {key:m, style:{background:'#7c3aed33',color:'#c4b5fd',borderRadius:4,padding:'2px 6px',fontSize:8,fontFamily:'monospace',fontWeight:700,border:'1px solid #7c3aed55'}}, m)
+            React.createElement('span', {key:m, style:{background:'#7c3aed33',color:'#c4b5fd',borderRadius:4,padding:'2px 6px',fontSize:15,fontFamily:'monospace',fontWeight:700,border:'1px solid #7c3aed55'}}, m)
           ),
           secondaryMuscles.map(m =>
-            React.createElement('span', {key:m, style:{background:'#ffffff08',color:'#64748b',borderRadius:4,padding:'2px 6px',fontSize:8,fontFamily:'monospace'}}, m)
+            React.createElement('span', {key:m, style:{background:'#ffffff08',color:'#64748b',borderRadius:4,padding:'2px 6px',fontSize:15,fontFamily:'monospace'}}, m)
           )
         )
       )
@@ -1792,13 +1797,13 @@ function PRBanner({prevReg, reg, prog}) {
   return React.createElement('div', {style:{background:'linear-gradient(135deg, #fbbf2411, #f59e0b22, #fbbf2411)',border:'1px solid #f59e0b44',borderRadius:12,padding:'10px 14px',marginBottom:12,animation:'prPulse 2s ease-in-out infinite'}},
     React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginBottom:6}},
       React.createElement('span', {style:{fontSize:16}}, '\u{1F3C6}'),
-      React.createElement('span', {style:{fontSize:11,fontFamily:'monospace',fontWeight:700,color:'#fbbf24',letterSpacing:1}}, 'NUEVO PR' + (prs.length>1?'s':'') + ' HOY')
+      React.createElement('span', {style:{fontSize:15,fontFamily:'monospace',fontWeight:700,color:'#fbbf24',letterSpacing:1}}, 'NUEVO PR' + (prs.length>1?'s':'') + ' HOY')
     ),
     prs.map((pr,i) =>
       React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:8,marginBottom:2}},
-        React.createElement('span', {style:{fontSize:12,fontWeight:700,color:'#fde68a'}}, pr.nombre),
-        React.createElement('span', {style:{fontSize:10,color:'#fbbf24',fontFamily:'monospace'}}, '1RM: '+pr.prev+'kg \u2192 '+pr.now+'kg'),
-        React.createElement('span', {style:{background:'#22c55e33',color:'#22c55e',borderRadius:4,padding:'1px 5px',fontSize:9,fontFamily:'monospace',fontWeight:700}}, '+'+pr.pct+'%')
+        React.createElement('span', {style:{fontSize:15,fontWeight:700,color:'#fde68a'}}, pr.nombre),
+        React.createElement('span', {style:{fontSize:15,color:'#fbbf24',fontFamily:'monospace'}}, '1RM: '+pr.prev+'kg \u2192 '+pr.now+'kg'),
+        React.createElement('span', {style:{background:'#22c55e33',color:'#22c55e',borderRadius:4,padding:'1px 5px',fontSize:15,fontFamily:'monospace',fontWeight:700}}, '+'+pr.pct+'%')
       )
     )
   );
@@ -1812,8 +1817,8 @@ function StreakBadge({streak}) {
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,background:'linear-gradient(90deg, '+fire+'11, '+fire+'22, '+fire+'11)',border:'1px solid '+fire+'44',borderRadius:10,padding:'6px 12px',marginBottom:12}},
     React.createElement('span', {style:{fontSize:20}}, streak.weeks >= 8 ? '\u{1F525}' : '\u{26A1}'),
     React.createElement('div', null,
-      React.createElement('div', {style:{fontSize:12,fontWeight:800,fontFamily:'monospace',color:fire}}, streak.weeks + ' semanas ' + level),
-      React.createElement('div', {style:{fontSize:9,color:'#94a3b8',fontFamily:'monospace'}}, streak.totalSessions + ' sesiones totales \u{2022} ' + streak.thisWeek + ' esta semana')
+      React.createElement('div', {style:{fontSize:15,fontWeight:800,fontFamily:'monospace',color:fire}}, streak.weeks + ' semanas ' + level),
+      React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace'}}, streak.totalSessions + ' sesiones totales \u{2022} ' + streak.thisWeek + ' esta semana')
     )
   );
 }
@@ -1821,7 +1826,7 @@ function StreakBadge({streak}) {
 function Sec({title, color, children}) {
   return (
     <div style={{background:G.sur+'cc',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',border:'1px solid '+(color||G.bor),borderRadius:16,padding:16,marginBottom:14,boxShadow:'0 4px 24px rgba(0,0,0,0.25)'}}>
-      {title && <div style={{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:color||G.mu,marginBottom:10,fontWeight:700}}>{title}</div>}
+      {title && <div style={{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:color||G.mu,marginBottom:10,fontWeight:700}}>{title}</div>}
       {children}
     </div>
   );
@@ -1847,11 +1852,11 @@ function SaveStatus({status, message, onRetry}) {
   }
 
   return (
-    <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:bgColor,borderRadius:6,fontSize:11,color:textColor,whiteSpace:'nowrap'}}>
+    <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:bgColor,borderRadius:6,fontSize:15,color:textColor,whiteSpace:'nowrap'}}>
       <span style={status==='saving'?{animation:'spin 1s linear infinite'}:{}}>{icon}</span>
       <span>{message}</span>
       {status==='error' && onRetry && (
-        <button onClick={onRetry} style={{background:'none',color:textColor,border:'1px solid '+textColor,borderRadius:3,padding:'1px 6px',fontSize:10,marginLeft:4}}>Reintentar</button>
+        <button onClick={onRetry} style={{background:'none',color:textColor,border:'1px solid '+textColor,borderRadius:3,padding:'1px 6px',fontSize:15,marginLeft:4}}>Reintentar</button>
       )}
     </div>
   );
@@ -1872,6 +1877,8 @@ function TabEntreno({user, cfg}) {
   const [prevReg, setPrevReg] = useState(null); // Registro sesi\u00f3n anterior (mismo d\u00eda)
   const [prevFecha, setPrevFecha] = useState('');
   const [streak, setStreak] = useState({weeks:0,totalSessions:0,thisWeek:0});
+  const [openEj, setOpenEj] = useState(null); // key del ejercicio expandido (null=todos cerrados)
+  const [showTec, setShowTec] = useState({}); // keys de tecnica expandida
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
 
@@ -2010,7 +2017,7 @@ function TabEntreno({user, cfg}) {
     const bloqueHtml = (prog.bloques||[]).map(bl => {
       const esBi = bl.ejercicios.length > 1;
       return `<div style="margin-bottom:12px">
-        <div style="background:#333;color:#fff;padding:5px 10px;font-size:12px;font-weight:bold">${bl.nombre}${esBi?' (BISERIE)':''}</div>
+        <div style="background:#333;color:#fff;padding:5px 10px;font-size:15px;font-weight:bold">${bl.nombre}${esBi?' (BISERIE)':''}</div>
         ${bl.ejercicios.map((ej,ei) => {
           const key = 'b'+prog.bloques.indexOf(bl)+'_'+ei;
           const rc = getRirColor(ej.rir);
@@ -2046,8 +2053,8 @@ function TabEntreno({user, cfg}) {
   if(vista === 'historial') return (
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <div style={{fontSize:14,fontWeight:700}}>Historial de sesiones</div>
-        <button onClick={()=>setVista('hoy')} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:12}}>Volver</button>
+        <div style={{fontSize:15,fontWeight:700}}>Historial de sesiones</div>
+        <button onClick={()=>setVista('hoy')} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Volver</button>
       </div>
       {loadHist ? <div style={{color:G.mu,textAlign:'center',padding:20}}>Cargando...</div> :
        historial.length === 0 ? <div style={{color:G.mu,padding:20,textAlign:'center'}}>Sin sesiones guardadas</div> :
@@ -2059,10 +2066,10 @@ function TabEntreno({user, cfg}) {
            <div key={i} onClick={()=>cargarSesion(s.fecha,s.dia_semana)} style={{background:G.sur,border:'1px solid '+G.bor,borderRadius:10,padding:12,marginBottom:8,cursor:'pointer'}}>
              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                <div>
-                 <div style={{fontWeight:600,fontSize:13}}>{p?.nombre || 'Dia '+s.dia_semana}</div>
-                 <div style={{fontSize:11,color:G.mu}}>{fmtFecha(s.fecha)}</div>
+                 <div style={{fontWeight:600,fontSize:15}}>{p?.nombre || 'Dia '+s.dia_semana}</div>
+                 <div style={{fontSize:15,color:G.mu}}>{fmtFecha(s.fecha)}</div>
                </div>
-               <div style={{textAlign:'right',fontSize:12,color:G.dim}}>
+               <div style={{textAlign:'right',fontSize:15,color:G.dim}}>
                  {notas.ePost && <span>E:{notas.ePost}/10 </span>}
                  {notas.pump && <span>P:{notas.pump}/10</span>}
                </div>
@@ -2091,23 +2098,23 @@ function TabEntreno({user, cfg}) {
         {(() => { const sem = PERIODO[getSemPeriodo(fecha)]; return (
         <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
           <div style={{flex:1,minWidth:120}}>
-            <div style={{fontWeight:700,fontSize:15}}>{prog.nombre} <span style={{fontSize:11,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></div>
+            <div style={{fontWeight:700,fontSize:15}}>{prog.nombre} <span style={{fontSize:15,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></div>
             <div style={{display:'flex',gap:6,alignItems:'center',marginTop:3,flexWrap:'wrap'}}>
-              <span style={{background:(TC[prog.tipo]||G.mu)+'22',color:TC[prog.tipo]||G.mu,borderRadius:4,padding:'2px 8px',fontSize:10,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(prog.tipo||'').toUpperCase()}</span>
-              <span style={{background:sem.color+'22',color:sem.color,borderRadius:4,padding:'2px 8px',fontSize:10,fontFamily:'monospace',fontWeight:700}}>{sem.emoji} S{getSemPeriodo(fecha)}: {sem.nombre}</span>
-              <span style={{fontSize:10,color:G.warn,fontFamily:'monospace'}}>{prog.carbos}</span>
+              <span style={{background:(TC[prog.tipo]||G.mu)+'22',color:TC[prog.tipo]||G.mu,borderRadius:4,padding:'2px 8px',fontSize:15,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(prog.tipo||'').toUpperCase()}</span>
+              <span style={{background:sem.color+'22',color:sem.color,borderRadius:4,padding:'2px 8px',fontSize:15,fontFamily:'monospace',fontWeight:700}}>{sem.emoji} S{getSemPeriodo(fecha)}: {sem.nombre}</span>
+              <span style={{fontSize:15,color:G.warn,fontFamily:'monospace'}}>{prog.carbos}</span>
             </div>
-            {prog.cardio && <div style={{fontSize:10,color:'#38bdf8',marginTop:4}}>{'\u{1F6B6}'} {prog.cardio}</div>}
-            {prog.cf_opcional && <div style={{fontSize:10,color:G.warn,marginTop:2}}>{'\u{1F3CB}'} CrossFit opcional (seg\u00FAn fatiga)</div>}
+            {prog.cardio && <div style={{fontSize:15,color:'#38bdf8',marginTop:4}}>{'\u{1F6B6}'} {prog.cardio}</div>}
+            {prog.cf_opcional && <div style={{fontSize:15,color:G.warn,marginTop:2}}>{'\u{1F3CB}'} CrossFit opcional (seg\u00FAn fatiga)</div>}
           </div>
         </div>
         ); })()}
         <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
         <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
-          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>
-          <button onClick={imprimir} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:11}}>Imprimir</button>
-          <button onClick={verHistorial} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:11}}>Historial</button>
-          <span style={{background:G.alt,color:G.coa,border:'1px solid '+G.coa,borderRadius:7,padding:'5px 10px',fontSize:11}}>Suplementos</span>
+          <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:15,fontWeight:600}}>GUARDAR AHORA</button>
+          <button onClick={imprimir} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Imprimir</button>
+          <button onClick={verHistorial} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Historial</button>
+          <span style={{background:G.alt,color:G.coa,border:'1px solid '+G.coa,borderRadius:7,padding:'5px 10px',fontSize:15}}>Suplementos</span>
         </div>
       </Sec>
 
@@ -2122,45 +2129,45 @@ function TabEntreno({user, cfg}) {
         <Sec title={'\u{1F634} AN\u00C1LISIS DE SUE\u00D1O'} color={sa.color || '#6366f1'}>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
             <div>
-              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Horas sue\u00F1o</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Horas sue\u00F1o</div>
               <Inp type="number" min="0" max="12" step="0.5" value={meta.sueno} onChange={e=>updMeta('sueno',e.target.value)} placeholder="7.5" style={{textAlign:'center'}} />
             </div>
             <div>
-              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Calidad (1-10)</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Calidad (1-10)</div>
               <Inp type="number" min="1" max="10" step="1" value={meta.suenoCalidad} onChange={e=>updMeta('suenoCalidad',e.target.value)} placeholder="7" style={{textAlign:'center'}} />
             </div>
             <div>
-              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Despertares</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Despertares</div>
               <Inp type="number" min="0" max="10" step="1" value={meta.despertares} onChange={e=>updMeta('despertares',e.target.value)} placeholder="0" style={{textAlign:'center'}} />
             </div>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
             <div>
-              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Hora acostarse</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Hora acostarse</div>
               <Inp type="time" value={meta.horaAcostarse} onChange={e=>updMeta('horaAcostarse',e.target.value)} />
             </div>
             <div>
-              <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Horas ayuno</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Horas ayuno</div>
               <Inp type="number" min="0" max="24" step="0.5" value={meta.ayuno} onChange={e=>updMeta('ayuno',e.target.value)} placeholder="12" style={{textAlign:'center'}} />
             </div>
           </div>
           {/* Resumen */}
-          {sa.resumen && <div style={{background:sa.color+'15',border:'1px solid '+sa.color+'44',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:sa.color}}>{sa.resumen}</div>}
+          {sa.resumen && <div style={{background:sa.color+'15',border:'1px solid '+sa.color+'44',borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:15,fontWeight:600,color:sa.color}}>{sa.resumen}</div>}
           {/* Barra de fases de sue\u00F1o */}
           {sa.phases && (
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>Fases estimadas del sue\u00F1o:</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>Fases estimadas del sue\u00F1o:</div>
               <div style={{display:'flex',borderRadius:6,overflow:'hidden',height:22}}>
                 {[['deep',sa.phases.deep],['rem',sa.phases.rem],['light',sa.phases.light],['awake',sa.phases.awake]].map(([k,mins]) => {
                   const total = sa.phases.deep+sa.phases.rem+sa.phases.light+sa.phases.awake;
                   const pct = total>0 ? (mins/total*100) : 0;
                   const ph = SLEEP_PHASES[k];
-                  return pct > 0 ? <div key={k} title={ph.name+': '+mins+'min'} style={{width:pct+'%',background:ph.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'#fff',fontWeight:700,minWidth:pct>8?'auto':0}}>{pct>12?(mins+'m'):''}</div> : null;
+                  return pct > 0 ? <div key={k} title={ph.name+': '+mins+'min'} style={{width:pct+'%',background:ph.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,color:'#fff',fontWeight:700,minWidth:pct>8?'auto':0}}>{pct>12?(mins+'m'):''}</div> : null;
                 })}
               </div>
               <div style={{display:'flex',gap:8,marginTop:4,flexWrap:'wrap'}}>
                 {Object.entries(SLEEP_PHASES).map(([k,ph]) => (
-                  <span key={k} style={{fontSize:9,color:ph.color,display:'flex',alignItems:'center',gap:2}}>
+                  <span key={k} style={{fontSize:15,color:ph.color,display:'flex',alignItems:'center',gap:2}}>
                     <span style={{width:8,height:8,borderRadius:2,background:ph.color,display:'inline-block'}}></span>
                     {ph.name}
                   </span>
@@ -2171,32 +2178,32 @@ function TabEntreno({user, cfg}) {
           {/* Energ\u00EDa predicha */}
           {sa.energyPrediction.pct && (
             <div style={{background:'#0f172a',borderRadius:8,padding:'8px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:40,height:40,borderRadius:'50%',border:'3px solid '+(sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'),display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'}}>{sa.energyPrediction.pct}%</div>
+              <div style={{width:40,height:40,borderRadius:'50%',border:'3px solid '+(sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'),display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'}}>{sa.energyPrediction.pct}%</div>
               <div style={{flex:1}}>
-                <div style={{fontSize:11,fontWeight:700,color:'#e2e8f0'}}>{'\u{26A1}'} {sa.energyPrediction.msg}</div>
-                <div style={{fontSize:9,color:G.mu,marginTop:2}}>Basado en sue\u00F1o, calidad, despertares y estado pre-entreno</div>
+                <div style={{fontSize:15,fontWeight:700,color:'#e2e8f0'}}>{'\u{26A1}'} {sa.energyPrediction.msg}</div>
+                <div style={{fontSize:15,color:G.mu,marginTop:2}}>Basado en sue\u00F1o, calidad, despertares y estado pre-entreno</div>
               </div>
             </div>
           )}
           {/* Impacto en entrenamiento */}
           {sa.impacto.length > 0 && (
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F3CB}'} Impacto en tu entrenamiento hoy:</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F3CB}'} Impacto en tu entrenamiento hoy:</div>
               {sa.impacto.map((r,i) => (
-                <div key={i} style={{background:r.color+'11',borderLeft:'3px solid '+r.color,borderRadius:'0 6px 6px 0',padding:'6px 10px',marginBottom:4,fontSize:11,color:'#e2e8f0',lineHeight:1.4}}>{r.icon} {r.txt}</div>
+                <div key={i} style={{background:r.color+'11',borderLeft:'3px solid '+r.color,borderRadius:'0 6px 6px 0',padding:'6px 10px',marginBottom:4,fontSize:15,color:'#e2e8f0',lineHeight:1.4}}>{r.icon} {r.txt}</div>
               ))}
             </div>
           )}
           {/* Recomendaci\u00F3n de siesta */}
           {sa.siesta.msg && (
-            <div style={{background:sa.siesta.recomendada?'#6366f115':'#10b98111',border:'1px solid '+(sa.siesta.recomendada?'#6366f144':'#10b98144'),borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:11,color:'#e2e8f0',lineHeight:1.4}}>
+            <div style={{background:sa.siesta.recomendada?'#6366f115':'#10b98111',border:'1px solid '+(sa.siesta.recomendada?'#6366f144':'#10b98144'),borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:15,color:'#e2e8f0',lineHeight:1.4}}>
               {sa.siesta.msg}
             </div>
           )}
           {/* Consejos para esta noche */}
           {sa.consejosNoche.length > 0 && (
             <details style={{marginBottom:6}}>
-              <summary style={{fontSize:11,color:'#a855f7',cursor:'pointer',fontWeight:600,marginBottom:6}}>{'\u{1F319}'} Consejos para esta noche ({sa.consejosNoche.length-1} tips)</summary>
+              <summary style={{fontSize:15,color:'#a855f7',cursor:'pointer',fontWeight:600,marginBottom:6}}>{'\u{1F319}'} Consejos para esta noche ({sa.consejosNoche.length-1} tips)</summary>
               {sa.consejosNoche.map((c,i) => (
                 <div key={i} style={{background:c.isHeader?c.color+'22':c.color+'0a',borderLeft:c.isHeader?'3px solid '+c.color:'2px solid '+c.color+'44',borderRadius:'0 6px 6px 0',padding:c.isHeader?'6px 10px':'5px 10px',marginBottom:3,fontSize:c.isHeader?11:10,color:c.isHeader?c.color:'#cbd5e1',fontWeight:c.isHeader?700:400,lineHeight:1.4}}>{c.icon} {c.txt}</div>
               ))}
@@ -2209,11 +2216,11 @@ function TabEntreno({user, cfg}) {
       <Sec title="PRE-ENTRENO" color={G.acc}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Hora inicio</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Hora inicio</div>
             <Inp type="time" value={meta.inicio} onChange={e=>updMeta('inicio',e.target.value)} />
           </div>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Hora fin {dur&&<span style={{color:G.acc,fontFamily:'monospace'}}>({dur}h)</span>}</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Hora fin {dur&&<span style={{color:G.acc,fontFamily:'monospace'}}>({dur}h)</span>}</div>
             <Inp type="time" value={meta.fin} onChange={e=>updMeta('fin',e.target.value)} />
           </div>
         </div>
@@ -2232,12 +2239,12 @@ function TabEntreno({user, cfg}) {
         return (
           <div key={bi} style={{background:G.sur,border:'1px solid '+bt+'55',borderRadius:12,overflow:'hidden',marginBottom:12}}>
             <div style={{padding:'8px 14px',background:bt+'15',borderBottom:'2px solid '+bt+'44',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-              <span style={{fontSize:10,fontFamily:'monospace',fontWeight:700,color:bt,letterSpacing:1}}>{bloque.nombre}</span>
-              <span style={{background:bt+'33',color:bt,borderRadius:4,padding:'2px 7px',fontSize:8,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(bloque.btipo||'').toUpperCase()}</span>
-              <span style={{background:ep.color+'22',color:ep.color,borderRadius:4,padding:'2px 7px',fontSize:8,fontFamily:'monospace',fontWeight:700}}>{ep.emoji} {ep.label}</span>
-              {esBi && <span style={{background:G.warn+'22',color:G.warn,borderRadius:3,padding:'2px 5px',fontSize:8,fontFamily:'monospace'}}>BISERIE</span>}
-              {hasPrecaucion && <span style={{background:'#ef444422',color:'#ef4444',borderRadius:3,padding:'2px 5px',fontSize:8,fontFamily:'monospace'}}>{'\u26A0\uFE0F'} OJO</span>}
-              <span style={{marginLeft:'auto',fontSize:8,color:G.mu}}>{ep.desc} | Desc: {desc}</span>
+              <span style={{fontSize:15,fontFamily:'monospace',fontWeight:700,color:bt,letterSpacing:1}}>{bloque.nombre}</span>
+              <span style={{background:bt+'33',color:bt,borderRadius:4,padding:'2px 7px',fontSize:15,fontFamily:'monospace',fontWeight:700,letterSpacing:1}}>{(bloque.btipo||'').toUpperCase()}</span>
+              <span style={{background:ep.color+'22',color:ep.color,borderRadius:4,padding:'2px 7px',fontSize:15,fontFamily:'monospace',fontWeight:700}}>{ep.emoji} {ep.label}</span>
+              {esBi && <span style={{background:G.warn+'22',color:G.warn,borderRadius:3,padding:'2px 5px',fontSize:15,fontFamily:'monospace'}}>BISERIE</span>}
+              {hasPrecaucion && <span style={{background:'#ef444422',color:'#ef4444',borderRadius:3,padding:'2px 5px',fontSize:15,fontFamily:'monospace'}}>{'\u26A0\uFE0F'} OJO</span>}
+              <span style={{marginLeft:'auto',fontSize:15,color:G.mu}}>{ep.desc} | Desc: {desc}</span>
             </div>
             {bloque.ejercicios.map((ej, ei) => {
               const key = 'b'+bi+'_'+ei;
@@ -2248,37 +2255,48 @@ function TabEntreno({user, cfg}) {
                 <div key={ei}>
                   {ei > 0 && (
                     <div style={{display:'flex',alignItems:'center',gap:6,padding:'3px 14px',background:G.warn+'11'}}>
-                      <div style={{flex:1,height:1,background:G.bor}}/><span style={{fontSize:8,color:G.warn,fontFamily:'monospace'}}>SEGUIDO</span><div style={{flex:1,height:1,background:G.bor}}/>
+                      <div style={{flex:1,height:1,background:G.bor}}/><span style={{fontSize:15,color:G.warn,fontFamily:'monospace'}}>SEGUIDO</span><div style={{flex:1,height:1,background:G.bor}}/>
                     </div>
                   )}
-                  <div style={{padding:'12px 14px',borderLeft:'3px solid '+rc}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                  <div style={{padding:'0',borderLeft:'3px solid '+rc}}>
+                    <div onClick={()=>setOpenEj(openEj===key?null:key)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',cursor:'pointer',userSelect:'none',background:openEj===key?rc+'0d':'transparent',transition:'background 0.2s'}}>
                       <div style={{flex:1}}>
                         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
                           <div style={{width:10,height:10,borderRadius:'50%',background:rc,flexShrink:0}}/>
                           <span style={{fontWeight:700,fontSize:15}}>{ej.nombre}</span>
+                          <span style={{fontSize:15,color:G.mu,marginLeft:4,transition:'transform 0.2s',display:'inline-block',transform:openEj===key?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
                         </div>
-                        <div style={{fontSize:11,color:G.mu,marginLeft:16}}>{ej.musculo}</div>
+                        <div style={{fontSize:15,color:G.mu,marginLeft:16}}>{ej.musculo} {reg[key] && Object.keys(reg[key]).length>0 ? ' \u2705' : ''}</div>
                       </div>
                       <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
-                        <div style={{fontSize:14,fontWeight:700,fontFamily:'monospace',color:rc}}>{ej.sets}x{ej.reps}</div>
-                        <div style={{fontSize:11,color:G.mu}}>RIR {ej.rir} · {ej.cadencia}</div>
-                        {rl && <div style={{fontSize:8,background:rc+'22',color:rc,borderRadius:3,padding:'1px 5px',marginTop:2,fontFamily:'monospace'}}>{rl}</div>}
+                        <div style={{fontSize:15,fontWeight:700,fontFamily:'monospace',color:rc}}>{ej.sets}x{ej.reps}</div>
+                        <div style={{fontSize:15,color:G.mu}}>RIR {ej.rir} · {ej.cadencia}</div>
+                        {rl && <div style={{fontSize:15,background:rc+'22',color:rc,borderRadius:3,padding:'1px 5px',marginTop:2,fontFamily:'monospace'}}>{rl}</div>}
                       </div>
                     </div>
-                    {ej.tecnica && (
-                      <div style={{background:rc+'0d',border:'1px solid '+rc+'33',borderRadius:8,padding:'7px 10px',marginBottom:ej.precaucion?6:10,fontSize:12,color:G.dim,lineHeight:1.6}}>
-                        <span style={{fontSize:10,fontFamily:'monospace',color:rc,fontWeight:700}}>TECNICA: </span>{ej.tecnica}
+                    {openEj===key && <div style={{padding:'8px 14px 12px'}}>
+                    {(ej.tecnica || ej.precaucion) && (
+                      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
+                        {ej.tecnica && (
+                          <span onClick={(e)=>{e.stopPropagation();setShowTec(p=>({...p,[key+'_t']:!p[key+'_t']}))}} style={{display:'inline-flex',alignItems:'center',gap:4,cursor:'pointer',userSelect:'none',background:showTec[key+'_t']?rc+'22':rc+'11',border:'1px solid '+rc+'33',borderRadius:20,padding:'4px 14px',fontSize:15,color:rc,fontWeight:600,transition:'background 0.2s'}}>
+                            {'\u{1F4CB}'} T\u00e9cnica <span style={{fontSize:15,transition:'transform 0.2s',display:'inline-block',transform:showTec[key+'_t']?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
+                          </span>
+                        )}
+                        {ej.precaucion && (
+                          <span onClick={(e)=>{e.stopPropagation();setShowTec(p=>({...p,[key+'_p']:!p[key+'_p']}))}} style={{display:'inline-flex',alignItems:'center',gap:4,cursor:'pointer',userSelect:'none',background:showTec[key+'_p']?'#ef444422':'#ef444411',border:'1px solid #ef444444',borderRadius:20,padding:'4px 14px',fontSize:15,color:'#ef4444',fontWeight:600,transition:'background 0.2s'}}>
+                            {'\u26A0\uFE0F'} Precauci\u00f3n <span style={{fontSize:15,transition:'transform 0.2s',display:'inline-block',transform:showTec[key+'_p']?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
+                          </span>
+                        )}
                       </div>
                     )}
-                    {ej.precaucion && (
-                      <div style={{background:'#ef444412',border:'1px solid #ef444444',borderRadius:8,padding:'7px 10px',marginBottom:10,fontSize:11,color:'#fca5a5',lineHeight:1.5,display:'flex',gap:6,alignItems:'flex-start'}}>
-                        <span style={{fontSize:13,flexShrink:0}}>{'\u26A0\uFE0F'}</span>
-                        <div><span style={{fontSize:10,fontFamily:'monospace',color:'#ef4444',fontWeight:700}}>PRECAUCION: </span>{ej.precaucion}</div>
-                      </div>
+                    {showTec[key+'_t'] && ej.tecnica && (
+                      <div style={{padding:'8px 12px',fontSize:15,color:G.dim,lineHeight:1.7,background:rc+'08',borderRadius:8,marginBottom:8}}>{ej.tecnica}</div>
+                    )}
+                    {showTec[key+'_p'] && ej.precaucion && (
+                      <div style={{padding:'8px 12px',fontSize:15,color:'#fca5a5',lineHeight:1.6,background:'#ef444410',borderRadius:8,marginBottom:8,borderLeft:'3px solid #ef4444'}}>{ej.precaucion}</div>
                     )}
                     {ej.video && (
-                      React.createElement('a', {href:ej.video, target:'_blank', rel:'noopener noreferrer', style:{display:'inline-flex',alignItems:'center',gap:6,background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:8,padding:'6px 12px',marginBottom:10,fontSize:12,color:G.acc,textDecoration:'none',cursor:'pointer',fontWeight:600}},
+                      React.createElement('a', {href:ej.video, target:'_blank', rel:'noopener noreferrer', style:{display:'inline-flex',alignItems:'center',gap:6,background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:8,padding:'6px 12px',marginBottom:10,fontSize:15,color:G.acc,textDecoration:'none',cursor:'pointer',fontWeight:600}},
                         '\u{25B6}\uFE0F} Ver video del ejercicio'
                       )
                     )}
@@ -2293,17 +2311,17 @@ function TabEntreno({user, cfg}) {
                       const periodo = getSemPeriodo(fecha);
                       const sug = prevBest && prevBest.peso ? suggestWeight(prevBest.peso, prevBest.reps, periodo) : null;
                       return React.createElement(React.Fragment, null,
-                        prevBest && prevBest.peso && React.createElement('div', {style:{background:G.acc+'11',border:'1px solid '+G.acc+'33',borderRadius:6,padding:'5px 8px',marginBottom:6,fontSize:10,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
+                        prevBest && prevBest.peso && React.createElement('div', {style:{background:G.acc+'11',border:'1px solid '+G.acc+'33',borderRadius:6,padding:'5px 8px',marginBottom:6,fontSize:15,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
                           React.createElement('span', {style:{color:G.acc,fontFamily:'monospace',fontWeight:700}}, '\u{1F4CA} Anterior: '+prevBest.peso+'kg \u00d7'+prevBest.reps+(prevBest.rir?' RIR'+prevBest.rir:'')+(prevBest.rpe?' RPE'+prevBest.rpe:'')),
-                          React.createElement('span', {style:{color:G.mu,fontSize:9}}, '1RM\u2248'+prevBest.rm+'kg'),
-                          prevFecha && React.createElement('span', {style:{color:G.mu,fontSize:8,marginLeft:'auto'}}, prevFecha)
+                          React.createElement('span', {style:{color:G.mu,fontSize:15}}, '1RM\u2248'+prevBest.rm+'kg'),
+                          prevFecha && React.createElement('span', {style:{color:G.mu,fontSize:15,marginLeft:'auto'}}, prevFecha)
                         ),
-                        sug && React.createElement('div', {style:{background:G.ok+'11',border:'1px solid '+G.ok+'33',borderRadius:6,padding:'4px 8px',marginBottom:6,fontSize:10,color:G.ok,fontFamily:'monospace'}},
+                        sug && React.createElement('div', {style:{background:G.ok+'11',border:'1px solid '+G.ok+'33',borderRadius:6,padding:'4px 8px',marginBottom:6,fontSize:15,color:G.ok,fontFamily:'monospace'}},
                           '\u{1F3AF} Sugerido hoy: '+sug.peso+'kg '+sug.label
                         ),
                         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}},
                           ['#','PESO kg','REPS','CADENCIA','RIR','RPE','NOTAS'].map(h =>
-                            React.createElement('span', {key:h,style:{fontSize:7,color:G.mu,textAlign:'center',fontFamily:'monospace'}}, h)
+                            React.createElement('span', {key:h,style:{fontSize:15,color:G.mu,textAlign:'center',fontFamily:'monospace'}}, h)
                           )
                         ),
                         Array.from({length:ej.sets}).map((_,si) => {
@@ -2311,23 +2329,32 @@ function TabEntreno({user, cfg}) {
                           const prevS = prevSets && prevSets[si] ? prevSets[si] : null;
                           const phPeso = prevS && prevS.peso ? prevS.peso : (sug ? String(sug.peso) : '\u2014');
                           return React.createElement('div', {key:si, style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
-                            React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
-                            React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
-                            React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
-                            React.createElement(Inp, {value:s.cadencia||'',onChange:e=>updSet(key,si,'cadencia',e.target.value),placeholder:ej.cadencia,style:{textAlign:'center',padding:'5px 2px',fontSize:10}}),
-                            React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
-                            React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:12}}),
-                            React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:10}})
+                            React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
+                            React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                            React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                            React.createElement(Inp, {value:s.cadencia||'',onChange:e=>updSet(key,si,'cadencia',e.target.value),placeholder:ej.cadencia,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                            React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                            React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                            React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:15}})
                           );
                         })
                       );
                     })()}
                     {React.createElement(RestTimer, {btipo:bloque.btipo, esBiserie:esBi})}
-                    <div style={{marginTop:10,padding:'8px 10px',background:G.bg,borderRadius:8,border:'1px solid '+G.bor}}>
-                      <div style={{fontSize:8,color:G.mu,fontFamily:'monospace',marginBottom:6}}>AL TERMINAR ESTE EJERCICIO</div>
-                      <Rating label="Energia (auto POST)" value={ejm.e||''} onChange={v=>updEjMeta(key,'e',v)} color={G.acc} small onSave={forceManualSave} />
-                      <Rating label="Fatiga (auto POST)" value={ejm.f||''} onChange={v=>updEjMeta(key,'f',v)} color={G.bad} small onSave={forceManualSave} />
-                    </div>
+                    {(() => {
+                      const hasData = ejm.e || ejm.f;
+                      const barBg = hasData ? G.ok+'15' : G.acc+'0a';
+                      const barBorder = hasData ? G.ok+'44' : G.acc+'33';
+                      const barLabel = hasData ? G.ok : G.acc;
+                      return (
+                        <div style={{marginTop:10,padding:'10px 12px',background:barBg,borderRadius:10,border:'1px solid '+barBorder,transition:'all 0.3s'}}>
+                          <div style={{fontSize:15,color:barLabel,fontFamily:'monospace',marginBottom:8,fontWeight:600}}>{hasData ? '\u2705 EJERCICIO REGISTRADO' : '\u{1F3CB}\uFE0F AL TERMINAR ESTE EJERCICIO'}</div>
+                          <Rating label="Energia" value={ejm.e||''} onChange={v=>updEjMeta(key,'e',v)} color={G.acc} small onSave={forceManualSave} />
+                          <Rating label="Fatiga" value={ejm.f||''} onChange={v=>updEjMeta(key,'f',v)} color={G.warn} small onSave={forceManualSave} warnAt={6} />
+                        </div>
+                      );
+                    })()}
+                    </div>}
                   </div>
                 </div>
               );
@@ -2337,7 +2364,7 @@ function TabEntreno({user, cfg}) {
       })}
 
       <Sec title="POST-ENTRENO" color={G.ok}>
-        <div style={{fontSize:10,color:G.ok,marginBottom:10,fontFamily:'monospace'}}>Energia y Fatiga se calculan con promedio de ejercicios</div>
+        <div style={{fontSize:15,color:G.ok,marginBottom:10,fontFamily:'monospace'}}>Energia y Fatiga se calculan con promedio de ejercicios</div>
         <Rating label="Energia post (auto)" value={meta.ePost} onChange={v=>updMeta('ePost',v)} color={G.acc} onSave={forceManualSave} />
         <Rating label="Pump" value={meta.pump} onChange={v=>updMeta('pump',v)} color={G.coa} onSave={forceManualSave} />
         <Rating label="Fatiga post (auto)" value={meta.fPost} onChange={v=>updMeta('fPost',v)} color={G.bad} onSave={forceManualSave} />
@@ -2347,14 +2374,14 @@ function TabEntreno({user, cfg}) {
 
       {/* ─── ENERGY CHECK-IN: mid-day y end-of-day ─── */}
       <Sec title={'\u{26A1} ENERG\u00CDA DURANTE EL D\u00CDA'} color={'#f59e0b'}>
-        <div style={{fontSize:10,color:'#f59e0b',marginBottom:8,fontFamily:'monospace'}}>Registra tu energ\u00EDa a lo largo del d\u00EDa para consejos personalizados</div>
+        <div style={{fontSize:15,color:'#f59e0b',marginBottom:8,fontFamily:'monospace'}}>Registra tu energ\u00EDa a lo largo del d\u00EDa para consejos personalizados</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:10}}>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} Medio d\u00EDa (~12-2PM)</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} Medio d\u00EDa (~12-2PM)</div>
             <Rating label="Energ\u00EDa mid-day" value={meta.eMid} onChange={v=>updMeta('eMid',v)} color={'#f59e0b'} onSave={forceManualSave} />
           </div>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F319}'} Final del d\u00EDa (~8-10PM)</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F319}'} Final del d\u00EDa (~8-10PM)</div>
             <Rating label="Energ\u00EDa end-day" value={meta.eEnd} onChange={v=>updMeta('eEnd',v)} color={'#6366f1'} onSave={forceManualSave} />
           </div>
         </div>
@@ -2363,7 +2390,7 @@ function TabEntreno({user, cfg}) {
           const midTips = energyCheckInAdvice('midday', meta.eMid, meta.sueno, meta);
           return midTips.length > 0 ? (
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:11,color:'#f59e0b',fontWeight:600,marginBottom:4}}>{'\u{1F31E}'} Consejos medio d\u00EDa:</div>
+              <div style={{fontSize:15,color:'#f59e0b',fontWeight:600,marginBottom:4}}>{'\u{1F31E}'} Consejos medio d\u00EDa:</div>
               {midTips.map((t,i) => (
                 <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:'#cbd5e1',fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
               ))}
@@ -2375,7 +2402,7 @@ function TabEntreno({user, cfg}) {
           const endTips = energyCheckInAdvice('endday', meta.eEnd, meta.sueno, meta);
           return endTips.length > 0 ? (
             <div>
-              <div style={{fontSize:11,color:'#6366f1',fontWeight:600,marginBottom:4}}>{'\u{1F319}'} Consejos para cerrar el d\u00EDa:</div>
+              <div style={{fontSize:15,color:'#6366f1',fontWeight:600,marginBottom:4}}>{'\u{1F319}'} Consejos para cerrar el d\u00EDa:</div>
               {endTips.map((t,i) => (
                 <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:'#cbd5e1',fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
               ))}
@@ -2394,23 +2421,23 @@ function TabEntreno({user, cfg}) {
                 const cur = meta.obs||'';
                 if(sel) { updMeta('obs', cur.replace(opt.label,'').replace(/\s*\|\s*\|\s*/g,' | ').replace(/^\s*\|\s*/,'').replace(/\s*\|\s*$/,'').trim()); }
                 else { updMeta('obs', cur ? cur + ' | ' + opt.label : opt.label); }
-              }} style={{background:sel?G.coa+'33':G.alt,border:'1px solid '+(sel?G.coa:G.bor),borderRadius:12,padding:'10px 14px',fontSize:13,color:sel?G.coa:G.dim,fontWeight:sel?700:400,display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:90,transition:'all 0.2s'}}>
+              }} style={{background:sel?G.coa+'33':G.alt,border:'1px solid '+(sel?G.coa:G.bor),borderRadius:12,padding:'10px 14px',fontSize:15,color:sel?G.coa:G.dim,fontWeight:sel?700:400,display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:90,transition:'all 0.2s'}}>
                 <span style={{fontSize:20}}>{opt.emoji}</span>
-                <span style={{fontSize:11,fontWeight:600}}>{opt.label}</span>
-                <span style={{fontSize:10,color:G.mu,textAlign:'center'}}>{opt.desc}</span>
+                <span style={{fontSize:15,fontWeight:600}}>{opt.label}</span>
+                <span style={{fontSize:15,color:G.mu,textAlign:'center'}}>{opt.desc}</span>
               </button>
             );
           })}
         </div>
         {(meta.obs||'').includes('Otro:') && (
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:G.mu,marginBottom:4}}>Nota personalizada</div>
-            <textarea value={meta.obs_custom||''} onChange={e=>updMeta('obs_custom',e.target.value)} placeholder="Escribi lo que sentiste..." style={{background:G.alt,border:'1px solid '+G.bor,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',minHeight:50}} />
+            <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Nota personalizada</div>
+            <textarea value={meta.obs_custom||''} onChange={e=>updMeta('obs_custom',e.target.value)} placeholder="Escribi lo que sentiste..." style={{background:G.alt,border:'1px solid '+G.bor,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:50}} />
           </div>
         )}
         {meta.obs && (
-          <div style={{background:G.alt,borderRadius:10,padding:'10px 14px',marginBottom:12,fontSize:12,color:G.dim}}>
-            <span style={{color:G.mu,fontSize:10,fontFamily:'monospace'}}>RESUMEN: </span>{meta.obs}{meta.obs_custom ? ' \u2014 ' + meta.obs_custom : ''}
+          <div style={{background:G.alt,borderRadius:10,padding:'10px 14px',marginBottom:12,fontSize:15,color:G.dim}}>
+            <span style={{color:G.mu,fontSize:15,fontFamily:'monospace'}}>RESUMEN: </span>{meta.obs}{meta.obs_custom ? ' \u2014 ' + meta.obs_custom : ''}
           </div>
         )}
       </Sec>
@@ -2422,13 +2449,13 @@ function TabEntreno({user, cfg}) {
           return (
             <div>
               {tips.map((tip, i) => (
-                <div key={i} style={{background:G.alt,border:'1px solid '+G.bor,borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:13,color:G.dim,lineHeight:1.6}}>
+                <div key={i} style={{background:G.alt,border:'1px solid '+G.bor,borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:15,color:G.dim,lineHeight:1.6}}>
                   {tip}
                 </div>
               ))}
               <div style={{marginTop:10}}>
-                <div style={{fontSize:11,color:G.mu,marginBottom:4}}>Nota adicional del coach (manual)</div>
-                <textarea value={meta.coach||''} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes manuales, observaciones especiales..." style={{background:G.alt,border:'1px solid '+G.acc,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',minHeight:45}} />
+                <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Nota adicional del coach (manual)</div>
+                <textarea value={meta.coach||''} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes manuales, observaciones especiales..." style={{background:G.alt,border:'1px solid '+G.acc,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:45}} />
               </div>
             </div>
           );
@@ -2453,8 +2480,8 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
 
   return React.createElement('div', {style:{background:G.sur,border:'1px solid '+color+'44',borderRadius:12,padding:14,marginBottom:12}},
     React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
-      React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:color,fontWeight:700}}, label),
-      React.createElement('span', {style:{fontSize:11,color:G.mu,fontFamily:'monospace'}},
+      React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:color,fontWeight:700}}, label),
+      React.createElement('span', {style:{fontSize:15,color:G.mu,fontFamily:'monospace'}},
         items.filter(s => (checked||[]).includes(s.id)).length + '/' + items.length
       )
     ),
@@ -2464,22 +2491,22 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
         const next = cur.includes(sup.id) ? cur.filter(x=>x!==sup.id) : [...cur, sup.id];
         onChange(next);
       }, style:{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:(checked||[]).includes(sup.id)?color+'15':G.alt,border:'1px solid '+((checked||[]).includes(sup.id)?color+'55':G.bor),borderRadius:10,marginBottom:6,cursor:'pointer',transition:'all 0.2s'}},
-        React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+((checked||[]).includes(sup.id)?color:G.bor),background:(checked||[]).includes(sup.id)?color:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14,color:'#fff',transition:'all 0.2s'}},
+        React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+((checked||[]).includes(sup.id)?color:G.bor),background:(checked||[]).includes(sup.id)?color:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15,color:'#fff',transition:'all 0.2s'}},
           (checked||[]).includes(sup.id) ? '\u2713' : ''
         ),
         React.createElement('div', {style:{flex:1}},
-          React.createElement('div', {style:{fontSize:13,fontWeight:600,color:(checked||[]).includes(sup.id)?'#e2e8f0':G.dim}}, sup.emoji + ' ' + sup.nombre),
-          React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:2}}, sup.timing)
+          React.createElement('div', {style:{fontSize:15,fontWeight:600,color:(checked||[]).includes(sup.id)?'#e2e8f0':G.dim}}, sup.emoji + ' ' + sup.nombre),
+          React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, sup.timing)
         )
       )
     ),
     // ─── TRACKER REAL para suplementos (carnivor, whey, cafe, miel, etc.) ───
     React.createElement('div', {style:{marginTop:6,borderTop:'1px solid '+G.bor,paddingTop:8}},
       React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
-        React.createElement('button', {onClick:()=>setShowTracker(!showTracker), style:{background:showTracker?G.acc+'33':G.acc+'15',border:'1px solid '+G.acc+'44',borderRadius:7,padding:'5px 12px',fontSize:10,fontWeight:700,color:G.acc,cursor:'pointer'}},
+        React.createElement('button', {onClick:()=>setShowTracker(!showTracker), style:{background:showTracker?G.acc+'33':G.acc+'15',border:'1px solid '+G.acc+'44',borderRadius:7,padding:'5px 12px',fontSize:15,fontWeight:700,color:G.acc,cursor:'pointer'}},
           showTracker ? '\u25B2 Cerrar detalle' : '\u{1F4CA} Detalle real'
         ),
-        hasReal && React.createElement('span', {style:{fontSize:9,fontFamily:'monospace',color:G.ok}},
+        hasReal && React.createElement('span', {style:{fontSize:15,fontFamily:'monospace',color:G.ok}},
           '\u2705 P:'+Math.round(riTot.p)+'g C:'+Math.round(riTot.c)+'g G:'+Math.round(riTot.g)+'g '+riTot.k+'kcal'
         )
       ),
@@ -2521,7 +2548,7 @@ function QtyControl({value, onChange, step, min, unit}) {
   const btnS = {width:32,height:32,borderRadius:8,border:'1px solid '+G.bor,background:G.alt,color:'#e2e8f0',fontSize:16,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0};
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
     React.createElement('button', {onClick:()=>onChange(Math.max(mn, v-st)), style:btnS}, '\u2212'),
-    React.createElement('div', {style:{minWidth:48,textAlign:'center',fontSize:14,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}},
+    React.createElement('div', {style:{minWidth:48,textAlign:'center',fontSize:15,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}},
       v + (unit||'g')
     ),
     React.createElement('button', {onClick:()=>onChange(v+st), style:btnS}, '+')
@@ -2532,7 +2559,7 @@ function QtyControl({value, onChange, step, min, unit}) {
 function StepToggle({step, setStep}) {
   return React.createElement('div', {style:{display:'flex',gap:0,background:G.alt,borderRadius:6,border:'1px solid '+G.bor,overflow:'hidden'}},
     [1,10].map(s =>
-      React.createElement('button', {key:s, onClick:()=>setStep(s), style:{padding:'3px 8px',fontSize:9,fontWeight:700,fontFamily:'monospace',border:'none',background:step===s?G.acc:'transparent',color:step===s?'#fff':G.mu,cursor:'pointer'}}, '\u00B1'+s)
+      React.createElement('button', {key:s, onClick:()=>setStep(s), style:{padding:'3px 8px',fontSize:15,fontWeight:700,fontFamily:'monospace',border:'none',background:step===s?G.acc:'transparent',color:step===s?'#fff':G.mu,cursor:'pointer'}}, '\u00B1'+s)
     )
   );
 }
@@ -2548,11 +2575,11 @@ function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride, userId, da
   const sem = getSemaforo(alId, userId, dayType);
   const semCol = SEM_COLORS[sem.luz];
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:G.alt,borderRadius:8,marginBottom:4,flexWrap:'wrap',borderLeft:'3px solid '+semCol}},
-    React.createElement('div', {onClick:()=>setShowTip(!showTip), style:{cursor:'pointer',fontSize:11,lineHeight:1}}, SEM_LABELS[sem.luz]),
-    React.createElement('div', {style:{flex:'1 1 80px',fontSize:12,color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontWeight:600,minWidth:70}}, al.n),
+    React.createElement('div', {onClick:()=>setShowTip(!showTip), style:{cursor:'pointer',fontSize:15,lineHeight:1}}, SEM_LABELS[sem.luz]),
+    React.createElement('div', {style:{flex:'1 1 80px',fontSize:15,color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontWeight:600,minWidth:70}}, al.n),
     React.createElement(QtyControl, {value:qty, onChange:onQtyChange, step:step, min:0, unit:unit}),
     React.createElement(StepToggle, {step, setStep}),
-    React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',color:G.dim,minWidth:100,textAlign:'right'}},
+    React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:G.dim,minWidth:100,textAlign:'right'}},
       React.createElement('span', {style:{color:G.acc}}, 'P:'+Math.round(m.p)),
       ' ',
       React.createElement('span', {style:{color:G.warn}}, 'C:'+Math.round(m.c)),
@@ -2563,7 +2590,7 @@ function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride, userId, da
       m.alcG>0 ? [' ', React.createElement('span', {key:'alc',style:{color:'#ef4444'}}, '\u{1F37A}'+Math.round(m.alcG)+'g')] : null
     ),
     React.createElement('button', {onClick:onRemove, style:{background:'none',border:'none',color:G.mu,fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0}}, '\u00D7'),
-    showTip && React.createElement('div', {style:{width:'100%',padding:'4px 8px',fontSize:10,color:semCol,background:semCol+'15',borderRadius:6,marginTop:2}}, sem.msg)
+    showTip && React.createElement('div', {style:{width:'100%',padding:'4px 8px',fontSize:15,color:semCol,background:semCol+'15',borderRadius:6,marginTop:2}}, sem.msg)
   );
 }
 
@@ -2573,7 +2600,7 @@ function AddFoodSelector({onAdd, exclude, userId, dayType}) {
   const [cat, setCat] = useState(null);
   const [filter, setFilter] = useState('all'); // all, v, a, r
   const exc = exclude || [];
-  if(!open) return React.createElement('button', {onClick:()=>setOpen(true), style:{background:G.acc+'22',border:'1px dashed '+G.acc+'66',borderRadius:8,padding:'8px 12px',fontSize:11,color:G.acc,cursor:'pointer',width:'100%',fontWeight:600}}, '+ Agregar alimento');
+  if(!open) return React.createElement('button', {onClick:()=>setOpen(true), style:{background:G.acc+'22',border:'1px dashed '+G.acc+'66',borderRadius:8,padding:'8px 12px',fontSize:15,color:G.acc,cursor:'pointer',width:'100%',fontWeight:600}}, '+ Agregar alimento');
   const items = cat ? Object.entries(ALIMENTOS).filter(([id,a])=>a.cat===cat && !exc.includes(id)) : [];
   // Ordenar por semaforo: verde primero, luego amarillo, luego rojo
   const sorted = items.map(([id,al])=>({id,al,sem:getSemaforo(id,userId,dayType)})).sort((a,b)=>{
@@ -2582,24 +2609,24 @@ function AddFoodSelector({onAdd, exclude, userId, dayType}) {
   return React.createElement('div', {style:{background:G.alt,borderRadius:10,padding:10,border:'1px solid '+G.bor}},
     React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}},
       AL_CATS.map(c =>
-        React.createElement('button', {key:c.id, onClick:()=>setCat(cat===c.id?null:c.id), style:{padding:'4px 10px',borderRadius:6,border:cat===c.id?'1px solid '+c.c:'1px solid '+G.bor,background:cat===c.id?c.c+'22':'transparent',color:cat===c.id?c.c:G.mu,fontSize:10,fontWeight:600,cursor:'pointer'}}, c.n)
+        React.createElement('button', {key:c.id, onClick:()=>setCat(cat===c.id?null:c.id), style:{padding:'4px 10px',borderRadius:6,border:cat===c.id?'1px solid '+c.c:'1px solid '+G.bor,background:cat===c.id?c.c+'22':'transparent',color:cat===c.id?c.c:G.mu,fontSize:15,fontWeight:600,cursor:'pointer'}}, c.n)
       ),
-      React.createElement('button', {onClick:()=>{setOpen(false);setCat(null);}, style:{marginLeft:'auto',background:'none',border:'none',color:G.mu,fontSize:12,cursor:'pointer'}}, '\u2715 Cerrar')
+      React.createElement('button', {onClick:()=>{setOpen(false);setCat(null);}, style:{marginLeft:'auto',background:'none',border:'none',color:G.mu,fontSize:15,cursor:'pointer'}}, '\u2715 Cerrar')
     ),
     cat && React.createElement('div', {style:{display:'flex',gap:4,marginBottom:6}},
       [{id:'all',l:'Todos',c:G.mu},{id:'v',l:'\u{2705} Libres',c:SEM_COLORS.v},{id:'a',l:'\u{26A0}\u{FE0F} Moderados',c:SEM_COLORS.a},{id:'r',l:'\u{1F6D1} Restringidos',c:SEM_COLORS.r}].map(f=>
-        React.createElement('button',{key:f.id,onClick:()=>setFilter(f.id),style:{padding:'2px 8px',borderRadius:5,border:'1px solid '+(filter===f.id?f.c:G.bor),background:filter===f.id?f.c+'22':'transparent',color:filter===f.id?f.c:G.mu,fontSize:9,cursor:'pointer',fontWeight:600}},f.l)
+        React.createElement('button',{key:f.id,onClick:()=>setFilter(f.id),style:{padding:'2px 8px',borderRadius:5,border:'1px solid '+(filter===f.id?f.c:G.bor),background:filter===f.id?f.c+'22':'transparent',color:filter===f.id?f.c:G.mu,fontSize:15,cursor:'pointer',fontWeight:600}},f.l)
       )
     ),
     cat && React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,maxHeight:200,overflowY:'auto'}},
       sorted.map(({id,al,sem}) =>
-        React.createElement('button', {key:id, onClick:()=>{onAdd(id, al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?1:100));setOpen(false);setCat(null);setFilter('all');}, style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontSize:11,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',alignItems:'center',gap:4}},
-          React.createElement('span',{style:{fontSize:10}},SEM_LABELS[sem.luz]),
+        React.createElement('button', {key:id, onClick:()=>{onAdd(id, al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?1:100));setOpen(false);setCat(null);setFilter('all');}, style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontSize:15,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',alignItems:'center',gap:4}},
+          React.createElement('span',{style:{fontSize:15}},SEM_LABELS[sem.luz]),
           al.n
         )
       )
     ),
-    cat && sorted.length===0 && React.createElement('div',{style:{textAlign:'center',padding:12,color:G.mu,fontSize:11}},'No hay alimentos en esta categor\u00EDa con este filtro')
+    cat && sorted.length===0 && React.createElement('div',{style:{textAlign:'center',padding:12,color:G.mu,fontSize:15}},'No hay alimentos en esta categor\u00EDa con este filtro')
   );
 }
 
@@ -2610,8 +2637,8 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
     return React.createElement('div', {style:{background:'#22c55e11',border:'1px dashed #22c55e44',borderRadius:10,padding:'12px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:10}},
       React.createElement('span', {style:{fontSize:18}}, '\u{1F54A}'),
       React.createElement('div', null,
-        React.createElement('div', {style:{fontSize:12,fontWeight:700,color:G.ok}}, comida.label),
-        React.createElement('div', {style:{fontSize:11,color:G.mu}}, comida.hora + ' \u2014 ' + comida.items[0])
+        React.createElement('div', {style:{fontSize:15,fontWeight:700,color:G.ok}}, comida.label),
+        React.createElement('div', {style:{fontSize:15,color:G.mu}}, comida.hora + ' \u2014 ' + comida.items[0])
       )
     );
   }
@@ -2628,19 +2655,19 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
   return React.createElement('div', {style:{background:isChecked?G.ok+'11':G.sur,border:'1px solid '+(isChecked?G.ok+'44':G.bor),borderRadius:12,marginBottom:8,overflow:'hidden',transition:'all 0.2s'}},
     // Header: checkbox + plan info
     React.createElement('div', {onClick:onCheck, style:{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 14px',cursor:'pointer'}},
-      React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isChecked?G.ok:G.bor),background:isChecked?G.ok:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14,color:'#fff',marginTop:2,transition:'all 0.2s'}},
+      React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isChecked?G.ok:G.bor),background:isChecked?G.ok:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15,color:'#fff',marginTop:2,transition:'all 0.2s'}},
         isChecked ? '\u2713' : ''
       ),
       React.createElement('div', {style:{flex:1}},
         React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}},
-          React.createElement('span', {style:{fontSize:12,fontWeight:700,color:isChecked?G.ok:'#e2e8f0'}}, comida.label),
-          React.createElement('span', {style:{fontSize:11,color:G.mu,fontFamily:'monospace'}}, comida.hora)
+          React.createElement('span', {style:{fontSize:15,fontWeight:700,color:isChecked?G.ok:'#e2e8f0'}}, comida.label),
+          React.createElement('span', {style:{fontSize:15,color:G.mu,fontFamily:'monospace'}}, comida.hora)
         ),
-        React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',letterSpacing:0.5,color:G.mu,marginBottom:4}}, 'SUGERIDO:'),
+        React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:0.5,color:G.mu,marginBottom:4}}, 'SUGERIDO:'),
         comida.items.map((item,i) =>
-          React.createElement('div', {key:i, style:{fontSize:11,color:isChecked?G.mu:G.dim,marginBottom:2,paddingLeft:2}}, '\u2022 ' + item)
+          React.createElement('div', {key:i, style:{fontSize:15,color:isChecked?G.mu:G.dim,marginBottom:2,paddingLeft:2}}, '\u2022 ' + item)
         ),
-        comida.macros && React.createElement('div', {style:{marginTop:4,fontSize:10,fontFamily:'monospace',color:G.dim,display:'flex',gap:8}},
+        comida.macros && React.createElement('div', {style:{marginTop:4,fontSize:15,fontFamily:'monospace',color:G.dim,display:'flex',gap:8}},
           React.createElement('span', {style:{color:G.acc}}, comida.macros.split(' ').find(x=>x.startsWith('P:'))||''),
           React.createElement('span', {style:{color:G.warn}}, comida.macros.split(' ').find(x=>x.startsWith('C:'))||''),
           React.createElement('span', {style:{color:G.coa}}, comida.macros.split(' ').find(x=>x.startsWith('G:'))||''),
@@ -2650,10 +2677,10 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
     ),
     // Real intake summary badge + expand button
     React.createElement('div', {style:{borderTop:'1px solid '+G.bor,padding:'6px 14px',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
-      React.createElement('button', {onClick:(e)=>{e.stopPropagation();setExpanded(!expanded);}, style:{background:expanded?G.acc+'33':G.acc+'15',border:'1px solid '+G.acc+'44',borderRadius:7,padding:'5px 12px',fontSize:10,fontWeight:700,color:G.acc,cursor:'pointer'}},
+      React.createElement('button', {onClick:(e)=>{e.stopPropagation();setExpanded(!expanded);}, style:{background:expanded?G.acc+'33':G.acc+'15',border:'1px solid '+G.acc+'44',borderRadius:7,padding:'5px 12px',fontSize:15,fontWeight:700,color:G.acc,cursor:'pointer'}},
         expanded ? '\u25B2 Cerrar tracker' : '\u{1F4CA} Registrar real'
       ),
-      hasReal && React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',color:G.ok,display:'flex',gap:6}},
+      hasReal && React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:G.ok,display:'flex',gap:6}},
         React.createElement('span', null, '\u2705'),
         React.createElement('span', {style:{color:G.acc}}, 'P:'+Math.round(realTot.p)),
         React.createElement('span', {style:{color:G.warn}}, 'C:'+Math.round(realTot.c)),
@@ -2663,7 +2690,7 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
     ),
     // Expanded: food tracking
     expanded && React.createElement('div', {style:{padding:'10px 14px 14px',borderTop:'1px solid '+G.bor,background:G.bg+'cc'}},
-      React.createElement('div', {style:{fontSize:9,fontFamily:'monospace',letterSpacing:1,color:G.warn,fontWeight:700,marginBottom:8}}, '\u{1F37D}\u{FE0F} \u00BFQU\u00C9 COM\u00CD REALMENTE?'),
+      React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:1,color:G.warn,fontWeight:700,marginBottom:8}}, '\u{1F37D}\u{FE0F} \u00BFQU\u00C9 COM\u00CD REALMENTE?'),
       // Listed food items
       riEntries.map(([alId, qty]) =>
         React.createElement(FoodItemRow, {
@@ -2682,7 +2709,7 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
         })
       ),
       // Macro total for this meal
-      hasReal && React.createElement('div', {style:{display:'flex',justifyContent:'flex-end',gap:8,fontSize:10,fontFamily:'monospace',padding:'6px 0 8px',borderTop:'1px dashed '+G.bor,marginTop:4}},
+      hasReal && React.createElement('div', {style:{display:'flex',justifyContent:'flex-end',gap:8,fontSize:15,fontFamily:'monospace',padding:'6px 0 8px',borderTop:'1px dashed '+G.bor,marginTop:4}},
         React.createElement('span', {style:{color:G.mu,fontWeight:700}}, 'TOTAL REAL:'),
         React.createElement('span', {style:{color:G.acc,fontWeight:700}}, 'P:'+Math.round(realTot.p)+'g'),
         React.createElement('span', {style:{color:G.warn,fontWeight:700}}, 'C:'+Math.round(realTot.c)+'g'),
@@ -2767,18 +2794,18 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
     React.createElement(Sec, {color:plan.color},
       React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
         React.createElement('div', null,
-          React.createElement('div', {style:{fontSize:14,fontWeight:700,color:plan.color}}, '\u{1F4CB} ' + plan.label),
-          React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:2}}, 'Meta: ~' + plan.resumen.prot + 'g prot | ~' + plan.resumen.carbs + 'g carbs | ~' + plan.resumen.kcal + ' kcal')
+          React.createElement('div', {style:{fontSize:15,fontWeight:700,color:plan.color}}, '\u{1F4CB} ' + plan.label),
+          React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, 'Meta: ~' + plan.resumen.prot + 'g prot | ~' + plan.resumen.carbs + 'g carbs | ~' + plan.resumen.kcal + ' kcal')
         ),
         React.createElement('div', {style:{textAlign:'right'}},
           React.createElement('div', {style:{fontSize:22,fontWeight:700,fontFamily:'monospace',color:pctDone>=80?G.ok:pctDone>=50?G.warn:G.dim}}, pctDone + '%'),
-          React.createElement('div', {style:{fontSize:11,color:G.mu}}, doneItems + '/' + totalItems + ' items')
+          React.createElement('div', {style:{fontSize:15,color:G.mu}}, doneItems + '/' + totalItems + ' items')
         )
       ),
       React.createElement('div', {style:{height:6,background:G.alt,borderRadius:3,overflow:'hidden'}},
         React.createElement('div', {style:{height:'100%',width:pctDone+'%',background:pctDone>=80?G.ok:pctDone>=50?G.warn:G.acc,borderRadius:3,transition:'width 0.3s'}})
       ),
-      plan.resumen.nota && React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:8,fontStyle:'italic'}}, '\u{1F4A1} ' + plan.resumen.nota)
+      plan.resumen.nota && React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:8,fontStyle:'italic'}}, '\u{1F4A1} ' + plan.resumen.nota)
     ),
 
     // ─── SUPLEMENTOS AM con tracker real ───
@@ -2794,7 +2821,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
 
     // ─── COMIDAS DEL DIA con tracker real ───
     React.createElement('div', {style:{marginBottom:12}},
-      React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.warn,fontWeight:700,marginBottom:10,paddingLeft:4}}, 'COMIDAS DEL D\u00CDA \u{1F372}'),
+      React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.warn,fontWeight:700,marginBottom:10,paddingLeft:4}}, 'COMIDAS DEL D\u00CDA \u{1F372}'),
       plan.comidas.filter(c => !['pre','intra','post'].includes(c.id)).map(comida =>
         React.createElement(PlanMealBlock, {
           key:comida.id,
@@ -2849,13 +2876,13 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
       if(hasAnyReal) {
         const tot = calcTotalReal();
         return React.createElement(Sec, {color:G.ok},
-          React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}}, '\u{2705} CONSUMIDO HOY (TRACKER REAL)'),
+          React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}}, '\u{2705} CONSUMIDO HOY (TRACKER REAL)'),
           React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center'}},
             [{l:'Prote\u00EDna',v:tot.p,m:METAS.prot,u:'g',c:G.acc},{l:'Carbos',v:tot.c,m:METAS.carbs,u:'g',c:G.warn},{l:'Grasa',v:tot.g,m:METAS.grasa,u:'g',c:G.coa},{l:'Kcal',v:tot.k,m:METAS.kcal,u:'',c:G.dim}].map(x =>
               React.createElement('div', {key:x.l,style:{background:G.alt,borderRadius:8,padding:'8px 4px'}},
                 React.createElement('div', {style:{fontSize:18,fontWeight:700,fontFamily:'monospace',color:x.v>=x.m*0.9?G.ok:x.c}}, x.v),
-                React.createElement('div', {style:{fontSize:9,color:G.mu,marginTop:2}}, x.l),
-                React.createElement('div', {style:{fontSize:9,color:G.mu}}, '/' + x.m + x.u)
+                React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, x.l),
+                React.createElement('div', {style:{fontSize:15,color:G.mu}}, '/' + x.m + x.u)
               )
             )
           ),
@@ -2864,7 +2891,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
             [{l:'P',v:tot.p,m:METAS.prot,c:G.acc},{l:'C',v:tot.c,m:METAS.carbs,c:G.warn},{l:'G',v:tot.g,m:METAS.grasa,c:G.coa}].map(x => {
               const pct = Math.min(120, Math.round(x.v/x.m*100));
               return React.createElement('div', {key:x.l, style:{marginBottom:4}},
-                React.createElement('div', {style:{display:'flex',justifyContent:'space-between',fontSize:9,color:G.mu,marginBottom:2}},
+                React.createElement('div', {style:{display:'flex',justifyContent:'space-between',fontSize:15,color:G.mu,marginBottom:2}},
                   React.createElement('span', null, x.l),
                   React.createElement('span', null, x.v+'/'+x.m+'g ('+pct+'%)')
                 ),
@@ -2876,7 +2903,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
           ),
           // Deficit/surplus indicator
           React.createElement('div', {style:{marginTop:10,padding:'8px 12px',background:tot.k>METAS.kcal?G.bad+'15':tot.k>=METAS.kcal*0.85?G.ok+'15':G.warn+'15',borderRadius:8,textAlign:'center'}},
-            React.createElement('span', {style:{fontSize:12,fontWeight:700,fontFamily:'monospace',color:tot.k>METAS.kcal?G.bad:tot.k>=METAS.kcal*0.85?G.ok:G.warn}},
+            React.createElement('span', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:tot.k>METAS.kcal?G.bad:tot.k>=METAS.kcal*0.85?G.ok:G.warn}},
               tot.k > METAS.kcal ? '\u{26A0}\u{FE0F} SUPER\u00C1VIT +' + (tot.k-METAS.kcal) + ' kcal' :
               tot.k >= METAS.kcal*0.85 ? '\u{2705} EN RANGO (' + (METAS.kcal-tot.k) + ' kcal restantes)' :
               '\u{1F4C9} D\u00C9FICIT \u2212' + (METAS.kcal-tot.k) + ' kcal'
@@ -2896,14 +2923,14 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
       const tot = overridden.reduce((a,m) => ({p:a.p+m.p,c:a.c+m.c,g:a.g+m.g}), {p:0,c:0,g:0});
       tot.k = tot.p*4+tot.c*4+tot.g*9;
       return React.createElement(Sec, {color:G.ok},
-        React.createElement('div', {style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:6}}, '\u{2705} CONSUMIDO HOY (ESTIMADO)'),
-        React.createElement('div', {style:{fontSize:9,color:G.mu,marginBottom:8,fontStyle:'italic'}}, 'Basado en checklist. Usa "Registrar real" para datos exactos.'),
+        React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:6}}, '\u{2705} CONSUMIDO HOY (ESTIMADO)'),
+        React.createElement('div', {style:{fontSize:15,color:G.mu,marginBottom:8,fontStyle:'italic'}}, 'Basado en checklist. Usa "Registrar real" para datos exactos.'),
         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,textAlign:'center'}},
           [{l:'Prot',v:tot.p,m:METAS.prot,u:'g',c:G.acc},{l:'Carbs',v:tot.c,m:METAS.carbs,u:'g',c:G.warn},{l:'Grasa',v:tot.g,m:METAS.grasa,u:'g',c:G.coa},{l:'Kcal',v:tot.k,m:METAS.kcal,u:'',c:G.dim}].map(x =>
             React.createElement('div', {key:x.l,style:{background:G.alt,borderRadius:8,padding:'8px 4px'}},
               React.createElement('div', {style:{fontSize:18,fontWeight:700,fontFamily:'monospace',color:x.v>=x.m*0.9?G.ok:x.c}}, x.v),
-              React.createElement('div', {style:{fontSize:9,color:G.mu,marginTop:2}}, x.l),
-              React.createElement('div', {style:{fontSize:9,color:G.mu}}, '/' + x.m + x.u)
+              React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, x.l),
+              React.createElement('div', {style:{fontSize:15,color:G.mu}}, '/' + x.m + x.u)
             )
           )
         )
@@ -3063,16 +3090,16 @@ function TabNutricion({user, cfg}) {
 
   const BarMacro = ({label, current, target, pct, color, unit}) => (
     <div style={{marginBottom:8}}>
-      <div style={{display:'flex',justifyContent:'space-between',fontSize:10,marginBottom:3}}>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:15,marginBottom:3}}>
         <span style={{color:G.dim}}>{label}</span>
         <span style={{fontFamily:'monospace',color:pct>=100?G.ok:color}}>
-          <b>{current}</b>/{target}{unit} <span style={{fontSize:11,color:G.mu}}>({pct}%)</span>
+          <b>{current}</b>/{target}{unit} <span style={{fontSize:15,color:G.mu}}>({pct}%)</span>
         </span>
       </div>
       <div style={{height:6,background:G.alt,borderRadius:3,overflow:'hidden'}}>
         <div style={{height:'100%',width:pct+'%',background:pct>=90?G.ok:pct>=60?color:G.bad,borderRadius:3,transition:'width 0.3s'}}/>
       </div>
-      {target-current>0 && <div style={{fontSize:11,color:G.mu,marginTop:2,textAlign:'right'}}>Faltan {target-current}{unit}</div>}
+      {target-current>0 && <div style={{fontSize:15,color:G.mu,marginTop:2,textAlign:'right'}}>Faltan {target-current}{unit}</div>}
     </div>
   );
 
@@ -3081,20 +3108,20 @@ function TabNutricion({user, cfg}) {
       <Sec>
         <NavSemana fecha={fecha} setFecha={setFecha} dia={dia} setDia={setDia} />
         <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
-          <span style={{fontSize:13,fontWeight:700}}>{prog.nombre} <span style={{fontSize:11,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></span>
-          <span style={{marginLeft:'auto',fontSize:11,color:G.warn}}>Carbos: {prog.carbos}</span>
+          <span style={{fontSize:15,fontWeight:700}}>{prog.nombre} <span style={{fontSize:15,color:G.mu,fontWeight:400}}>{fmtFecha(fecha)}</span></span>
+          <span style={{marginLeft:'auto',fontSize:15,color:G.warn}}>Carbos: {prog.carbos}</span>
         </div>
         {/* TOGGLE PLAN / REGISTRO */}
         <div style={{display:'flex',gap:0,marginBottom:10,background:G.alt,borderRadius:10,padding:3,border:'1px solid '+G.bor}}>
           {[['plan','PLAN DEL D\u00CDA','\u{1F4CB}'],['actual','REGISTRO ACTUAL','\u{1F4DD}']].map(([v,l,ic]) => (
-            <button key={v} onClick={()=>setVista(v)} style={{flex:1,background:vista===v?G.acc:'transparent',color:vista===v?'#fff':G.dim,border:'none',borderRadius:8,padding:'8px 10px',fontSize:11,fontWeight:700,fontFamily:'monospace',letterSpacing:0.5,cursor:'pointer',transition:'all 0.2s'}}>
+            <button key={v} onClick={()=>setVista(v)} style={{flex:1,background:vista===v?G.acc:'transparent',color:vista===v?'#fff':G.dim,border:'none',borderRadius:8,padding:'8px 10px',fontSize:15,fontWeight:700,fontFamily:'monospace',letterSpacing:0.5,cursor:'pointer',transition:'all 0.2s'}}>
               {ic} {l}
             </button>
           ))}
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          {vista==='actual' && <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:11,fontWeight:600}}>GUARDAR AHORA</button>}
-          {vista==='plan' && saveStatus==='saved' && <span style={{fontSize:11,color:G.ok,display:'flex',alignItems:'center',gap:4}}>{'\u2705'} Registro guardado</span>}
+          {vista==='actual' && <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:15,fontWeight:600}}>GUARDAR AHORA</button>}
+          {vista==='plan' && saveStatus==='saved' && <span style={{fontSize:15,color:G.ok,display:'flex',alignItems:'center',gap:4}}>{'\u2705'} Registro guardado</span>}
         </div>
         <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
       </Sec>
@@ -3110,7 +3137,7 @@ function TabNutricion({user, cfg}) {
         <div style={{padding:'10px 12px',background:G.alt,borderRadius:10,marginBottom:10}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
             <span style={{fontSize:18,fontWeight:700,fontFamily:'monospace',color:pctK>=90?G.ok:G.acc}}>{totales.kcal}</span>
-            <span style={{fontSize:11,color:G.mu}}>/ {METAS.kcal} kcal ({pctK}%)</span>
+            <span style={{fontSize:15,color:G.mu}}>/ {METAS.kcal} kcal ({pctK}%)</span>
           </div>
           <BarMacro label="Proteina" current={totales.p} target={METAS.prot} pct={pctP} color={G.acc} unit="g" />
           <BarMacro label="Carbos netos" current={totales.c} target={METAS.carbs} pct={pctC} color={G.warn} unit="g" />
@@ -3132,8 +3159,8 @@ function TabNutricion({user, cfg}) {
           return alertas.length > 0 && (
             <div style={{marginTop:10}}>
               {alertas.map((a,i) => (
-                <div key={i} style={{background:a.tipo==='bad'?'#ef444418':a.tipo==='warn'?'#f59e0b18':'#22c55e18',border:'1px solid '+(a.tipo==='bad'?'#ef444444':a.tipo==='warn'?'#f59e0b44':'#22c55e44'),borderRadius:8,padding:'8px 12px',marginBottom:6,fontSize:11,color:a.tipo==='bad'?'#fca5a5':a.tipo==='warn'?'#fde68a':'#86efac',display:'flex',gap:8,alignItems:'center'}}>
-                  <span style={{fontSize:14,flexShrink:0}}>{a.icon}</span>
+                <div key={i} style={{background:a.tipo==='bad'?'#ef444418':a.tipo==='warn'?'#f59e0b18':'#22c55e18',border:'1px solid '+(a.tipo==='bad'?'#ef444444':a.tipo==='warn'?'#f59e0b44':'#22c55e44'),borderRadius:8,padding:'8px 12px',marginBottom:6,fontSize:15,color:a.tipo==='bad'?'#fca5a5':a.tipo==='warn'?'#fde68a':'#86efac',display:'flex',gap:8,alignItems:'center'}}>
+                  <span style={{fontSize:15,flexShrink:0}}>{a.icon}</span>
                   <span>{a.msg}</span>
                 </div>
               ))}
@@ -3145,17 +3172,17 @@ function TabNutricion({user, cfg}) {
       <Sec title="AYUNO" color={G.ok}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:8}}>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Ultima comida</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Ultima comida</div>
             <Inp type="time" value={data.ayuno_ini||''} onChange={e=>upd('ayuno_ini',e.target.value)} />
           </div>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Primera comida</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Primera comida</div>
             <Inp type="time" value={data.ayuno_fin||''} onChange={e=>upd('ayuno_fin',e.target.value)} />
           </div>
         </div>
         {hrs && (
           <div style={{padding:'8px 12px',background:G.alt,borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <span style={{fontSize:13,color:G.mu}}>Duracion ayuno</span>
+            <span style={{fontSize:15,color:G.mu}}>Duracion ayuno</span>
             <span style={{fontSize:22,fontWeight:700,fontFamily:'monospace',color:parseFloat(hrs)>=12?G.ok:G.warn}}>{hrs}h</span>
           </div>
         )}
@@ -3168,9 +3195,9 @@ function TabNutricion({user, cfg}) {
           return (
             <div key={field} style={{marginBottom:10}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
-                <div style={{fontSize:11,color:G.mu}}>{label}</div>
+                <div style={{fontSize:15,color:G.mu}}>{label}</div>
                 {hasMacros && (
-                  <div style={{fontSize:10,fontFamily:'monospace',color:G.dim}}>
+                  <div style={{fontSize:15,fontFamily:'monospace',color:G.dim}}>
                     <span style={{color:G.acc}}>P:{m.p}g</span>{' '}
                     <span style={{color:G.warn}}>C:{m.c}g</span>{' '}
                     <span style={{color:G.coa}}>G:{m.g}g</span>{' '}
@@ -3186,13 +3213,13 @@ function TabNutricion({user, cfg}) {
 
       <Sec title="AGUA + BIENESTAR">
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Agua (litros)</div>
+          <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Agua (litros)</div>
           <Inp type="number" step="0.5" value={data.agua||''} onChange={e=>upd('agua',e.target.value)} placeholder="3.5" style={{textAlign:'center'}} />
         </div>
         <Rating label="Hambre general" value={data.hambre||''} onChange={v=>upd('hambre',v)} color={G.warn} />
         <div style={{marginTop:8}}>
-          <div style={{fontSize:11,color:G.mu,marginBottom:4}}>Digestion</div>
-          <select value={data.digestion||''} onChange={e=>upd('digestion',e.target.value)} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:13,width:'100%',outline:'none'}}>
+          <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Digestion</div>
+          <select value={data.digestion||''} onChange={e=>upd('digestion',e.target.value)} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none'}}>
             <option value="">—</option>
             <option>Excelente</option>
             <option>Buena</option>
@@ -3239,7 +3266,7 @@ function TabProgreso({user}) {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
             {[['Peso',tP,'kg'],['Cintura',tC,'cm']].map(([l,v,u]) => (
               <div key={l} style={{padding:12,background:G.alt,borderRadius:8,textAlign:'center'}}>
-                <div style={{fontSize:11,color:G.mu,marginBottom:4}}>{l}</div>
+                <div style={{fontSize:15,color:G.mu,marginBottom:4}}>{l}</div>
                 <div style={{fontSize:22,fontWeight:700,fontFamily:'monospace',color:v!==null?(parseFloat(v)<=0?G.ok:G.warn):G.mu}}>
                   {v!==null ? (parseFloat(v)>0?'+':'')+v+' '+u : '--'}
                 </div>
@@ -3252,20 +3279,20 @@ function TabProgreso({user}) {
       <Sec title="NUEVA MEDICION">
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Fecha</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Fecha</div>
             <Inp type="date" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})} />
           </div>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Peso kg</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Peso kg</div>
             <Inp type="number" step="0.1" value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} placeholder="75.5" />
           </div>
           <div>
-            <div style={{fontSize:11,color:G.mu,marginBottom:3}}>Cintura cm</div>
+            <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Cintura cm</div>
             <Inp type="number" step="0.1" value={form.cintura} onChange={e=>setForm({...form,cintura:e.target.value})} placeholder="82" />
           </div>
         </div>
         <Inp value={form.notas} onChange={e=>setForm({...form,notas:e.target.value})} placeholder="Condicion (en ayunas, post-entreno...)" style={{marginBottom:10}} />
-        <button onClick={guardar} style={{background:G.acc,color:'#fff',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:500,border:'none'}}>
+        <button onClick={guardar} style={{background:G.acc,color:'#fff',borderRadius:8,padding:'9px 18px',fontSize:15,fontWeight:500,border:'none'}}>
           Guardar medicion
         </button>
       </Sec>
@@ -3274,11 +3301,11 @@ function TabProgreso({user}) {
         <Sec title="HISTORIAL">
           {hist.map((m,i) => (
             <div key={m.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:G.alt,borderRadius:8,marginBottom:5,flexWrap:'wrap'}}>
-              {i===0 && <span style={{background:G.acc+'22',color:G.acc,borderRadius:3,padding:'1px 6px',fontSize:8,fontFamily:'monospace'}}>ULTIMO</span>}
-              <span style={{fontSize:11,color:G.mu,fontFamily:'monospace'}}>{fmtFecha(m.fecha)}</span>
-              {m.peso && <span style={{fontSize:14,fontWeight:700}}>{m.peso} kg</span>}
-              {m.cintura && <span style={{fontSize:14,fontWeight:700,color:G.warn}}>{m.cintura} cm</span>}
-              {m.notas && <span style={{fontSize:11,color:G.mu,flex:1}}>{m.notas}</span>}
+              {i===0 && <span style={{background:G.acc+'22',color:G.acc,borderRadius:3,padding:'1px 6px',fontSize:15,fontFamily:'monospace'}}>ULTIMO</span>}
+              <span style={{fontSize:15,color:G.mu,fontFamily:'monospace'}}>{fmtFecha(m.fecha)}</span>
+              {m.peso && <span style={{fontSize:15,fontWeight:700}}>{m.peso} kg</span>}
+              {m.cintura && <span style={{fontSize:15,fontWeight:700,color:G.warn}}>{m.cintura} cm</span>}
+              {m.notas && <span style={{fontSize:15,color:G.mu,flex:1}}>{m.notas}</span>}
               <button onClick={()=>borrar(m.id)} style={{background:'none',color:G.mu,fontSize:18,marginLeft:'auto',border:'none'}}>x</button>
             </div>
           ))}
@@ -3460,7 +3487,7 @@ function TabBalance({user, cfg}) {
     loadWeek();
   }, [fecha, user.id]);
 
-  if(loading) return React.createElement('div',{style:{textAlign:'center',padding:40,color:G.mu,fontFamily:'monospace',fontSize:12}},'Calculando balance...');
+  if(loading) return React.createElement('div',{style:{textAlign:'center',padding:40,color:G.mu,fontFamily:'monospace',fontSize:15}},'Calculando balance...');
 
   const balance = ingesta ? (ingesta.kcal - (gasto?.tdee||0)) : 0;
   const protDemand = Math.round(perfil.protKg * perfil.peso);
@@ -3475,7 +3502,7 @@ function TabBalance({user, cfg}) {
     const pct = max>0 ? Math.min(100, (val/max)*100) : 0;
     const over = val > max;
     return React.createElement('div',{style:{marginBottom:8}},
-      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:G.dim,marginBottom:3}},
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:15,color:G.dim,marginBottom:3}},
         React.createElement('span',null,label),
         React.createElement('span',{style:{color:over?G.bad:color,fontWeight:700}},val+(unit||'')+(max>0?(' / '+max+(unit||'')):''))
       ),
@@ -3500,15 +3527,15 @@ function TabBalance({user, cfg}) {
               React.createElement('div',{style:{width:8,height:gH,background:G.bad+'cc',borderRadius:2}}),
               React.createElement('div',{style:{width:8,height:iH,background:G.ok+'cc',borderRadius:2}})
             ),
-            React.createElement('div',{style:{fontSize:7,color:isSel?G.acc:G.mu,fontWeight:isSel?700:400,fontFamily:'monospace'}},d.label)
+            React.createElement('div',{style:{fontSize:15,color:isSel?G.acc:G.mu,fontWeight:isSel?700:400,fontFamily:'monospace'}},d.label)
           );
         })
       ),
       React.createElement('div',{style:{display:'flex',justifyContent:'center',gap:16,marginTop:6}},
-        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4,fontSize:8,color:G.mu}},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4,fontSize:15,color:G.mu}},
           React.createElement('div',{style:{width:8,height:8,background:G.bad+'cc',borderRadius:2}}), 'Gasto'
         ),
-        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4,fontSize:8,color:G.mu}},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4,fontSize:15,color:G.mu}},
           React.createElement('div',{style:{width:8,height:8,background:G.ok+'cc',borderRadius:2}}), 'Ingesta'
         )
       )
@@ -3568,30 +3595,30 @@ function TabBalance({user, cfg}) {
 
     // TITULO
     React.createElement(Sec,{color:G.acc},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.acc,fontWeight:700,marginBottom:6}},'\u{1F4CA} BALANCE GASTO vs INGESTA'),
-      React.createElement('div',{style:{fontSize:11,color:G.dim}}, (plan?plan.label:'D\u00EDa') + ' \u2022 ' + fmtFecha(fecha))
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.acc,fontWeight:700,marginBottom:6}},'\u{1F4CA} BALANCE GASTO vs INGESTA'),
+      React.createElement('div',{style:{fontSize:15,color:G.dim}}, (plan?plan.label:'D\u00EDa') + ' \u2022 ' + fmtFecha(fecha))
     ),
 
     // GASTO CALORICO
     React.createElement(Sec,{color:G.bad},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.bad,fontWeight:700,marginBottom:10}},'\u{1F525} GASTO CAL\u00D3RICO ESTIMADO'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.bad,fontWeight:700,marginBottom:10}},'\u{1F525} GASTO CAL\u00D3RICO ESTIMADO'),
       React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center',marginBottom:12}},
         [{l:'TDEE Total',v:gasto.tdee,c:G.bad},{l:'TMB Basal',v:gasto.tmb,c:G.mu},{l:'Entreno (EAT)',v:gasto.totalEAT,c:'#f97316'}].map((x,i) =>
           React.createElement('div',{key:i,style:{background:G.bg,borderRadius:10,padding:'10px 6px',border:'1px solid '+G.bor}},
             React.createElement('div',{style:{fontSize:18,fontWeight:800,color:x.c,fontFamily:'monospace'}},x.v),
-            React.createElement('div',{style:{fontSize:8,color:G.mu,marginTop:2}},x.l+' kcal')
+            React.createElement('div',{style:{fontSize:15,color:G.mu,marginTop:2}},x.l+' kcal')
           )
         )
       ),
       gasto.setsN>0 && React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:6,textAlign:'center'}},
         [{l:'Tonnage',v:gasto.tonnage>1000?(gasto.tonnage/1000).toFixed(1)+'t':gasto.tonnage+'kg'},{l:'Sets',v:gasto.setsN},{l:'Dur',v:gasto.durMin+'min'},{l:'RPE avg',v:gasto.avgRPE}].map((x,i) =>
           React.createElement('div',{key:i,style:{background:G.alt,borderRadius:8,padding:'6px 4px'}},
-            React.createElement('div',{style:{fontSize:13,fontWeight:700,color:G.dim,fontFamily:'monospace'}},x.v),
-            React.createElement('div',{style:{fontSize:7,color:G.mu}},x.l)
+            React.createElement('div',{style:{fontSize:15,fontWeight:700,color:G.dim,fontFamily:'monospace'}},x.v),
+            React.createElement('div',{style:{fontSize:15,color:G.mu}},x.l)
           )
         )
       ),
-      gasto.setsN>0 && React.createElement('div',{style:{marginTop:8,fontSize:9,color:G.mu,fontFamily:'monospace',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
+      gasto.setsN>0 && React.createElement('div',{style:{marginTop:8,fontSize:15,color:G.mu,fontFamily:'monospace',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}},
         React.createElement('span',null,'Aerobico: '+gasto.eat+' kcal'),
         React.createElement('span',null,'Mec\u00E1nico: '+gasto.tBonus+' kcal'),
         React.createElement('span',null,'EPOC: '+gasto.epoc+' kcal')
@@ -3600,9 +3627,9 @@ function TabBalance({user, cfg}) {
 
     // INGESTA NUTRICIONAL
     React.createElement(Sec,{color:G.ok},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}},'\u{1F37D}\u{FE0F} INGESTA NUTRICIONAL'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.ok,fontWeight:700,marginBottom:10}},'\u{1F37D}\u{FE0F} INGESTA NUTRICIONAL'),
       ingesta.fuente==='ninguna'
-        ? React.createElement('div',{style:{textAlign:'center',padding:16,color:G.mu,fontSize:12}},'Sin datos. Registra en NUTRICI\u00D3N \u{2192} Plan del D\u00EDa')
+        ? React.createElement('div',{style:{textAlign:'center',padding:16,color:G.mu,fontSize:15}},'Sin datos. Registra en NUTRICI\u00D3N \u{2192} Plan del D\u00EDa')
         : React.createElement('div',null,
             React.createElement('div',{style:{display:'grid',gridTemplateColumns:ingesta.alcG>0?'1fr 1fr 1fr 1fr 1fr':'1fr 1fr 1fr 1fr',gap:8,textAlign:'center',marginBottom:10}},
               [{l:'Prote\u00EDna',v:ingesta.prot,u:'g',c:G.acc},{l:'Carbos',v:ingesta.carbs,u:'g',c:G.warn},{l:'Grasa',v:ingesta.grasa,u:'g',c:G.coa},{l:'Kcal',v:ingesta.kcal,u:'',c:G.dim}].concat(
@@ -3610,25 +3637,25 @@ function TabBalance({user, cfg}) {
               ).map((x,i) =>
                 React.createElement('div',{key:i,style:{background:G.bg,borderRadius:10,padding:'10px 6px',border:'1px solid '+(x.l==='Alcohol'?'#ef4444':G.bor)}},
                   React.createElement('div',{style:{fontSize:ingesta.alcG>0?15:18,fontWeight:800,color:x.c,fontFamily:'monospace'}},x.v),
-                  React.createElement('div',{style:{fontSize:8,color:G.mu,marginTop:2}},x.l+(x.u?' ('+x.u+')':''))
+                  React.createElement('div',{style:{fontSize:15,color:G.mu,marginTop:2}},x.l+(x.u?' ('+x.u+')':''))
                 )
               )
             ),
-            ingesta.alcG>0 && React.createElement('div',{style:{background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:10,color:'#fca5a5',textAlign:'center'}},
+            ingesta.alcG>0 && React.createElement('div',{style:{background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:15,color:'#fca5a5',textAlign:'center'}},
               '\u{26A0}\u{FE0F} Alcohol: '+ingesta.alcG+'g = '+Math.round(ingesta.alcG*7)+' kcal vac\u00EDas (no aportan nutrientes, inhiben recuperaci\u00F3n muscular)'
             ),
-            React.createElement('div',{style:{fontSize:9,color:G.mu,textAlign:'center',fontFamily:'monospace'}},'Fuente: '+(ingesta.fuente==='tracker'?'Tracker de alimentos':ingesta.fuente==='plan'?'Plan del D\u00EDa (checklist)':'Registro manual'))
+            React.createElement('div',{style:{fontSize:15,color:G.mu,textAlign:'center',fontFamily:'monospace'}},'Fuente: '+(ingesta.fuente==='tracker'?'Tracker de alimentos':ingesta.fuente==='plan'?'Plan del D\u00EDa (checklist)':'Registro manual'))
           )
     ),
 
     // BALANCE ENERGETICO
     React.createElement(Sec,{color:balance>=0?G.ok:Math.abs(balance)>400?G.bad:G.warn},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:balance>=0?G.ok:G.warn,fontWeight:700,marginBottom:10}},'\u{2696}\u{FE0F} BALANCE ENERG\u00C9TICO'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:balance>=0?G.ok:G.warn,fontWeight:700,marginBottom:10}},'\u{2696}\u{FE0F} BALANCE ENERG\u00C9TICO'),
       React.createElement('div',{style:{textAlign:'center',marginBottom:12}},
         React.createElement('div',{style:{fontSize:32,fontWeight:900,color:balance>=0?G.ok:Math.abs(balance)>400?G.bad:G.warn,fontFamily:'monospace'}},
           (balance>=0?'+':'')+balance+' kcal'
         ),
-        React.createElement('div',{style:{fontSize:11,color:G.mu}},
+        React.createElement('div',{style:{fontSize:15,color:G.mu}},
           balance>=0?'Super\u00E1vit cal\u00F3rico':'D\u00E9ficit cal\u00F3rico'
         )
       ),
@@ -3640,7 +3667,7 @@ function TabBalance({user, cfg}) {
 
     // RECUPERACION
     React.createElement(Sec,{color:recoveryColor},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:recoveryColor,fontWeight:700,marginBottom:10}},'\u{1F9EC} RECUPERACI\u00D3N MUSCULAR'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:recoveryColor,fontWeight:700,marginBottom:10}},'\u{1F9EC} RECUPERACI\u00D3N MUSCULAR'),
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:16,marginBottom:12}},
         React.createElement('div',{style:{position:'relative',width:64,height:64}},
           React.createElement('svg',{width:64,height:64,viewBox:'0 0 64 64'},
@@ -3650,16 +3677,16 @@ function TabBalance({user, cfg}) {
           React.createElement('div',{style:{position:'absolute',top:0,left:0,width:64,height:64,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:800,color:recoveryColor,fontFamily:'monospace'}},recoveryScore+'%')
         ),
         React.createElement('div',null,
-          React.createElement('div',{style:{fontSize:13,fontWeight:700,color:recoveryColor}},recoveryLabel),
-          React.createElement('div',{style:{fontSize:10,color:G.mu,marginTop:4}},
+          React.createElement('div',{style:{fontSize:15,fontWeight:700,color:recoveryColor}},recoveryLabel),
+          React.createElement('div',{style:{fontSize:15,color:G.mu,marginTop:4}},
             'Sue\u00F1o: '+(sueno>0?sueno+'h':'\u2014')+' \u2022 Fatiga: '+(fPost>0?fPost+'/10':'\u2014')+' \u2022 Energ\u00EDa: '+(ePre>0?ePre+'/10':'\u2014')
           ),
-          React.createElement('div',{style:{fontSize:10,color:G.mu,marginTop:2}},
+          React.createElement('div',{style:{fontSize:15,color:G.mu,marginTop:2}},
             'Prote\u00EDna: '+ingesta.prot+'/'+protDemand+'g ('+(protBalance>=0?'+':'')+protBalance+'g)'
           )
         )
       ),
-      React.createElement('div',{style:{fontSize:10,color:G.dim,background:G.bg,borderRadius:8,padding:'8px 10px',border:'1px solid '+G.bor}},
+      React.createElement('div',{style:{fontSize:15,color:G.dim,background:G.bg,borderRadius:8,padding:'8px 10px',border:'1px solid '+G.bor}},
         protBalance<0
           ? '\u{26A0}\u{FE0F} Necesitas '+Math.abs(protBalance)+'g m\u00E1s de prote\u00EDna para cubrir la demanda de reparaci\u00F3n muscular. Prioriza carne, huevos o prote\u00EDna post.'
           : '\u{2705} Prote\u00EDna cubierta. La reparaci\u00F3n muscular tiene sustrato suficiente.'
@@ -3668,26 +3695,26 @@ function TabBalance({user, cfg}) {
 
     // GRAFICO SEMANAL
     React.createElement(Sec,{color:G.acc},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.acc,fontWeight:700,marginBottom:6}},'\u{1F4C8} SEMANA'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.acc,fontWeight:700,marginBottom:6}},'\u{1F4C8} SEMANA'),
       React.createElement(WeekChart,null)
     ),
 
     // RECOMENDACIONES
     recs.length>0 && React.createElement(Sec,{color:G.coa},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:G.coa,fontWeight:700,marginBottom:8}},'\u{1F4A1} RECOMENDACIONES'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:G.coa,fontWeight:700,marginBottom:8}},'\u{1F4A1} RECOMENDACIONES'),
       recs.map((r,i) => React.createElement('div',{key:i,style:{display:'flex',gap:8,alignItems:'flex-start',marginBottom:6,padding:'6px 8px',background:G.bg,borderRadius:8,border:'1px solid '+r.color+'44'}},
-        React.createElement('span',{style:{fontSize:14,flexShrink:0}},r.icon),
-        React.createElement('span',{style:{fontSize:11,color:r.color,lineHeight:'1.4'}},r.txt)
+        React.createElement('span',{style:{fontSize:15,flexShrink:0}},r.icon),
+        React.createElement('span',{style:{fontSize:15,color:r.color,lineHeight:'1.4'}},r.txt)
       ))
     ),
 
     // COACH HOLISTICO: SNC / Sue\u00F1o / Ansiedad / Temblores
     holisticRecs.length>0 && React.createElement(Sec,{color:'#a855f7'},
-      React.createElement('div',{style:{fontSize:10,fontFamily:'monospace',letterSpacing:2,color:'#a855f7',fontWeight:700,marginBottom:4}},'\u{1F9E0} AN\u00C1LISIS HOL\u00CDSTICO'),
-      React.createElement('div',{style:{fontSize:9,color:G.mu,marginBottom:10}},'Impacto de alimentos consumidos en SNC, sue\u00F1o, ansiedad y temblor'),
+      React.createElement('div',{style:{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:'#a855f7',fontWeight:700,marginBottom:4}},'\u{1F9E0} AN\u00C1LISIS HOL\u00CDSTICO'),
+      React.createElement('div',{style:{fontSize:15,color:G.mu,marginBottom:10}},'Impacto de alimentos consumidos en SNC, sue\u00F1o, ansiedad y temblor'),
       holisticRecs.map((r,i) => React.createElement('div',{key:'h'+i,style:{display:'flex',gap:8,alignItems:'flex-start',marginBottom:8,padding:'8px 10px',background:G.bg,borderRadius:10,border:'1px solid '+r.color+'33',borderLeft:'3px solid '+r.color}},
-        React.createElement('span',{style:{fontSize:14,flexShrink:0}},r.icon),
-        React.createElement('span',{style:{fontSize:11,color:r.color==='#ef4444'?'#fca5a5':r.color===G.ok?'#86efac':r.color,lineHeight:'1.5'}},r.txt)
+        React.createElement('span',{style:{fontSize:15,flexShrink:0}},r.icon),
+        React.createElement('span',{style:{fontSize:15,color:r.color==='#ef4444'?'#fca5a5':r.color===G.ok?'#86efac':r.color,lineHeight:'1.5'}},r.txt)
       ))
     )
   );
@@ -3707,15 +3734,15 @@ function UserSelector({onSelect}) {
     {id:MELISSA_ID, nombre:'Melissa', desc:'45 a\u00F1os \u2022 Gym casa + Yoga \u2022 Keto fase 2', color:'#f0abfc', icon:'\u{1F9D8}'}
   ];
   return React.createElement('div', {style:{background:G.bg,minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,backgroundImage:'radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%)'}},
-    React.createElement('div', {style:{fontFamily:'monospace',fontSize:14,fontWeight:700,letterSpacing:4,color:G.acc,marginBottom:6}}, 'FITTRACKER'),
-    React.createElement('div', {style:{fontSize:12,color:G.mu,marginBottom:30}}, 'Selecciona tu perfil'),
+    React.createElement('div', {style:{fontFamily:'monospace',fontSize:15,fontWeight:700,letterSpacing:4,color:G.acc,marginBottom:6}}, 'FITTRACKER'),
+    React.createElement('div', {style:{fontSize:15,color:G.mu,marginBottom:30}}, 'Selecciona tu perfil'),
     users.map(u =>
       React.createElement('button', {key:u.id, onClick:()=>onSelect(u.id), style:{background:G.sur+'cc',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',border:'2px solid '+u.color+'55',borderRadius:20,padding:'24px 30px',marginBottom:16,width:'100%',maxWidth:340,cursor:'pointer',textAlign:'left',boxShadow:'0 4px 24px rgba(0,0,0,0.25)',transition:'transform 0.15s,border-color 0.2s'}},
         React.createElement('div', {style:{display:'flex',alignItems:'center',gap:14}},
           React.createElement('div', {style:{fontSize:36}}, u.icon),
           React.createElement('div', null,
             React.createElement('div', {style:{fontSize:18,fontWeight:700,color:u.color,marginBottom:4}}, u.nombre),
-            React.createElement('div', {style:{fontSize:12,color:G.dim}}, u.desc)
+            React.createElement('div', {style:{fontSize:15,color:G.dim}}, u.desc)
           )
         )
       )
@@ -3738,7 +3765,7 @@ function App() {
   if(!userId) return React.createElement(UserSelector, {onSelect:setUserId});
 
   if(loading || !user) return (
-    React.createElement('div', {style:{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:12}},
+    React.createElement('div', {style:{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:G.bg,color:G.mu,fontFamily:'monospace',fontSize:15}},
       'Cargando...'
     )
   );
@@ -3749,12 +3776,12 @@ function App() {
     React.createElement('div', {style:{background:G.bg,minHeight:'100vh',maxWidth:640,margin:'0 auto'}},
       React.createElement('div', {style:{background:G.sur+'ee',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',borderBottom:'1px solid '+G.bor,padding:'10px 16px 0',position:'sticky',top:0,zIndex:10,boxShadow:'0 2px 16px rgba(0,0,0,0.3)'}},
         React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-          React.createElement('div', {style:{fontFamily:'monospace',fontSize:12,fontWeight:700,letterSpacing:3,color:G.acc}}, 'FITTRACKER'),
-          React.createElement('button', {onClick:()=>{setUserId(null);setUser(null);setTab('entreno');}, style:{background:'none',border:'1px solid '+G.bor,borderRadius:6,padding:'3px 10px',fontSize:11,color:cfg.nombre==='Melissa'?'#f0abfc':G.ok,cursor:'pointer',fontFamily:'monospace'}}, cfg.nombre + ' \u{25BC}')
+          React.createElement('div', {style:{fontFamily:'monospace',fontSize:15,fontWeight:700,letterSpacing:3,color:G.acc}}, 'FITTRACKER'),
+          React.createElement('button', {onClick:()=>{setUserId(null);setUser(null);setTab('entreno');}, style:{background:'none',border:'1px solid '+G.bor,borderRadius:6,padding:'3px 10px',fontSize:15,color:cfg.nombre==='Melissa'?'#f0abfc':G.ok,cursor:'pointer',fontFamily:'monospace'}}, cfg.nombre + ' \u{25BC}')
         ),
         React.createElement('div', {style:{display:'flex',gap:2}},
           TABS.map(t => (
-            React.createElement('button', {key:t.id, onClick:()=>setTab(t.id), style:{background:'none',color:tab===t.id?G.acc:G.mu,borderBottom:'2px solid '+(tab===t.id?G.acc:'transparent'),padding:'5px 14px',fontSize:10,fontWeight:700,fontFamily:'monospace',letterSpacing:1,border:'none',cursor:'pointer'}},
+            React.createElement('button', {key:t.id, onClick:()=>setTab(t.id), style:{background:'none',color:tab===t.id?G.acc:G.mu,borderBottom:'2px solid '+(tab===t.id?G.acc:'transparent'),padding:'5px 14px',fontSize:15,fontWeight:700,fontFamily:'monospace',letterSpacing:1,border:'none',cursor:'pointer'}},
               t.label
             )
           ))
