@@ -191,7 +191,9 @@ const delMedicion = (id) => sb.from('mediciones').delete().eq('id',id);
 const DIAS = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
 const TC = {alta:'#ef4444', media:'#f59e0b', baja:'#22c55e'};
 // Tipos de bloque: fuerza, tecnico, metcon, pump, aislamiento
-const BT = {fuerza:'#ef4444',tecnico:'#6366f1',metcon:'#f97316',pump:'#22c55e',aislamiento:'#a855f7',warmup:'#38bdf8'};
+// Gradiente de intensidad por temperatura de color (Mehta & Zhu 2009):
+// Rojo(max) \u2192 Naranja(alto) \u2192 \u00c1mbar(medio) \u2192 Verde(bajo-medio) \u2192 Azul(t\u00e9cnico/foco) \u2192 Teal(calma)
+const BT = {fuerza:'#ef4444',metcon:'#f97316',aislamiento:'#eab308',tecnico:'#3b82f6',pump:'#22c55e',warmup:'#14b8a6'};
 // Esfuerzo percibido
 const EP = {
   max:{label:'MAXIMO',color:'#ef4444',emoji:'\u{1F525}',desc:'Al limite, RPE 9-10'},
