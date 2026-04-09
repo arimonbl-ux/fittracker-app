@@ -960,7 +960,7 @@ const SEM_NAMES = {v:'Libre',a:'Moderado',r:'Restringido'};
 const calcAlMacros = (alId, qty) => {
   const al = ALIMENTOS[alId];
   if(!al) return {p:0,c:0,g:0,k:0,alcG:0};
-  const grams = al.u ? qty * (al.pu||1) : qty;
+  const grams = qty;
   const factor = grams / 100;
   const p = Math.round(al.p * factor * 10) / 10;
   const c = Math.round(al.c * factor * 10) / 10;
