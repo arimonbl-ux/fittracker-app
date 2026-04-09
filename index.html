@@ -1604,12 +1604,14 @@ function Rating({label, value, onChange, color, small, onSave, warnAt}) {
 // Aislamiento: 45-90s
 // Warmup/pump: 30-60s
 const REST_SECS = {fuerza:150,aislamiento:75,tecnico:120,metcon:60,warmup:45,pump:30};
+const TRANSITION_SECS = 20; // Transici\u00f3n entre estaciones en bi-serie (NSCA: 10-30s para cambio de estaci\u00f3n)
 function RestTimer({btipo, esBiserie, compact}) {
   const [running, setRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [total, setTotal] = useState(0);
   const intervalRef = useRef(null);
-  const sugSecs = esBiserie ? 15 : (REST_SECS[btipo] || 90);
+  const sugSecs = esBiserie ? TRANSITION_SECS : (REST_SECS[btipo] || 90);
+  const transLabel = esBiserie ? '\u{1F3C3} CAMBIO ESTACI\u00d3N' : '\u{23F1}\uFE0F DESCANSO';
   const start = (secs) => {
     if(intervalRef.current) clearInterval(intervalRef.current);
     setTotal(secs); setTimeLeft(secs); setRunning(true);
@@ -1636,13 +1638,13 @@ function RestTimer({btipo, esBiserie, compact}) {
   if(compact) {
     return React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'6px 0',borderTop:'1px dashed '+G.bor+'66',borderBottom:'1px dashed '+G.bor+'66',margin:'4px 0'}},
       !running && !isDone && React.createElement('button', {onClick:()=>start(sugSecs),
-        style:{background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:20,padding:'6px 16px',fontSize:15,color:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6}},
-        '\u{23F1}\uFE0F DESCANSO '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60),
-      !running && !isDone && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
+        style:{background:(esBiserie?G.warn:G.acc)+'22',border:'1px solid '+(esBiserie?G.warn:G.acc)+'44',borderRadius:20,padding:'6px 16px',fontSize:15,color:esBiserie?G.warn:G.acc,fontFamily:'monospace',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6}},
+        transLabel+' '+Math.floor(sugSecs/60)+':'+(sugSecs%60<10?'0':'')+sugSecs%60),
+      !running && !isDone && !esBiserie && sugSecs > 60 && React.createElement('button', {onClick:()=>start(Math.round(sugSecs*0.7)),
         style:{background:G.warn+'15',border:'1px solid '+G.warn+'33',borderRadius:20,padding:'6px 10px',fontSize:15,color:G.warn,fontFamily:'monospace',cursor:'pointer'}},
         '\u{26A1}'),
       isDone && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'4px 14px',background:G.ok+'22',borderRadius:20,border:'1px solid '+G.ok+'44'}},
-        React.createElement('span', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:G.ok}}, '\u{2705} SIGUIENTE SERIE'),
+        React.createElement('span', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:G.ok}}, esBiserie ? '\u{26A1} LISTO \u2014 Siguiente ejercicio' : '\u{2705} SIGUIENTE SERIE'),
         React.createElement('button', {onClick:()=>{setTotal(0);setTimeLeft(0);},style:{background:'transparent',border:'none',color:G.mu,fontSize:15,cursor:'pointer'}}, '\u{2716}')
       ),
       running && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'4px 12px',background:isLast10?G.bad+'22':G.acc+'15',borderRadius:20,border:'1px solid '+(isLast10?G.bad:G.acc)+'44',transition:'background 0.3s'}},
@@ -1905,7 +1907,7 @@ function TabEntreno({user, cfg}) {
   const [dia, setDia] = useState(diaHoy());
   const [fecha, setFecha] = useState(hoy());
   const [reg, setReg] = useState({});
-  const [meta, setMeta] = useState({inicio:'',fin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
+  const [meta, setMeta] = useState({inicio:'',fin:'',durMin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [saveMessage, setSaveMessage] = useState('');
   const [vista, setVista] = useState('hoy');
@@ -1919,6 +1921,9 @@ function TabEntreno({user, cfg}) {
   const [showTec, setShowTec] = useState({}); // keys de tecnica expandida
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
+  // Cron\u00f3metro general de rutina
+  const [wkTimer, setWkTimer] = useState({running:false, startTs:null, elapsed:0});
+  const wkIntervalRef = useRef(null);
 
   const prog = cfg.prog[dia] || cfg.prog[1];
 
@@ -2037,6 +2042,43 @@ function TabEntreno({user, cfg}) {
     let d = (h2*60+m2)-(h1*60+m1);
     if(d<0) d+=1440;
     return (d/60).toFixed(1);
+  };
+
+  // ── CRON\u00d3METRO GENERAL DE RUTINA ─────────────────────────────────────────
+  const wkStart = () => {
+    const now = Date.now();
+    const horaStr = new Date(now).toTimeString().slice(0,5);
+    updMeta('inicio', horaStr);
+    setWkTimer({running:true, startTs:now, elapsed:0});
+    if(wkIntervalRef.current) clearInterval(wkIntervalRef.current);
+    wkIntervalRef.current = setInterval(() => {
+      setWkTimer(prev => prev.running ? {...prev, elapsed: Math.floor((Date.now()-prev.startTs)/1000)} : prev);
+    }, 1000);
+  };
+  const wkStop = () => {
+    if(wkIntervalRef.current) clearInterval(wkIntervalRef.current);
+    wkIntervalRef.current = null;
+    const now = Date.now();
+    const horaStr = new Date(now).toTimeString().slice(0,5);
+    const elapsedSec = wkTimer.startTs ? Math.floor((now - wkTimer.startTs)/1000) : wkTimer.elapsed;
+    const durMin = Math.round(elapsedSec/60);
+    setWkTimer(prev => ({...prev, running:false, elapsed:elapsedSec}));
+    // Auto-llenar hora fin y duraci\u00f3n en minutos
+    const nm = {...meta, fin:horaStr, durMin:String(durMin)};
+    setMeta(nm);
+    debouncedSave(reg, nm);
+  };
+  const wkReset = () => {
+    if(wkIntervalRef.current) clearInterval(wkIntervalRef.current);
+    wkIntervalRef.current = null;
+    setWkTimer({running:false, startTs:null, elapsed:0});
+  };
+  useEffect(() => () => { if(wkIntervalRef.current) clearInterval(wkIntervalRef.current); }, []);
+  const fmtElapsed = (s) => {
+    const h = Math.floor(s/3600);
+    const m = Math.floor((s%3600)/60);
+    const sec = s%60;
+    return (h>0?h+':':'') + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
   };
 
   const verHistorial = async () => {
@@ -2268,6 +2310,22 @@ function TabEntreno({user, cfg}) {
         <Rating label="Ansiedad pre" value={meta.aPre} onChange={v=>updMeta('aPre',v)} color={G.coa} onSave={forceManualSave} />
       </Sec>
 
+      {React.createElement('div', {style:{background:wkTimer.running?G.acc+'15':G.sur,border:'2px solid '+(wkTimer.running?G.acc:wkTimer.elapsed>0?G.ok:G.bor),borderRadius:16,padding:'16px 20px',marginBottom:14,textAlign:'center',transition:'all 0.3s'}},
+        React.createElement('div', {style:{fontSize:13,fontFamily:'monospace',color:G.mu,marginBottom:6,letterSpacing:2,textTransform:'uppercase'}}, '\u{23F1}\uFE0F Cron\u00f3metro de Rutina'),
+        React.createElement('div', {style:{fontSize:wkTimer.running?48:36,fontFamily:'monospace',fontWeight:700,color:wkTimer.running?G.acc:wkTimer.elapsed>0?G.ok:'#94a3b8',letterSpacing:3,marginBottom:10,transition:'all 0.3s',textShadow:wkTimer.running?'0 0 20px '+G.acc+'44':'none'}},
+          fmtElapsed(wkTimer.elapsed)
+        ),
+        React.createElement('div', {style:{display:'flex',justifyContent:'center',gap:10,flexWrap:'wrap'}},
+          !wkTimer.running && wkTimer.elapsed===0 && React.createElement('button', {onClick:wkStart,style:{background:G.acc,color:'#0f172a',border:'none',borderRadius:25,padding:'12px 32px',fontSize:18,fontWeight:700,fontFamily:'monospace',cursor:'pointer',letterSpacing:1}}, '\u{25B6} INICIAR RUTINA'),
+          wkTimer.running && React.createElement('button', {onClick:wkStop,style:{background:G.bad,color:'#fff',border:'none',borderRadius:25,padding:'12px 32px',fontSize:18,fontWeight:700,fontFamily:'monospace',cursor:'pointer',letterSpacing:1}}, '\u{25A0} FINALIZAR'),
+          !wkTimer.running && wkTimer.elapsed>0 && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',justifyContent:'center'}},
+            React.createElement('span', {style:{fontSize:16,color:G.ok,fontFamily:'monospace',fontWeight:700}}, '\u{2705} Rutina: ' + Math.round(wkTimer.elapsed/60) + ' min' + (meta.durMin ? ' (guardado)' : '')),
+            React.createElement('button', {onClick:wkReset,style:{background:G.alt,color:G.mu,border:'1px solid '+G.bor,borderRadius:20,padding:'6px 14px',fontSize:13,cursor:'pointer',fontFamily:'monospace'}}, '\u{1F504} Reset')
+          )
+        ),
+        wkTimer.running && meta.inicio && React.createElement('div', {style:{fontSize:12,color:G.mu,marginTop:8,fontFamily:'monospace'}}, 'Inicio: '+meta.inicio)
+      )}
+
       {(prog.bloques||[]).map((bloque, bi) => {
         const esBi = bloque.ejercicios.length > 1;
         const desc = bloque.ejercicios.length > 1 ? '60-90s' : (prog.tipo==='alta' ? '2-3 min' : '90s');
@@ -2379,8 +2437,8 @@ function TabEntreno({user, cfg}) {
                               React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
                               React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:15}})
                             ),
-                            !isLastSet && React.createElement(RestTimer, {key:'rt'+si, btipo:bloque.btipo, esBiserie:false, compact:true}),
-                            isLastSet && esBi && !isLastEjInBi && React.createElement('div', {key:'bi'+si, style:{textAlign:'center',padding:'4px 0',fontSize:15,color:G.warn,fontFamily:'monospace',fontWeight:700}}, '\u{26A1} SIN DESCANSO \u2014 Siguiente ejercicio bi-serie'),
+                            !isLastSet && !esBi && React.createElement(RestTimer, {key:'rt'+si, btipo:bloque.btipo, esBiserie:false, compact:true}),
+                            isLastSet && esBi && !isLastEjInBi && React.createElement(RestTimer, {key:'trans'+si, btipo:bloque.btipo, esBiserie:true, compact:true}),
                             isLastSet && (!esBi || isLastEjInBi) && React.createElement(RestTimer, {key:'rtf'+si, btipo:bloque.btipo, esBiserie:false, compact:false})
                           );
                         })
@@ -3693,7 +3751,10 @@ const calcGasto = (ejercicios, meta, prog, perfil) => {
     });
   }
   let durMin=0;
-  if(meta.inicio&&meta.fin){
+  // Preferir durMin del cron\u00f3metro (m\u00e1s preciso) sobre c\u00e1lculo inicio/fin
+  if(meta.durMin && parseInt(meta.durMin)>0) {
+    durMin = parseInt(meta.durMin);
+  } else if(meta.inicio&&meta.fin){
     const [h1,m1]=meta.inicio.split(':').map(Number);
     const [h2,m2]=meta.fin.split(':').map(Number);
     durMin=(h2*60+m2)-(h1*60+m1); if(durMin<0) durMin+=1440;
