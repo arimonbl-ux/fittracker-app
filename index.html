@@ -2238,7 +2238,7 @@ function TabEntreno({user, cfg}) {
               <span style={{fontSize:15,color:G.warn,fontFamily:'monospace'}}>{prog.carbos}</span>
             </div>
             {prog.cardio && <div style={{fontSize:15,color:'#38bdf8',marginTop:4}}>{'\u{1F6B6}'} {prog.cardio}</div>}
-            {prog.cf_opcional && <div style={{fontSize:15,color:G.warn,marginTop:2}}>{'\u{1F3CB}'} CrossFit opcional (seg\u00FAn fatiga)</div>}
+            {prog.cf_opcional && <div style={{fontSize:15,color:G.warn,marginTop:2}}>{'\u{1F3CB}'} {'CrossFit opcional (seg\u00FAn fatiga)'}</div>}
           </div>
         </div>
         ); })()}
@@ -2262,7 +2262,7 @@ function TabEntreno({user, cfg}) {
         <Sec title={'\u{1F634} AN\u00C1LISIS DE SUE\u00D1O'} color={sa.color || '#6366f1'}>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
             <div>
-              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Horas sue\u00F1o</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>{'Horas sue\u00F1o'}</div>
               <Inp type="number" min="0" max="12" step="0.5" value={meta.sueno} onChange={e=>updMeta('sueno',e.target.value)} placeholder="7.5" style={{textAlign:'center'}} />
             </div>
             <div>
@@ -2289,7 +2289,7 @@ function TabEntreno({user, cfg}) {
           {/* Barra de fases de sue\u00F1o */}
           {sa.phases && (
             <div style={{marginBottom:10}}>
-              <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>Fases estimadas del sue\u00F1o:</div>
+              <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'Fases estimadas del sue\u00F1o:'}</div>
               <div style={{display:'flex',borderRadius:6,overflow:'hidden',height:22}}>
                 {[['deep',sa.phases.deep],['rem',sa.phases.rem],['light',sa.phases.light],['awake',sa.phases.awake]].map(([k,mins]) => {
                   const total = sa.phases.deep+sa.phases.rem+sa.phases.light+sa.phases.awake;
@@ -2314,7 +2314,7 @@ function TabEntreno({user, cfg}) {
               <div style={{width:40,height:40,borderRadius:'50%',border:'3px solid '+(sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'),display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'}}>{sa.energyPrediction.pct}%</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:15,fontWeight:700,color:'#e2e8f0'}}>{'\u{26A1}'} {sa.energyPrediction.msg}</div>
-                <div style={{fontSize:15,color:G.mu,marginTop:2}}>Basado en sue\u00F1o, calidad, despertares y estado pre-entreno</div>
+                <div style={{fontSize:15,color:G.mu,marginTop:2}}>{'Basado en sue\u00F1o, calidad, despertares y estado pre-entreno'}</div>
               </div>
             </div>
           )}
@@ -2567,7 +2567,7 @@ function TabEntreno({user, cfg}) {
 
       {/* ─── ENERGY CHECK-IN: mid-day y end-of-day ─── */}
       <Sec title={'\u{26A1} ENERG\u00CDA DURANTE EL D\u00CDA'} color={'#f59e0b'}>
-        <div style={{fontSize:15,color:'#f59e0b',marginBottom:8,fontFamily:'monospace'}}>Registra tu energ\u00EDa a lo largo del d\u00EDa para consejos personalizados</div>
+        <div style={{fontSize:15,color:'#f59e0b',marginBottom:8,fontFamily:'monospace'}}>{'Registra tu energ\u00EDa a lo largo del d\u00EDa para consejos personalizados'}</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:10}}>
           <div>
             <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} Medio d\u00EDa (~12-2PM)</div>
