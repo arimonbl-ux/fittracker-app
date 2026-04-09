@@ -653,14 +653,14 @@ const ALIMENTOS = {
   lechuga:{n:'Lechuga',p:1.4,c:2.9,g:0.2,s:10,cat:'veg'},
   hongos:{n:'Hongos/champi\u00F1ones',p:3.1,c:3.3,g:0.3,s:10,cat:'veg'},
   coliflor:{n:'Coliflor',p:1.9,c:5,g:0.3,s:10,cat:'veg'},
-  // ── Suplementos ──
-  carnivor:{n:'Carnivor (scoop)',p:23,c:1,g:0,s:1,cat:'sup',u:'sc',pu:35},
-  whey:{n:'Whey protein (sc)',p:24,c:3,g:1.5,s:1,cat:'sup',u:'sc',pu:32},
-  plant_prot:{n:'Prote\u00EDna plant',p:20,c:4,g:2,s:1,cat:'sup',u:'sc',pu:35},
-  eaa_s:{n:'EAA',p:100,c:0,g:0,s:1,cat:'sup'},
-  colageno_s:{n:'Col\u00E1geno',p:90,c:0,g:0,s:1,cat:'sup'},
-  creatina_s:{n:'Creatina',p:0,c:0,g:0,s:1,cat:'sup'},
-  glutamina_s:{n:'Glutamina',p:0,c:0,g:0,s:1,cat:'sup'},
+  // ── Suplementos (por porci\u00F3n/dosis est\u00E1ndar) ──
+  carnivor:{n:'Carnivor',p:23,c:1,g:0,s:1,cat:'sup',u:'scoop',pu:35},
+  whey:{n:'Whey protein',p:24,c:3,g:1.5,s:1,cat:'sup',u:'scoop',pu:32},
+  plant_prot:{n:'Prote\u00EDna plant',p:20,c:4,g:2,s:1,cat:'sup',u:'scoop',pu:35},
+  eaa_s:{n:'EAA',p:100,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:10},
+  colageno_s:{n:'Col\u00E1geno Multi',p:90,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:10},
+  creatina_s:{n:'Creatina 5g',p:0,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:5},
+  glutamina_s:{n:'Glutamina 5g',p:0,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:5},
   // ── Frutas ──
   banano:{n:'Banano',p:1.1,c:23,g:0.3,s:1,cat:'fru',u:'ud',pu:120},
   manzana:{n:'Manzana',p:0.3,c:14,g:0.2,s:1,cat:'fru',u:'ud',pu:180},
@@ -735,22 +735,22 @@ const ALIMENTOS = {
   leche_soya:{n:'Leche de soya',p:3.3,c:1.2,g:1.8,s:1,cat:'ext',u:'vaso',pu:240},
   leche_avena:{n:'Leche de avena',p:0.4,c:6.7,g:0.5,s:1,cat:'ext',u:'vaso',pu:240},
   // ── Snacks / Chocolates / Golosinas ──
-  // Chocolates por % cacao (por 100g / por barra ~40g)
-  choco_50:{n:'Chocolate 50% cacao',p:5,c:50,g:35,s:1,cat:'snk',u:'barra',pu:40},
-  choco_60:{n:'Chocolate 60% cacao',p:6,c:43,g:38,s:1,cat:'snk',u:'barra',pu:40},
-  choco_70:{n:'Chocolate 70% cacao',p:8,c:35,g:43,s:1,cat:'snk',u:'barra',pu:40},
-  choco_80:{n:'Chocolate 80% cacao',p:9,c:27,g:44,s:1,cat:'snk',u:'barra',pu:40},
-  choco_85:{n:'Chocolate 85% cacao',p:10,c:22,g:46,s:1,cat:'snk',u:'barra',pu:40},
-  choco_90:{n:'Chocolate 90% cacao',p:9,c:20,g:44,s:1,cat:'snk',u:'barra',pu:40},
-  choco_100:{n:'Chocolate 100% cacao',p:12,c:1,g:55,s:1,cat:'snk',u:'barra',pu:40},
-  choco_leche:{n:'Chocolate con leche',p:7,c:58,g:30,s:1,cat:'snk',u:'barra',pu:40},
-  choco_blanco:{n:'Chocolate blanco',p:6,c:59,g:32,s:1,cat:'snk',u:'barra',pu:40},
-  choco_keto:{n:'Chocolate keto/sin az\u00FAcar',p:9,c:4,g:33,s:1,cat:'snk',u:'barra',pu:40},
-  // Marcas populares CR (por barra/paquete)
-  snickers:{n:'Snickers',p:10,c:53,g:29,s:1,cat:'snk',u:'barra',pu:52},
-  kitkat:{n:'Kit Kat',p:6,c:64,g:28,s:1,cat:'snk',u:'barra',pu:42},
-  mm_mani:{n:'M&M man\u00ED',p:4,c:71,g:21,s:1,cat:'snk',u:'bolsa',pu:45},
-  gallito:{n:'Gallito chocolate (CR)',p:6,c:60,g:28,s:1,cat:'snk',u:'barra',pu:35},
+  // Chocolates por % cacao (macros por 100g / porci\u00F3n = 1 cuadrito ~10g)
+  choco_50:{n:'Chocolate 50% cacao',p:5,c:50,g:35,s:1,cat:'snk',u:'porc',pu:10},
+  choco_60:{n:'Chocolate 60% cacao',p:6,c:43,g:38,s:1,cat:'snk',u:'porc',pu:10},
+  choco_70:{n:'Chocolate 70% cacao',p:8,c:35,g:43,s:1,cat:'snk',u:'porc',pu:10},
+  choco_80:{n:'Chocolate 80% cacao',p:9,c:27,g:44,s:1,cat:'snk',u:'porc',pu:10},
+  choco_85:{n:'Chocolate 85% cacao',p:10,c:22,g:46,s:1,cat:'snk',u:'porc',pu:10},
+  choco_90:{n:'Chocolate 90% cacao',p:9,c:20,g:44,s:1,cat:'snk',u:'porc',pu:10},
+  choco_100:{n:'Chocolate 100% cacao',p:12,c:1,g:55,s:1,cat:'snk',u:'porc',pu:10},
+  choco_leche:{n:'Chocolate con leche',p:7,c:58,g:30,s:1,cat:'snk',u:'porc',pu:10},
+  choco_blanco:{n:'Chocolate blanco',p:6,c:59,g:32,s:1,cat:'snk',u:'porc',pu:10},
+  choco_keto:{n:'Chocolate keto/sin az\u00FAcar',p:9,c:4,g:33,s:1,cat:'snk',u:'porc',pu:10},
+  // Marcas populares CR (por porci\u00F3n est\u00E1ndar seg\u00FAn empaque)
+  snickers:{n:'Snickers',p:10,c:53,g:29,s:1,cat:'snk',u:'porc',pu:52},
+  kitkat:{n:'Kit Kat',p:6,c:64,g:28,s:1,cat:'snk',u:'porc',pu:42},
+  mm_mani:{n:'M&M man\u00ED',p:4,c:71,g:21,s:1,cat:'snk',u:'porc',pu:45},
+  gallito:{n:'Gallito chocolate (CR)',p:6,c:60,g:28,s:1,cat:'snk',u:'porc',pu:35},
   milky_way:{n:'Milky Way',p:4,c:66,g:17,s:1,cat:'snk',u:'barra',pu:52},
   twix:{n:'Twix',p:5,c:64,g:25,s:1,cat:'snk',u:'barra',pu:50},
   ferrero:{n:'Ferrero Rocher',p:9,c:43,g:42,s:1,cat:'snk',u:'ud',pu:13},
@@ -2541,25 +2541,35 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
 }
 
 // ─── QTY CONTROL: botones +/- con step configurable ───
-function QtyControl({value, onChange, step, min, unit}) {
+function QtyControl({value, onChange, step, min, unit, pu}) {
   const v = value || 0;
   const st = step || 10;
   const mn = min || 0;
-  const btnS = {width:32,height:32,borderRadius:8,border:'1px solid '+G.bor,background:G.alt,color:'#e2e8f0',fontSize:16,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0};
+  const isPorc = pu && pu > 0 && (unit==='porc'||unit==='scoop'||unit==='dosis'||unit==='ud'||unit==='cda'||unit==='shot'||unit==='copa'||unit==='lata'||unit==='sc');
+  const porciones = isPorc ? Math.round((v / pu)*10)/10 : 0;
+  const btnS = {width:36,height:36,borderRadius:8,border:'1px solid '+G.bor,background:G.alt,color:'#e2e8f0',fontSize:18,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0};
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
     React.createElement('button', {onClick:()=>onChange(Math.max(mn, v-st)), style:btnS}, '\u2212'),
-    React.createElement('div', {style:{minWidth:48,textAlign:'center',fontSize:15,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}},
-      v + (unit||'g')
+    React.createElement('div', {style:{minWidth:56,textAlign:'center'}},
+      isPorc ? React.createElement(React.Fragment, null,
+        React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}}, porciones + ' ' + (unit||'')),
+        React.createElement('div', {style:{fontSize:15,color:G.mu,fontFamily:'monospace'}}, v+'g')
+      ) : React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}}, v + (unit||'g'))
     ),
     React.createElement('button', {onClick:()=>onChange(v+st), style:btnS}, '+')
   );
 }
 
-// ─── STEP TOGGLE: alternar entre 1 y 10 ───
-function StepToggle({step, setStep}) {
+// ─── STEP TOGGLE: alternar entre porci\u00F3n, 1g y 10g ───
+function StepToggle({step, setStep, pu}) {
+  const opts = pu && pu > 1 ? [pu, 1, 10] : [1, 10];
+  const labels = {};
+  if(pu && pu > 1) labels[pu] = '1porc';
+  labels[1] = '\u00B11g';
+  labels[10] = '\u00B110g';
   return React.createElement('div', {style:{display:'flex',gap:0,background:G.alt,borderRadius:6,border:'1px solid '+G.bor,overflow:'hidden'}},
-    [1,10].map(s =>
-      React.createElement('button', {key:s, onClick:()=>setStep(s), style:{padding:'3px 8px',fontSize:15,fontWeight:700,fontFamily:'monospace',border:'none',background:step===s?G.acc:'transparent',color:step===s?'#fff':G.mu,cursor:'pointer'}}, '\u00B1'+s)
+    opts.map(s =>
+      React.createElement('button', {key:s, onClick:()=>setStep(s), style:{padding:'3px 8px',fontSize:15,fontWeight:600,fontFamily:'monospace',border:'none',background:step===s?G.acc:'transparent',color:step===s?'#fff':G.mu,cursor:'pointer'}}, labels[s] || ('\u00B1'+s))
     )
   );
 }
@@ -2568,7 +2578,8 @@ function StepToggle({step, setStep}) {
 function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride, userId, dayType}) {
   const al = ALIMENTOS[alId];
   if(!al) return null;
-  const [step, setStep] = useState(stepOverride || al.s || 10);
+  const defaultStep = al.pu || al.s || 10;
+  const [step, setStep] = useState(stepOverride || defaultStep);
   const [showTip, setShowTip] = useState(false);
   const m = calcAlMacros(alId, qty);
   const unit = al.u || 'g';
@@ -2577,8 +2588,8 @@ function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride, userId, da
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:G.alt,borderRadius:8,marginBottom:4,flexWrap:'wrap',borderLeft:'3px solid '+semCol}},
     React.createElement('div', {onClick:()=>setShowTip(!showTip), style:{cursor:'pointer',fontSize:15,lineHeight:1}}, SEM_LABELS[sem.luz]),
     React.createElement('div', {style:{flex:'1 1 80px',fontSize:15,color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontWeight:600,minWidth:70}}, al.n),
-    React.createElement(QtyControl, {value:qty, onChange:onQtyChange, step:step, min:0, unit:unit}),
-    React.createElement(StepToggle, {step, setStep}),
+    React.createElement(QtyControl, {value:qty, onChange:onQtyChange, step:step, min:0, unit:unit, pu:al.pu}),
+    React.createElement(StepToggle, {step, setStep, pu:al.pu}),
     React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:G.dim,minWidth:100,textAlign:'right'}},
       React.createElement('span', {style:{color:G.acc}}, 'P:'+Math.round(m.p)),
       ' ',
@@ -2620,7 +2631,7 @@ function AddFoodSelector({onAdd, exclude, userId, dayType}) {
     ),
     cat && React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,maxHeight:200,overflowY:'auto'}},
       sorted.map(({id,al,sem}) =>
-        React.createElement('button', {key:id, onClick:()=>{onAdd(id, al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?1:100));setOpen(false);setCat(null);setFilter('all');}, style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontSize:15,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',alignItems:'center',gap:4}},
+        React.createElement('button', {key:id, onClick:()=>{const defQty = al.pu || (al.u ? 1 : (al.cat==='ext'?5:al.cat==='sup'?5:100));onAdd(id, defQty);setOpen(false);setCat(null);setFilter('all');}, style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontSize:15,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',alignItems:'center',gap:4}},
           React.createElement('span',{style:{fontSize:15}},SEM_LABELS[sem.luz]),
           al.n
         )
