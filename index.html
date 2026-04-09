@@ -442,7 +442,8 @@ const SUPLEMENTOS = {
     {id:'eaa',nombre:'EAA 10g',timing:'Pre-entreno en ayunas',emoji:'\u{1F4CA}'},
     {id:'colageno',nombre:'Col\u00E1geno Multi',timing:'Con EAA',emoji:'\u{1F9B4}'},
     {id:'ashwa',nombre:'Ashwagandha KSM-66 600mg',timing:'Con caf\u00E9',emoji:'\u{1F33F}'},
-    {id:'cafe',nombre:'Caf\u00E9 negro',timing:'5:30-6:00 AM',emoji:'\u{2615}'}
+    {id:'cafe',nombre:'Caf\u00E9 negro',timing:'5:30-6:00 AM',emoji:'\u{2615}'},
+    {id:'mstak',nombre:'Animal M-Stak (pack)',timing:'30-45 min pre-entreno con caf\u00E9',emoji:'\u{1F525}'}
   ],
   POST: [
     {id:'creatina',nombre:'Creatina 5g',timing:'Post inmediato',emoji:'\u{26A1}'},
@@ -476,9 +477,9 @@ const PLANES = {
   alta: {
     label:'D\u00CDA ALTA (Lun/Mar)',color:'#ef4444',
     comidas:[
-      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['EAA 10g + Col\u00E1geno + Ashwagandha','Caf\u00E9 negro'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','EAA 10g + Col\u00E1geno + Ashwagandha','Miel 15g en caf\u00E9 (carbo pre-piernas)'],macros:'P:20g C:12g G:0',kcal:128},
       {id:'intra',hora:'Durante entreno',label:'Intra-entreno',items:['Agua 750ml + sal de mar + electrolitos'],macros:'P:0 C:0 G:0',kcal:0},
-      {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g','Miel 15g (carbo estrat\u00E9gico)'],macros:'P:40g C:15g G:1g',kcal:229},
+      {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g'],macros:'P:40g C:2g G:1g',kcal:177},
       {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['4 huevos + aguacate + espinaca','O: 200g carne + vegetales'],macros:'P:30g C:3g G:25g',kcal:357},
       {id:'c2',hora:'~12:00 PM',label:'Comida 2',items:['200g carne res/pollo + 1 taza vegetales','Aceite oliva/manteca'],macros:'P:40g C:5g G:15g',kcal:315},
       {id:'snack',hora:'~3:00 PM',label:'Snack',items:['Nueces/almendras 30g','O: queso + jam\u00F3n'],macros:'P:5g C:2g G:15g',kcal:163},
@@ -490,7 +491,7 @@ const PLANES = {
   media: {
     label:'D\u00CDA MEDIA (Mi\u00E9/Vie)',color:'#f59e0b',
     comidas:[
-      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['EAA 10g + Col\u00E1geno + Ashwagandha','Caf\u00E9 negro'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','EAA 10g + Col\u00E1geno + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
       {id:'intra',hora:'Durante entreno',label:'Intra-entreno',items:['Agua 750ml + sal'],macros:'P:0 C:0 G:0',kcal:0},
       {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g','SIN carbo estrat\u00E9gico'],macros:'P:40g C:2g G:1g',kcal:177},
       {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o','O: 150g carne + ensalada'],macros:'P:25g C:3g G:18g',kcal:274},
@@ -504,7 +505,7 @@ const PLANES = {
   media_baja: {
     label:'BRAZOS / CF OPCIONAL (S\u00E1b)',color:'#a855f7',
     comidas:[
-      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['EAA 10g + Col\u00E1geno','Caf\u00E9 negro + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','EAA 10g + Col\u00E1geno + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
       {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g'],macros:'P:40g C:2g G:1g',kcal:177},
       {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o + vegetales'],macros:'P:25g C:3g G:18g',kcal:274},
       {id:'c2',hora:'~12:00 PM',label:'Comida 2',items:['200g carne + ensalada'],macros:'P:40g C:4g G:12g',kcal:284},
@@ -669,6 +670,7 @@ const ALIMENTOS = {
   colageno_s:{n:'Col\u00E1geno Multi',p:90,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:10},
   creatina_s:{n:'Creatina 5g',p:0,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:5},
   glutamina_s:{n:'Glutamina 5g',p:0,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:5},
+  animal_mstak:{n:'Animal M-Stak (pack)',p:0,c:0,g:0,s:1,cat:'sup',u:'pack',pu:1},
   // ── Frutas ──
   banano:{n:'Banano',p:1.1,c:23,g:0.3,s:1,cat:'fru',u:'ud',pu:120},
   manzana:{n:'Manzana',p:0.3,c:14,g:0.2,s:1,cat:'fru',u:'ud',pu:180},
@@ -1924,7 +1926,7 @@ function TabEntreno({user, cfg}) {
   const [dia, setDia] = useState(diaHoy());
   const [fecha, setFecha] = useState(hoy());
   const [reg, setReg] = useState({});
-  const [meta, setMeta] = useState({inicio:'',fin:'',durMin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
+  const [meta, setMeta] = useState({inicio:'',fin:'',durMin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:'',userNotes:''});
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [saveMessage, setSaveMessage] = useState('');
   const [vista, setVista] = useState('hoy');
@@ -2576,6 +2578,10 @@ function TabEntreno({user, cfg}) {
               <div style={{marginTop:10}}>
                 <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Nota adicional del coach (manual)</div>
                 <textarea value={meta.coach||''} onChange={e=>updMeta('coach',e.target.value)} placeholder="Ajustes manuales, observaciones especiales..." style={{background:G.alt,border:'1px solid '+G.acc,color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:45}} />
+              </div>
+              <div style={{marginTop:10}}>
+                <div style={{fontSize:15,color:G.warn,marginBottom:4,fontWeight:600}}>{'\u{1F4DD}'} Mis notas / Feedback / Mejoras</div>
+                <textarea value={meta.userNotes||''} onChange={e=>updMeta('userNotes',e.target.value)} placeholder="Escrib\u00ED c\u00F3mo te sentiste, ideas de mejora, qu\u00E9 ajustar\u00EDas, c\u00F3mo estuvo el d\u00EDa..." style={{background:G.alt,border:'1px solid '+G.warn+'66',color:'#f1f5f9',borderRadius:10,padding:'9px 12px',fontSize:15,width:'100%',outline:'none',minHeight:70}} />
               </div>
             </div>
           );
