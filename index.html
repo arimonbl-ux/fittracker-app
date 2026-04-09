@@ -628,6 +628,7 @@ const ALIMENTOS = {
   aceite_coco:{n:'Aceite coco',p:0,c:0,g:100,s:1,cat:'gras',u:'cda',pu:14},
   mantequilla:{n:'Mantequilla',p:0.9,c:0.1,g:81,s:1,cat:'gras',u:'cda',pu:14},
   queso_crema:{n:'Queso crema',p:6,c:4,g:34,s:10,cat:'gras'},
+  queso_crema_dp:{n:'Queso crema Dos Pinos',p:3.3,c:6.7,g:33.3,s:1,cat:'gras',u:'cda',pu:30},
   queso:{n:'Queso',p:25,c:1.3,g:33,s:10,cat:'gras'},
   queso_mozza:{n:'Mozzarella',p:22,c:2.2,g:22,s:10,cat:'gras'},
   nueces:{n:'Nueces',p:15,c:14,g:65,s:5,cat:'gras'},
@@ -654,7 +655,8 @@ const ALIMENTOS = {
   hongos:{n:'Hongos/champi\u00F1ones',p:3.1,c:3.3,g:0.3,s:10,cat:'veg'},
   coliflor:{n:'Coliflor',p:1.9,c:5,g:0.3,s:10,cat:'veg'},
   // ── Suplementos (por porci\u00F3n/dosis est\u00E1ndar) ──
-  carnivor:{n:'Carnivor',p:23,c:1,g:0,s:1,cat:'sup',u:'scoop',pu:35},
+  carnivor:{n:'Carnivor polvo',p:23,c:1,g:0,s:1,cat:'sup',u:'scoop',pu:35},
+  carnivor_rtd:{n:'Carnivor RTD 500ml',p:8,c:1,g:0,s:1,cat:'sup',u:'botella',pu:500},
   whey:{n:'Whey protein',p:24,c:3,g:1.5,s:1,cat:'sup',u:'scoop',pu:32},
   plant_prot:{n:'Prote\u00EDna plant',p:20,c:4,g:2,s:1,cat:'sup',u:'scoop',pu:35},
   eaa_s:{n:'EAA',p:100,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:10},
@@ -725,6 +727,8 @@ const ALIMENTOS = {
   mostaza:{n:'Mostaza',p:4,c:6,g:4,s:1,cat:'ext',u:'cda',pu:5},
   leche_entera:{n:'Leche entera',p:3.2,c:4.8,g:3.3,s:1,cat:'ext',u:'vaso',pu:240},
   leche_almendra:{n:'Leche almendra',p:0.6,c:0.3,g:1.1,s:1,cat:'ext',u:'vaso',pu:240},
+  leche_silk_almendra:{n:'Silk Almendras sin az\u00FAcar',p:0.4,c:1.3,g:1.3,s:1,cat:'ext',u:'vaso',pu:240},
+  leche_silk_alm_coco:{n:'Silk Almendra+Coco',p:0,c:3,g:1.5,s:1,cat:'ext',u:'vaso',pu:240},
   yogurt:{n:'Yogurt natural',p:10,c:3.6,g:0.7,s:1,cat:'ext',u:'vaso',pu:150},
   helado:{n:'Helado',p:3.5,c:24,g:11,s:1,cat:'ext',u:'bola',pu:66},
   te_verde:{n:'T\u00e9 verde',p:0.2,c:0,g:0,s:1,cat:'ext',u:'taza',pu:240},
@@ -755,6 +759,9 @@ const ALIMENTOS = {
   twix:{n:'Twix',p:5,c:64,g:25,s:1,cat:'snk',u:'barra',pu:50},
   ferrero:{n:'Ferrero Rocher',p:9,c:43,g:42,s:1,cat:'snk',u:'ud',pu:13},
   nutella:{n:'Nutella',p:6,c:58,g:31,s:1,cat:'snk',u:'cda',pu:15},
+  // Queques keto caseros
+  queque_keto:{n:'Queque keto casero (huevo+almendra+mantequilla)',p:15,c:4,g:46,s:1,cat:'snk',u:'porc',pu:100},
+
   // Galletas
   galleta_keto_choc:{n:'Galleta keto chocolate',p:10,c:5,g:38,s:1,cat:'snk',u:'ud',pu:30},
   galleta_keto_coco:{n:'Galleta keto coco',p:8,c:6,g:35,s:1,cat:'snk',u:'ud',pu:30},
@@ -768,6 +775,7 @@ const ALIMENTOS = {
   malvavisco:{n:'Malvavisco/marshmallow',p:2,c:81,g:0,s:1,cat:'snk',u:'ud',pu:7},
   algodon_azucar:{n:'Algod\u00F3n de az\u00FAcar',p:0,c:100,g:0,s:1,cat:'snk',u:'bolsa',pu:28},
   palomitas:{n:'Palomitas ma\u00EDz',p:10,c:58,g:28,s:10,cat:'snk'},
+  chicharrines:{n:'Chicharrines (cerdo)',p:61,c:0,g:31,s:1,cat:'snk',u:'bolsa',pu:30},
   papas_fritas:{n:'Papas fritas/chips',p:6,c:53,g:33,s:1,cat:'snk',u:'bolsa',pu:30},
   barrita_cereal:{n:'Barrita de cereal',p:5,c:70,g:12,s:1,cat:'snk',u:'ud',pu:25},
   barrita_prot:{n:'Barrita prote\u00EDca',p:33,c:30,g:10,s:1,cat:'snk',u:'ud',pu:60},
