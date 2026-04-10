@@ -1952,6 +1952,7 @@ function TabEntreno({user, cfg}) {
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [saveMessage, setSaveMessage] = useState('');
   const [vista, setVista] = useState('hoy');
+  const [pestEnt, setPestEnt] = useState('rutina'); // 'rutina' | 'suplementos'
   const [historial, setHistorial] = useState([]);
   const [loadHist, setLoadHist] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -2286,10 +2287,18 @@ function TabEntreno({user, cfg}) {
           <button onClick={imprimir} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Imprimir</button>
           <button onClick={verHistorial} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Historial</button>
         </div>
+        {/* ── PESTAÑAS sub-navegacion entreno ── */}
+        <div style={{display:'flex',gap:0,marginTop:12,background:G.alt,borderRadius:10,padding:3,border:'1px solid '+G.bor}}>
+          {[['rutina','RUTINA','\u{1F3CB}\u{FE0F}'],['suplementos','SUPLEMENTOS','\u{1F48A}']].map(([v,l,ic]) => (
+            <button key={v} onClick={()=>setPestEnt(v)} style={{flex:1,background:pestEnt===v?G.acc:'transparent',color:pestEnt===v?'#fff':G.dim,border:'none',borderRadius:8,padding:'8px 10px',fontSize:15,fontWeight:700,fontFamily:'monospace',letterSpacing:0.5,cursor:'pointer',transition:'all 0.2s'}}>
+              {ic} {l}
+            </button>
+          ))}
+        </div>
       </Sec>
 
       {/* ─── SUPLEMENTOS DEL DIA (sync con Nutricion) ─── */}
-      {(() => {
+      {pestEnt==='suplementos' && (() => {
         const tipoDia = prog.tipo || 'media';
         const isDescanso = tipoDia === 'descanso';
         const isCrossfit = tipoDia === 'crossfit';
@@ -2368,10 +2377,11 @@ function TabEntreno({user, cfg}) {
         );
       })()}
 
-      {React.createElement(StreakBadge, {streak:streak})}
-      {React.createElement(SessionDashboard, {prog:prog, dia:dia, periodo:getSemPeriodo(fecha)})}
-      {React.createElement(PRBanner, {prevReg:prevReg, reg:reg, prog:prog})}
+      {pestEnt==='rutina' && React.createElement(StreakBadge, {streak:streak})}
+      {pestEnt==='rutina' && React.createElement(SessionDashboard, {prog:prog, dia:dia, periodo:getSemPeriodo(fecha)})}
+      {pestEnt==='rutina' && React.createElement(PRBanner, {prevReg:prevReg, reg:reg, prog:prog})}
 
+      {pestEnt==='rutina' && <>
       {/* ─── SLEEP ANALYSIS PANEL ─── */}
       {(() => {
         const sa = sleepAnalysis(meta, prog, getSemPeriodo(fecha), dia);
@@ -2790,6 +2800,7 @@ function TabEntreno({user, cfg}) {
           );
         })()}
       </Sec>
+      </>}
     </div>
   );
 }
