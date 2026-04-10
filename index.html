@@ -1958,6 +1958,8 @@ function TabEntreno({user, cfg}) {
   const [prevReg, setPrevReg] = useState(null); // Registro sesi\u00f3n anterior (mismo d\u00eda)
   const [prevFecha, setPrevFecha] = useState('');
   const [streak, setStreak] = useState({weeks:0,totalSessions:0,thisWeek:0});
+  const [planData, setPlanData] = useState({}); // sincronizado con TabNutricion planData
+  const planSaveRef = useRef(null);
   const [openEj, setOpenEj] = useState(null); // key del ejercicio expandido (null=todos cerrados)
   const [showTec, setShowTec] = useState({}); // keys de tecnica expandida
   const [warmupDone, setWarmupDone] = useState(false); // warmup completado
@@ -1990,6 +1992,14 @@ function TabEntreno({user, cfg}) {
     // Cargar sesi\u00f3n actual Y sesi\u00f3n anterior del mismo d\u00eda
     // Cargar streak en paralelo (no bloquea carga principal)
     getStreak(user.id).then(s => setStreak(s)).catch(()=>{});
+    // Cargar planData de nutricion (suplementos sincronizados con TabNutricion)
+    getNutricion(user.id, fecha).then(({data:nd}) => {
+      try {
+        const raw = (nd && nd._notasRaw) ? nd._notasRaw : '{}';
+        const n = JSON.parse(raw);
+        setPlanData(n.plan || {});
+      } catch { setPlanData({}); }
+    }).catch(()=>setPlanData({}));
     Promise.all([
       getEntreno(user.id, fecha, dia),
       getPrevSession(user.id, dia, fecha)
@@ -2091,6 +2101,22 @@ function TabEntreno({user, cfg}) {
     setMeta(nm);
     debouncedSave(reg, nm);
   };
+
+  // Actualizar planData (suplementos) y sincronizar con nutricion table
+  const updatePlanData = useCallback((newPlan) => {
+    setPlanData(newPlan);
+    if(planSaveRef.current) clearTimeout(planSaveRef.current);
+    planSaveRef.current = setTimeout(async () => {
+      try {
+        // Leer notas actuales, preservar campos no-plan
+        const {data:nd} = await getNutricion(user.id, fecha);
+        let existingNotas = {};
+        try { existingNotas = JSON.parse((nd && nd._notasRaw) || '{}'); } catch {}
+        existingNotas.plan = newPlan;
+        await sb.from('nutricion').upsert({ user_id:user.id, fecha, notas: JSON.stringify(existingNotas) }, { onConflict:'user_id,fecha' });
+      } catch(e) { console.error('Plan save error (entreno):', e); }
+    }, 600);
+  }, [user.id, fecha]);
 
   const duracion = () => {
     if(!meta.inicio||!meta.fin) return null;
@@ -2259,9 +2285,88 @@ function TabEntreno({user, cfg}) {
           <button onClick={forceManualSave} style={{background:G.acc,color:'#fff',border:'none',borderRadius:7,padding:'6px 14px',fontSize:15,fontWeight:600}}>GUARDAR AHORA</button>
           <button onClick={imprimir} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Imprimir</button>
           <button onClick={verHistorial} style={{background:G.alt,color:G.dim,border:'1px solid '+G.bor,borderRadius:7,padding:'5px 12px',fontSize:15}}>Historial</button>
-          <span style={{background:G.alt,color:G.coa,border:'1px solid '+G.coa,borderRadius:7,padding:'5px 10px',fontSize:15}}>Suplementos</span>
         </div>
       </Sec>
+
+      {/* ─── SUPLEMENTOS DEL DIA (sync con Nutricion) ─── */}
+      {(() => {
+        const tipoDia = prog.tipo || 'media';
+        const isDescanso = tipoDia === 'descanso';
+        const isCrossfit = tipoDia === 'crossfit';
+        const checkedSupAM = planData.sup_am || [];
+        const checkedSupPOST = planData.sup_post || [];
+        const checkedSupPM = planData.sup_pm || [];
+        const supReal = planData.sup_real || {};
+        const updateSupReal = (key, items) => {
+          const nr = {...(planData.sup_real||{}), [key]:items};
+          updatePlanData({...planData, sup_real:nr});
+        };
+        return (
+          <Sec title={'\u{1F48A} SUPLEMENTOS DEL D\u00CDA'} color={G.coa}>
+            <div style={{fontSize:15,color:G.mu,marginBottom:10,fontStyle:'italic'}}>
+              {'\u{1F504}'} {'Sincronizado autom\u00E1ticamente con secci\u00F3n NUTRICI\u00D3N'}
+            </div>
+            {!isDescanso && !isCrossfit && React.createElement(SupChecklist, {
+              timing:'AM',
+              label:'\u{1F305} PRE-ENTRENO / AM',
+              color:G.acc,
+              checked:checkedSupAM,
+              onChange:(v)=>updatePlanData({...planData, sup_am:v}),
+              suplementos:cfg.suplementos,
+              realItems:supReal['am']||{},
+              onRealUpdate:(items)=>updateSupReal('am', items),
+              userId:user.id, dayType:tipoDia
+            })}
+            {isCrossfit && React.createElement(SupChecklist, {
+              timing:'AM',
+              label:'\u{26A1} PRE-WOD (CROSSFIT)',
+              color:G.warn,
+              checked:checkedSupAM,
+              onChange:(v)=>updatePlanData({...planData, sup_am:v}),
+              suplementos:cfg.suplementos,
+              realItems:supReal['am']||{},
+              onRealUpdate:(items)=>updateSupReal('am', items),
+              userId:user.id, dayType:tipoDia
+            })}
+            {/* Durante entreno: nota informativa */}
+            {!isDescanso && (
+              <div style={{background:G.sur,border:'1px solid #38bdf844',borderRadius:12,padding:14,marginBottom:12}}>
+                <div style={{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:'#38bdf8',fontWeight:700,marginBottom:8}}>
+                  {'\u{1F4A7} DURANTE ENTRENO'}
+                </div>
+                <div style={{fontSize:15,color:G.dim,lineHeight:1.5}}>
+                  {'Agua 750ml + sal de mar + electrolitos'}
+                </div>
+                <div style={{fontSize:15,color:G.mu,marginTop:4,fontStyle:'italic'}}>
+                  {'Hidrataci\u00F3n intra-entreno cr\u00EDtica para rendimiento y recuperaci\u00F3n'}
+                </div>
+              </div>
+            )}
+            {!isDescanso && React.createElement(SupChecklist, {
+              timing:'POST',
+              label:'\u{1F4AA} POST-ENTRENO',
+              color:G.ok,
+              checked:checkedSupPOST,
+              onChange:(v)=>updatePlanData({...planData, sup_post:v}),
+              suplementos:cfg.suplementos,
+              realItems:supReal['post']||{},
+              onRealUpdate:(items)=>updateSupReal('post', items),
+              userId:user.id, dayType:tipoDia
+            })}
+            {React.createElement(SupChecklist, {
+              timing:'PM',
+              label:'\u{1F31C} PRE-SUE\u00D1O / PM',
+              color:G.coa,
+              checked:checkedSupPM,
+              onChange:(v)=>updatePlanData({...planData, sup_pm:v}),
+              suplementos:cfg.suplementos,
+              realItems:supReal['pm']||{},
+              onRealUpdate:(items)=>updateSupReal('pm', items),
+              userId:user.id, dayType:tipoDia
+            })}
+          </Sec>
+        );
+      })()}
 
       {React.createElement(StreakBadge, {streak:streak})}
       {React.createElement(SessionDashboard, {prog:prog, dia:dia, periodo:getSemPeriodo(fecha)})}
