@@ -1147,6 +1147,7 @@ const MEDITACION_M = [
 const USER_CFG = {
   [ARIEL_ID]: {
     nombre:'Ariel',
+    sexo:'M',
     prog:PROG,
     getDayType:getDayType,
     suplementos:SUPLEMENTOS,
@@ -1159,6 +1160,7 @@ const USER_CFG = {
   },
   [MELISSA_ID]: {
     nombre:'Melissa',
+    sexo:'F',
     prog:PROG_M,
     getDayType:getDayType_M,
     suplementos:SUPLEMENTOS_M,
@@ -1289,7 +1291,7 @@ const estimateSleepPhases = (totalH, calidad, edad) => {
   };
 };
 
-const sleepAnalysis = (meta, prog, periodo, dayOfWeek) => {
+const sleepAnalysis = (meta, prog, periodo, dayOfWeek, sexo) => {
   const sueno = parseFloat(meta.sueno) || 0;
   const calidad = parseInt(meta.suenoCalidad) || 0;
   const despertares = parseInt(meta.despertares) || 0;
@@ -1351,7 +1353,9 @@ const sleepAnalysis = (meta, prog, periodo, dayOfWeek) => {
     result.impacto.push({icon:'\u{1F3CB}',txt:'Rendimiento levemente afectado. Tiempo de reacci\u00F3n y coordinaci\u00F3n pueden bajar 5-15% (Reilly & Edwards 2007). Mantener plan pero con mayor enfoque en t\u00E9cnica.',color:'#f59e0b'});
     if(fPre > 5) result.impacto.push({icon:'\u{26A0}\u{FE0F}',txt:'Fatiga pre-entreno alta + sue\u00F1o bajo = fatiga acumulada. Considerar reducir 1-2 sets por ejercicio.',color:'#f59e0b'});
   } else {
-    result.impacto.push({icon:'\u{1F4AA}',txt:'Sue\u00F1o adecuado para rendimiento \u00F3ptimo. Testosterona, HGH y reparaci\u00F3n tisular en rango normal (Leproult & Van Cauter 2011).',color:'#10b981'});
+    result.impacto.push({icon:'\u{1F4AA}',txt:sexo==='F'
+      ? 'Sue\u00F1o adecuado para rendimiento \u00F3ptimo. Estr\u00F3geno, progesterona, HGH y reparaci\u00F3n tisular en rango normal. Regulaci\u00F3n del ciclo y recuperaci\u00F3n muscular preservadas (Kim et al. 2018).'
+      : 'Sue\u00F1o adecuado para rendimiento \u00F3ptimo. Testosterona, HGH y reparaci\u00F3n tisular en rango normal (Leproult & Van Cauter 2011).',color:'#10b981'});
   }
 
   // 5. Despertares nocturnos
@@ -2384,7 +2388,7 @@ function TabEntreno({user, cfg}) {
       {pestEnt==='rutina' && <>
       {/* ─── SLEEP ANALYSIS PANEL ─── */}
       {(() => {
-        const sa = sleepAnalysis(meta, prog, getSemPeriodo(fecha), dia);
+        const sa = sleepAnalysis(meta, prog, getSemPeriodo(fecha), dia, cfg.sexo);
         return (
         <Sec title={'\u{1F634} AN\u00C1LISIS DE SUE\u00D1O'} color={sa.color || '#6366f1'}>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
@@ -2799,6 +2803,51 @@ function TabEntreno({user, cfg}) {
             </div>
           );
         })()}
+      </Sec>
+
+      {/* ─── SUGERENCIAS DE MEJORA PARA LA APP ─── */}
+      <Sec title={'\u{1F4A1} MEJORAS PARA LA APP'} color={'#06b6d4'}>
+        <div style={{fontSize:15,color:G.mu,marginBottom:8}}>
+          {'\u00BFQu\u00E9 funciona bien? \u00BFQu\u00E9 falta? \u00BFQu\u00E9 cambiar\u00EDas? Escrib\u00ED tus ideas y se guardan para revisar y mejorar la app.'}
+        </div>
+        <textarea
+          value={meta.appFeedback||''}
+          onChange={e=>updMeta('appFeedback', e.target.value)}
+          placeholder={'Ejemplos: "agregar recordatorio de hidrataci\u00F3n", "que el bot\u00F3n de guardar sea m\u00E1s grande", "falta tracker de peso semanal"...'}
+          style={{background:G.alt,border:'1px solid #06b6d466',color:'#f1f5f9',borderRadius:10,padding:'10px 12px',fontSize:15,width:'100%',outline:'none',minHeight:90}}
+        />
+        <button
+          onClick={async ()=>{
+            const txt = (meta.appFeedback||'').trim();
+            if(!txt) { alert('Escrib\u00ED alguna sugerencia primero'); return; }
+            try {
+              const prev = Array.isArray(meta.mejorasLog) ? meta.mejorasLog : [];
+              const nueva = {fecha: fecha, ts: new Date().toISOString(), texto: txt, usuario: cfg.nombre};
+              const nm = {...meta, mejorasLog: [...prev, nueva], appFeedback:''};
+              setMeta(nm);
+              debouncedSave(reg, nm);
+              alert('\u2705 Sugerencia guardada. \u00A1Gracias!');
+            } catch(e) {
+              alert('Error al guardar: ' + e.message);
+            }
+          }}
+          style={{marginTop:8,background:'#06b6d4',color:'#fff',border:'none',borderRadius:8,padding:'8px 18px',fontSize:15,fontWeight:700,cursor:'pointer'}}
+        >
+          {'\u{1F4E4} Enviar sugerencia'}
+        </button>
+        {Array.isArray(meta.mejorasLog) && meta.mejorasLog.length > 0 && (
+          <div style={{marginTop:12,paddingTop:10,borderTop:'1px solid '+G.bor}}>
+            <div style={{fontSize:15,color:'#06b6d4',fontWeight:700,marginBottom:6,fontFamily:'monospace',letterSpacing:1}}>
+              {'\u{1F4CB} TUS SUGERENCIAS ('+meta.mejorasLog.length+')'}
+            </div>
+            {meta.mejorasLog.slice().reverse().map((m,i) => (
+              <div key={i} style={{background:G.alt,border:'1px solid #06b6d433',borderRadius:8,padding:'8px 10px',marginBottom:6,fontSize:15,color:G.dim}}>
+                <div style={{fontSize:15,color:G.mu,marginBottom:2}}>{new Date(m.ts).toLocaleString('es-CR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+                <div style={{whiteSpace:'pre-wrap'}}>{m.texto}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </Sec>
       </>}
     </div>
