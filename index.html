@@ -9,16 +9,20 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0a0f1e;--sur:#141d30;--alt:#1c2a42;--bor:#546b8f;--acc:#60a5fa;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--coa:#c084fc;--dim:#e2e8f0;--mu:#94a3b8}
-body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#1e3a5f22 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#2d1b6918 0%,transparent 50%);color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;font-size:17px;min-height:100vh}
-input,textarea,select{background:var(--alt);border:1px solid var(--bor);color:#f8fafc;border-radius:10px;padding:9px 12px;font-size:16px;width:100%;outline:none;font-family:inherit;transition:border-color 0.2s,box-shadow 0.2s}
-input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(96,165,250,0.25)}
-button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0.2s}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+:root{--bg:#f2f2f7;--sur:#ffffff;--alt:#f5f5f7;--bor:#d1d1d6;--acc:#007aff;--ok:#34c759;--warn:#ff9500;--bad:#ff3b30;--coa:#af52de;--dim:#1c1c1e;--mu:#8e8e93}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#007aff10 0%,transparent 55%),radial-gradient(ellipse at 80% 100%,#af52de0d 0%,transparent 55%);color:#1c1c1e;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:16px;min-height:100vh;letter-spacing:-0.01em}
+input,textarea,select{background:#ffffff;border:1px solid var(--bor);color:#1c1c1e;border-radius:10px;padding:10px 13px;font-size:16px;width:100%;outline:none;font-family:inherit;transition:border-color 0.18s,box-shadow 0.18s;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3.5px rgba(0,122,255,0.18)}
+input::placeholder,textarea::placeholder{color:#c7c7cc}
+button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0.18s,filter 0.15s;letter-spacing:-0.01em}
+button:hover{filter:brightness(1.03)}
 button:active{transform:scale(0.97)}
-textarea{resize:vertical;min-height:50px}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--acc);border-radius:2px}
-.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes prPulse{0%,100%{box-shadow:0 0 5px #f59e0b22}50%{box-shadow:0 0 20px #f59e0b44,0 0 40px #f59e0b11}}
+textarea{resize:vertical;min-height:56px}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#8e8e93}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes prPulse{0%,100%{box-shadow:0 0 8px #ff950022}50%{box-shadow:0 0 24px #ff950044,0 0 48px #ff950011}}
+.macCard{background:#ffffff;border:1px solid rgba(60,60,67,0.12);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.03)}
+.macGlass{background:rgba(255,255,255,0.78);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border:1px solid rgba(60,60,67,0.1);border-radius:16px}
 </style>
 </head>
 <body>
@@ -596,7 +600,7 @@ const PLANES = {
     resumen:{prot:170,carbs:12,grasa:37,kcal:1061,nota:'Brazos + pendientes. Si CF completo, a\u00F1adir snack pre-WOD'}
   },
   descanso: {
-    label:'DESCANSO (Dom)',color:'#94a3b8',
+    label:'DESCANSO (Dom)',color:G.mu,
     comidas:[
       {id:'c1',hora:'~1:00-2:00 PM',label:'Primera comida (romper ayuno)',items:['4 huevos + aguacate + espinaca','O: carne + vegetales'],macros:'P:35g C:4g G:25g',kcal:381},
       {id:'c2',hora:'~4:00 PM',label:'Comida 2',items:['200g carne + ensalada + aceite'],macros:'P:40g C:5g G:15g',kcal:315},
@@ -645,7 +649,7 @@ const PLANES_M = {
     resumen:{prot:65,carbs:9,grasa:28,kcal:548,nota:'D\u00EDa ligero: ayuno m\u00E1s extendido, menor ingesta total'}
   },
   descanso: {
-    label:'DESCANSO (Dom)',color:'#94a3b8',
+    label:'DESCANSO (Dom)',color:G.mu,
     comidas:[
       {id:'c1',hora:'~10:00 AM',label:'Brunch (romper ayuno)',items:['3 huevos + aguacate + vegetales'],macros:'P:22g C:4g G:20g',kcal:288},
       {id:'c2',hora:'~2:00 PM',label:'Comida 2',items:['150g carne/pollo + ensalada'],macros:'P:30g C:3g G:10g',kcal:222},
@@ -1125,7 +1129,7 @@ const NavSemana = ({fecha, setFecha, dia, setDia}) => {
 // Paleta optimizada WCAG AA: todos los textos >4.5:1, bordes >3:1, capas distinguibles
 // Base azul profundo (sin violeta) reduce fatiga ocular en uso prolongado (Knoblauch et al. 1991)
 // Acentos Tailwind blue/emerald/amber/red-400 para m\u00e1xima vibrancia en OLED/LCD
-const G = { bg:'#0a0f1e',sur:'#141d30',alt:'#1c2a42',bor:'#546b8f',acc:'#60a5fa',ok:'#34d399',warn:'#fbbf24',bad:'#f87171',coa:'#c084fc',dim:'#e2e8f0',mu:'#94a3b8' };
+const G = { bg:'#f2f2f7',sur:'#ffffff',alt:'#f5f5f7',bor:'#d1d1d6',acc:'#007aff',ok:'#34c759',warn:'#ff9500',bad:'#ff3b30',coa:'#af52de',dim:'#1c1c1e',mu:'#8e8e93' };
 
 // ─── OBSERVACIONES PREDEFINIDAS ──────────────────────────────────────────────
 const OBS_OPTIONS = [
@@ -1382,7 +1386,7 @@ const sleepAnalysis = (meta, prog, periodo, dayOfWeek, sexo) => {
   const tipodia = prog ? prog.tipo : 'media';
   const result = {phases:null, impacto:[], consejosNoche:[], siesta:{recomendada:false,msg:''}, resumen:'', color:'', energyPrediction:{}};
 
-  if(sueno <= 0) { result.resumen = 'Registra tus horas de sue\u00F1o para recibir an\u00E1lisis completo.'; result.color = '#94a3b8'; return result; }
+  if(sueno <= 0) { result.resumen = 'Registra tus horas de sue\u00F1o para recibir an\u00E1lisis completo.'; result.color = G.mu; return result; }
 
   // 1. Estimar fases
   result.phases = estimateSleepPhases(sueno, calidad, 49);
@@ -1428,7 +1432,7 @@ const sleepAnalysis = (meta, prog, periodo, dayOfWeek, sexo) => {
     if(tipodia === 'alta') {
       result.impacto.push({icon:'\u{26A0}\u{FE0F}',txt:'D\u00EDa de intensidad ALTA + sue\u00F1o insuficiente = alto riesgo. Considerar cambiar a trabajo t\u00E9cnico liviano o yoga/movilidad.',color:'#f87171'});
     }
-    result.impacto.push({icon:'\u{2615}',txt:'Caf\u00E9 estrat\u00E9gico: 200mg cafe\u00EDna 30min pre-entreno puede compensar parcialmente (Goldstein et al. 2010). M\u00C1XIMO 1 taza, no despu\u00E9s de 12PM.',color:'#94a3b8'});
+    result.impacto.push({icon:'\u{2615}',txt:'Caf\u00E9 estrat\u00E9gico: 200mg cafe\u00EDna 30min pre-entreno puede compensar parcialmente (Goldstein et al. 2010). M\u00C1XIMO 1 taza, no despu\u00E9s de 12PM.',color:G.mu});
   } else if(nivel === 'bajo') {
     result.impacto.push({icon:'\u{1F3CB}',txt:'Rendimiento levemente afectado. Tiempo de reacci\u00F3n y coordinaci\u00F3n pueden bajar 5-15% (Reilly & Edwards 2007). Mantener plan pero con mayor enfoque en t\u00E9cnica.',color:'#f59e0b'});
     if(fPre > 5) result.impacto.push({icon:'\u{26A0}\u{FE0F}',txt:'Fatiga pre-entreno alta + sue\u00F1o bajo = fatiga acumulada. Considerar reducir 1-2 sets por ejercicio.',color:'#f59e0b'});
@@ -1461,7 +1465,7 @@ const sleepAnalysis = (meta, prog, periodo, dayOfWeek, sexo) => {
     result.consejosNoche.push({icon:'\u{1F48A}',txt:'Magnesio glicinato 400mg + L-teanina 200mg 1h antes de dormir (Abbasi et al. 2012)',color:'#a855f7'});
     result.consejosNoche.push({icon:'\u{1F4F1}',txt:'Pantallas OFF m\u00EDnimo 60min antes de acostarte. Luz azul suprime melatonina 50% (Chang et al. 2015)',color:'#f59e0b'});
     result.consejosNoche.push({icon:'\u{1F321}\u{FE0F}',txt:'Temperatura habitaci\u00F3n: 18-20\u00B0C. Cuerpo necesita bajar 1\u00B0C core temp para iniciar sue\u00F1o profundo (Harding et al. 2019)',color:'#38bdf8'});
-    if(despertares > 2) result.consejosNoche.push({icon:'\u{1F3B5}',txt:'Ruido blanco o tapones. La fragmentaci\u00F3n es tu mayor enemigo ahora mismo.',color:'#94a3b8'});
+    if(despertares > 2) result.consejosNoche.push({icon:'\u{1F3B5}',txt:'Ruido blanco o tapones. La fragmentaci\u00F3n es tu mayor enemigo ahora mismo.',color:G.mu});
   }
   if(aPre > 5) {
     result.consejosNoche.push({icon:'\u{1F9D8}',txt:'Ansiedad detectada. Respiraci\u00F3n 4-7-8 (inhalar 4s, sostener 7s, exhalar 8s) x 4 ciclos antes de dormir (Weil 2015)',color:'#a855f7'});
@@ -1480,7 +1484,7 @@ const sleepAnalysis = (meta, prog, periodo, dayOfWeek, sexo) => {
     if(hr >= 23 || hr < 4) result.consejosNoche.push({icon:'\u{26A0}\u{FE0F}',txt:'Te acostaste tarde ('+horaAcostarse+'). Cada hora antes de medianoche vale por dos para deep sleep (Monk et al. 2003).',color:'#f59e0b'});
   }
   // General
-  result.consejosNoche.push({icon:'\u{1F4A7}',txt:'\u00DAltima comida 2-3h antes de dormir. Cena alta en tript\u00F3fano (pollo, pavo, huevos, l\u00E1cteos) promueve melatonina natural.',color:'#94a3b8'});
+  result.consejosNoche.push({icon:'\u{1F4A7}',txt:'\u00DAltima comida 2-3h antes de dormir. Cena alta en tript\u00F3fano (pollo, pavo, huevos, l\u00E1cteos) promueve melatonina natural.',color:G.mu});
 
   // 8. Predicci\u00F3n de energ\u00EDa para el d\u00EDa
   let energyLevel = 'normal';
@@ -1513,12 +1517,12 @@ const energyCheckInAdvice = (momento, nivel, sueno, meta) => {
       tips.push({icon:'\u{1F951}',txt:'Snack: pu\u00F1ado de nueces + prote\u00EDna. Evitar az\u00FAcar simple (crash en 30-60min).',color:'#10b981'});
     } else if(n <= 5) {
       tips.push({icon:'\u{26A1}',txt:'Energ\u00EDa moderada. Normal para esta hora. Mant\u00E9n hidrataci\u00F3n y evit\u00E1 carbos simples.',color:'#f59e0b'});
-      if(suenoH < 7) tips.push({icon:'\u{1F4A4}',txt:'Un power nap de 15min podr\u00EDa subirte 1-2 puntos de energ\u00EDa para la tarde.',color:'#94a3b8'});
+      if(suenoH < 7) tips.push({icon:'\u{1F4A4}',txt:'Un power nap de 15min podr\u00EDa subirte 1-2 puntos de energ\u00EDa para la tarde.',color:G.mu});
     } else {
       tips.push({icon:'\u{2705}',txt:'\u00A1Buena energ\u00EDa a medio d\u00EDa! Mantener: hidrataci\u00F3n constante + pr\u00F3xima comida balanceada.',color:'#10b981'});
     }
     // Sin cafe\u00EDna despu\u00E9s de esta hora
-    tips.push({icon:'\u{2615}',txt:'Recordatorio: NO m\u00E1s cafe\u00EDna despu\u00E9s de ahora. Vida media de 5-6h afectar\u00E1 tu sue\u00F1o esta noche (Drake et al. 2013).',color:'#94a3b8'});
+    tips.push({icon:'\u{2615}',txt:'Recordatorio: NO m\u00E1s cafe\u00EDna despu\u00E9s de ahora. Vida media de 5-6h afectar\u00E1 tu sue\u00F1o esta noche (Drake et al. 2013).',color:G.mu});
   }
 
   if(momento === 'endday') {
@@ -1535,7 +1539,7 @@ const energyCheckInAdvice = (momento, nivel, sueno, meta) => {
       tips.push({icon:'\u{1F31F}',txt:'\u00A1D\u00EDa excelente! Tu combinaci\u00F3n sue\u00F1o+nutrici\u00F3n+entreno est\u00E1 funcionando. Repet\u00ED este patr\u00F3n.',color:'#6366f1'});
     }
     // Consejo basado en entrenamiento de ma\u00F1ana
-    tips.push({icon:'\u{1F4CB}',txt:'Ma\u00F1ana toc\u00E1 entrenar: prep\u00E1 la ropa, hidrataci\u00F3n y pre-entreno desde hoy. Reduce fricci\u00F3n = m\u00E1s consistencia.',color:'#94a3b8'});
+    tips.push({icon:'\u{1F4CB}',txt:'Ma\u00F1ana toc\u00E1 entrenar: prep\u00E1 la ropa, hidrataci\u00F3n y pre-entreno desde hoy. Reduce fricci\u00F3n = m\u00E1s consistencia.',color:G.mu});
   }
 
   return tips;
@@ -1672,7 +1676,7 @@ const getRirLabel = rir => {
 // Auth eliminado — acceso directo sin clave
 
 // ─── UI HELPERS ──────────────────────────────────────────────────────────────
-const Inp = ({style, ...props}) => <input {...props} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none',...style}} />;
+const Inp = ({style, ...props}) => <input {...props} style={{background:G.alt,border:'1px solid '+G.bor,color:G.dim,borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none',...style}} />;
 
 // Gradiente sem\u00e1ntico: cada barra cambia de color seg\u00fan su posici\u00f3n
 // mode='positive': 1=rojo(malo) \u2192 5=amarillo \u2192 10=verde(bueno) — Energ\u00eda, Pump
@@ -1877,7 +1881,7 @@ function SessionDashboard({prog, dia, periodo}) {
   const sem = PERIODO[periodo] || PERIODO[1];
   const difficultyLevel = prog.tipo === 'alta' ? 3 : prog.tipo === 'media' ? 2 : 1;
 
-  return React.createElement('div', {style:{background:'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',border:'1px solid #7c3aed44',borderRadius:16,padding:16,marginBottom:14,position:'relative',overflow:'hidden'}},
+  return React.createElement('div', {style:{background:'linear-gradient(135deg,#ffffff 0%,#f5f5f7 100%)',border:'1px solid rgba(175,82,222,0.25)',borderRadius:16,padding:16,marginBottom:14,position:'relative',overflow:'hidden'}},
     // Glow effect
     React.createElement('div', {style:{position:'absolute',top:-20,right:-20,width:100,height:100,background:'radial-gradient(circle, #7c3aed22 0%, transparent 70%)',borderRadius:'50%'}}),
     React.createElement('div', {style:{position:'absolute',bottom:-15,left:-15,width:80,height:80,background:'radial-gradient(circle, #3b82f622 0%, transparent 70%)',borderRadius:'50%'}}),
@@ -1897,37 +1901,37 @@ function SessionDashboard({prog, dia, periodo}) {
         // Stats grid
         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:8}},
           // Ejercicios
-          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
-            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#a78bfa'}}, totalEjercicios),
-            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'EJERCICIOS')
+          React.createElement('div', {style:{background:'#f5f5f7',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#af52de'}}, totalEjercicios),
+            React.createElement('div', {style:{fontSize:15,color:'#8e8e93',fontFamily:'monospace',letterSpacing:1}}, 'EJERCICIOS')
           ),
           // Sets
-          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
-            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#60a5fa'}}, totalSets),
-            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'SETS TOTALES')
+          React.createElement('div', {style:{background:'#f5f5f7',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#007aff'}}, totalSets),
+            React.createElement('div', {style:{fontSize:15,color:'#8e8e93',fontFamily:'monospace',letterSpacing:1}}, 'SETS TOTALES')
           ),
           // Tiempo
-          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
-            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#34d399'}}, estMinutes + '\''),
-            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, 'ESTIMADO')
+          React.createElement('div', {style:{background:'#f5f5f7',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+            React.createElement('div', {style:{fontSize:18,fontWeight:800,fontFamily:'monospace',color:'#34c759'}}, estMinutes + '\''),
+            React.createElement('div', {style:{fontSize:15,color:'#8e8e93',fontFamily:'monospace',letterSpacing:1}}, 'ESTIMADO')
           ),
           // Dificultad
-          React.createElement('div', {style:{background:'#ffffff08',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
+          React.createElement('div', {style:{background:'#f5f5f7',borderRadius:8,padding:'6px 8px',textAlign:'center'}},
             React.createElement('div', {style:{fontSize:15,fontWeight:800,fontFamily:'monospace'}},
               Array.from({length:3}).map((_,i) =>
-                React.createElement('span', {key:i, style:{color:i < difficultyLevel ? (difficultyLevel===3?'#ef4444':difficultyLevel===2?'#f59e0b':'#22c55e') : '#334155'}}, '\u{25CF} ')
+                React.createElement('span', {key:i, style:{color:i < difficultyLevel ? (difficultyLevel===3?'#ff3b30':difficultyLevel===2?'#ff9500':'#34c759') : '#d1d1d6'}}, '\u{25CF} ')
               )
             ),
-            React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace',letterSpacing:1}}, difficultyLevel===3?'ALTA':difficultyLevel===2?'MEDIA':'BAJA')
+            React.createElement('div', {style:{fontSize:15,color:'#8e8e93',fontFamily:'monospace',letterSpacing:1}}, difficultyLevel===3?'ALTA':difficultyLevel===2?'MEDIA':'BAJA')
           )
         ),
         // Muscles pills
         React.createElement('div', {style:{display:'flex',gap:3,flexWrap:'wrap'}},
           primaryMuscles.map(m =>
-            React.createElement('span', {key:m, style:{background:'#7c3aed33',color:'#c4b5fd',borderRadius:4,padding:'2px 6px',fontSize:15,fontFamily:'monospace',fontWeight:700,border:'1px solid #7c3aed55'}}, m)
+            React.createElement('span', {key:m, style:{background:'rgba(175,82,222,0.12)',color:'#7528a8',borderRadius:4,padding:'2px 6px',fontSize:15,fontFamily:'monospace',fontWeight:700,border:'1px solid rgba(175,82,222,0.3)'}}, m)
           ),
           secondaryMuscles.map(m =>
-            React.createElement('span', {key:m, style:{background:'#ffffff08',color:'#64748b',borderRadius:4,padding:'2px 6px',fontSize:15,fontFamily:'monospace'}}, m)
+            React.createElement('span', {key:m, style:{background:'#f5f5f7',color:'#8e8e93',borderRadius:4,padding:'2px 6px',fontSize:15,fontFamily:'monospace'}}, m)
           )
         )
       )
@@ -1966,7 +1970,7 @@ function PRBanner({prevReg, reg, prog}) {
     ),
     prs.map((pr,i) =>
       React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:8,marginBottom:2}},
-        React.createElement('span', {style:{fontSize:15,fontWeight:700,color:'#fde68a'}}, pr.nombre),
+        React.createElement('span', {style:{fontSize:15,fontWeight:700,color:'#b45309'}}, pr.nombre),
         React.createElement('span', {style:{fontSize:15,color:'#fbbf24',fontFamily:'monospace'}}, '1RM: '+pr.prev+'kg \u2192 '+pr.now+'kg'),
         React.createElement('span', {style:{background:'#22c55e33',color:'#22c55e',borderRadius:4,padding:'1px 5px',fontSize:15,fontFamily:'monospace',fontWeight:700}}, '+'+pr.pct+'%')
       )
@@ -1983,15 +1987,15 @@ function StreakBadge({streak}) {
     React.createElement('span', {style:{fontSize:20}}, streak.weeks >= 8 ? '\u{1F525}' : '\u{26A1}'),
     React.createElement('div', null,
       React.createElement('div', {style:{fontSize:15,fontWeight:800,fontFamily:'monospace',color:fire}}, streak.weeks + ' semanas ' + level),
-      React.createElement('div', {style:{fontSize:15,color:'#94a3b8',fontFamily:'monospace'}}, streak.totalSessions + ' sesiones totales \u{2022} ' + streak.thisWeek + ' esta semana')
+      React.createElement('div', {style:{fontSize:15,color:G.mu,fontFamily:'monospace'}}, streak.totalSessions + ' sesiones totales \u{2022} ' + streak.thisWeek + ' esta semana')
     )
   );
 }
 
 function Sec({title, color, children}) {
   return (
-    <div style={{background:G.sur+'cc',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',border:'1px solid '+(color||G.bor),borderRadius:16,padding:16,marginBottom:14,boxShadow:'0 4px 24px rgba(0,0,0,0.25)'}}>
-      {title && <div style={{fontSize:15,fontFamily:'monospace',letterSpacing:2,color:color||G.mu,marginBottom:10,fontWeight:700}}>{title}</div>}
+    <div style={{background:'rgba(255,255,255,0.82)',backdropFilter:'saturate(180%) blur(18px)',WebkitBackdropFilter:'saturate(180%) blur(18px)',border:'1px solid rgba(60,60,67,0.12)',borderRadius:16,padding:16,marginBottom:14,boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.04)'}}>
+      {title && <div style={{fontSize:12,letterSpacing:0.6,color:color||G.mu,marginBottom:10,fontWeight:700,textTransform:'uppercase'}}>{title}</div>}
       {children}
     </div>
   );
@@ -2024,6 +2028,208 @@ function SaveStatus({status, message, onRetry}) {
         <button onClick={onRetry} style={{background:'none',color:textColor,border:'1px solid '+textColor,borderRadius:3,padding:'1px 6px',fontSize:15,marginLeft:4}}>Reintentar</button>
       )}
     </div>
+  );
+}
+
+// ─── COACH DEL DIA: genera recomendaciones automaticas hoy + manana ─────────
+// Analiza tendencias de los ultimos 7 dias + estado actual y produce consejos
+// cientificos para el resto del dia y una preview del dia siguiente.
+function CoachDelDia({user, cfg, fecha, dia, meta, reg}) {
+  const [loading, setLoading] = useState(true);
+  const [trends, setTrends] = useState(null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const {data: rows} = await sb.from('sesiones_entreno')
+          .select('fecha,dia_semana,notas,ejercicios')
+          .eq('user_id', user.id)
+          .lte('fecha', fecha)
+          .order('fecha', {ascending:false})
+          .limit(10);
+        const {data: nRows} = await sb.from('nutricion')
+          .select('fecha,totales,notas')
+          .eq('user_id', user.id)
+          .neq('fecha', '2099-12-31')
+          .lte('fecha', fecha)
+          .order('fecha', {ascending:false})
+          .limit(7);
+        const sleeps = [], calidades = [], obsHoy = [];
+        let rir0Hoy = 0, rir0Sem = 0, fallosHoy = 0, setsHoy = 0;
+        let ansiedadHoy = null, fatigaHoy = null;
+        const fechasUnicas = new Set();
+        for(const r of (rows||[])) {
+          let n = {}; try { n = JSON.parse(r.notas||'{}'); } catch {}
+          if(!fechasUnicas.has(r.fecha)) {
+            fechasUnicas.add(r.fecha);
+            if(n.sueno) sleeps.push(parseFloat(n.sueno));
+            if(n.suenoCalidad) calidades.push(parseFloat(n.suenoCalidad));
+          }
+          if(r.fecha === fecha && n.obs) obsHoy.push(n.obs);
+          if(r.fecha === fecha) {
+            if(n.aPost) ansiedadHoy = parseInt(n.aPost);
+            if(n.fPost) fatigaHoy = parseInt(n.fPost);
+          }
+          const ej = r.ejercicios || {};
+          Object.values(ej).forEach(bl => {
+            if(bl && typeof bl === 'object') {
+              Object.values(bl).forEach(s => {
+                const rir = parseInt(s.rir);
+                const reps = parseInt(s.reps||'0');
+                if(reps > 0) {
+                  if(r.fecha === fecha) { setsHoy++; if(rir === 0) rir0Hoy++; }
+                  if(rir === 0) rir0Sem++;
+                  if(s.notas && /fallo/i.test(s.notas) && r.fecha === fecha) fallosHoy++;
+                }
+              });
+            }
+          });
+        }
+        const nutHoy = (nRows||[]).find(x => x.fecha === fecha);
+        const avgSleep = sleeps.length ? sleeps.reduce((a,b)=>a+b,0)/sleeps.length : null;
+        const avgCal = calidades.length ? calidades.reduce((a,b)=>a+b,0)/calidades.length : null;
+        const metaSueno = (cfg.metas && cfg.metas.suenoOpt) || 7;
+        const debtHoras = avgSleep !== null ? Math.max(0, (metaSueno - avgSleep) * sleeps.length) : 0;
+        if(!cancel) setTrends({avgSleep, avgCal, debtHoras, sleeps, rir0Hoy, rir0Sem, setsHoy, fallosHoy, obsHoy, ansiedadHoy, fatigaHoy, nutHoy, sleepsCount:sleeps.length, metaSueno});
+      } catch(e) { console.error('CoachDelDia error', e); }
+      if(!cancel) setLoading(false);
+    })();
+    return () => { cancel = true; };
+  }, [fecha, user.id]);
+
+  const buildAdvice = () => {
+    if(!trends) return [];
+    const advice = [];
+    const suenoHoy = parseFloat(meta.sueno||'0');
+    const calHoy = parseFloat(meta.suenoCalidad||'0');
+    const ePost = parseInt(meta.ePost||'0');
+    const pump = parseInt(meta.pump||'0');
+    const obsTxt = (meta.obs||'') + ' ' + trends.obsHoy.join(' ');
+    const afectSueno = /sue.?o/i.test(obsTxt);
+    const fatigaObs = /fatiga|pesad|cansa/i.test(obsTxt);
+
+    // 1. Alerta sueno semanal
+    if(trends.avgSleep !== null && trends.avgSleep < 6.3 && trends.sleepsCount >= 3) {
+      advice.push({
+        nivel:'warn',
+        titulo:'Deuda de sueno acumulada',
+        texto:'Promedio ultimas '+trends.sleepsCount+' noches: '+trends.avgSleep.toFixed(1)+'h (meta '+trends.metaSueno+'h). Deuda total ~'+trends.debtHoras.toFixed(0)+'h. Prioridad: cama 21:30 hoy, apagado 22:00. Magnesio glicinato 400mg + K2 90mcg + 0.3-0.5mg melatonina 30 min antes. Cero pantallas post 20:30.',
+        ref:'Leproult 1997, Walker 2017'
+      });
+    }
+    // 2. Sueno corto anoche especifico
+    if(suenoHoy && suenoHoy < 5.8) {
+      advice.push({
+        nivel:'bad',
+        titulo:'Sueno corto anoche ('+suenoHoy.toFixed(1)+'h)',
+        texto:'Resto del dia: siesta 20-30 min entre 13-15h (no mas, no toca adenosina nocturna). Sin cafeina despues de 12:00. Hidratacion 1L extra con electrolitos (1g sal + K+). Evitar decisiones de alta carga cognitiva. Cortex prefrontal operando ~70%.',
+        ref:'Killgore 2010, Lovato 2010'
+      });
+    }
+    // 3. Trabajo al fallo alto hoy
+    if(trends.rir0Hoy >= 3) {
+      advice.push({
+        nivel:'warn',
+        titulo:trends.rir0Hoy+' sets al fallo hoy',
+        texto:'Recuperacion 48-72h requerida. Post-entreno extendido: omega-3 3g + vit C 500mg + ashwagandha 600mg extra para bajar cortisol (Salehi 2019 reduce 27%). Proteina total dia 2.0-2.2g/kg. Evitar cualquier otro estimulo neural intenso hoy (ni WOD extra, ni sesion de tecnica pesada).',
+        ref:'Salehi 2019, Helms 2018, Israetel MRV'
+      });
+    }
+    // 4. Post energia baja + fatiga
+    if(ePost && ePost <= 5 || (trends.fatigaHoy !== null && trends.fatigaHoy >= 7)) {
+      advice.push({
+        nivel:'bad',
+        titulo:'Fatiga post-entreno elevada',
+        texto:'Comida principal en las proximas 2h: 40g proteina + grasa saludable (aguacate 100g + aceite oliva) + verduras fibrosas. Mantener keto pero NO deficit hoy. Recuperacion > progresion.',
+        ref:'Phinney, Volek 2011'
+      });
+    }
+    // 5. Si el usuario escribio algo en obs que menciona dolor
+    if(/dolor|molest|pinch/i.test(obsTxt)) {
+      advice.push({
+        nivel:'bad',
+        titulo:'Dolor reportado en sesion',
+        texto:'Revisar tecnica/angulo del ejercicio mencionado. Aplicar frio 10 min + movilidad suave. Si persiste 48h suspender ejercicio especifico y consultar fisioterapeuta. Registrar en notas del proximo entreno si continua.',
+        ref:'ACSM guidelines'
+      });
+    }
+    // 6. Hidratacion / intra recordatorio si ya entreno
+    if(trends.setsHoy > 5) {
+      advice.push({
+        nivel:'info',
+        titulo:'Post-entreno logistica',
+        texto:'Proxima sesion: integrar agua de coco 250ml intra (13g CHO, 470mg K+, 25mg Mg) + sal rosada 1g + EAA. Previene fatiga por deficit de electrolitos bajo cargas altas.',
+        ref:'Saat 2002, Ismail 2007'
+      });
+    }
+
+    // 7. Consejo para MANANA
+    const mDia = (dia % 7) + 1;
+    const mProg = (cfg.prog && cfg.prog[mDia]) || null;
+    if(mProg) {
+      const intens = (mProg.tipo || 'media').toLowerCase();
+      const dName = ['','Lun','Mar','Mie','Jue','Vie','Sab','Dom'][mDia];
+      let texto = dName+': '+mProg.nombre+' ('+intens.toUpperCase()+'). ';
+      let nivel = 'info';
+      if(trends.avgSleep !== null && trends.avgSleep < 6.3 && (intens === 'alta' || intens === 'crossfit')) {
+        nivel = 'warn';
+        texto += 'Con deuda de sueno actual, convertir en DELOAD: -15/20% peso, RIR minimo 2, cero fallo, cero PRs. Si amaneces con <6.5h de sueno, reducir volumen tambien (-1 set por ejercicio). Si dormis 7h+, sesion normal pero capada a RIR1.';
+      } else if(intens === 'alta') {
+        texto += 'Pre: L-Arginina 5g 20 min antes + EAA 10g + Colageno + Ashwa + cafe. Miel 15g en cafe si hay piernas. Intra: agua de coco 250ml + sal + EAA. Post: Carnivor + creatina 5g + glutamina 5g + papa 100g. Objetivo: RIR 1-2 en todo, fallo solo ultimo set de aislamiento.';
+      } else if(intens === 'crossfit') {
+        texto += 'Escalar WOD si hay dolor articular o deuda de sueno. Agua de coco intra obligatoria. Si hay impacto alto (box, burpees, doble under) y tenes tendon o articulacion sensible hoy, sustituir por remo o bike.';
+      } else if(intens === 'media') {
+        texto += 'Intensidad moderada: RPE 7-8, tecnica sobre peso. Ideal para trabajo de debilidades (postura, cadencia, range of motion).';
+      } else if(intens === 'descanso') {
+        nivel = 'ok';
+        texto += 'Recuperacion activa: paseo 30 min al sol, estiramiento 15 min, yoga/movilidad suave. Sin cargas. Alimentacion: mantener keto, proteina 1.6g/kg, hidratacion 3L+.';
+      }
+      if(mProg.cardio) texto += ' Cardio: '+mProg.cardio+'.';
+      advice.push({nivel, titulo:'Manana ('+dName+')', texto, ref:'NSCA, Helms RP'});
+    }
+
+    // Default OK si nada
+    if(advice.length === 0) {
+      advice.push({nivel:'ok', titulo:'Todo en verde', texto:'Sin alertas criticas. Mantener hidratacion, protocolo de ayuno y registrar entreno al finalizar. Sueno promedio semanal: '+(trends.avgSleep!==null?trends.avgSleep.toFixed(1)+'h':'sin datos')+'.', ref:''});
+    }
+    return advice;
+  };
+
+  if(loading) {
+    return React.createElement('div', {style:{background:'rgba(255,255,255,0.82)',backdropFilter:'saturate(180%) blur(18px)',WebkitBackdropFilter:'saturate(180%) blur(18px)',border:'1px solid rgba(60,60,67,0.12)',borderRadius:16,padding:16,marginBottom:14,fontSize:13,color:G.mu,display:'flex',alignItems:'center',gap:8}},
+      React.createElement('span', {style:{animation:'spin 1s linear infinite'}}, '\u{27F3}'),
+      'Analizando datos y generando recomendaciones...'
+    );
+  }
+  const advices = buildAdvice();
+  const colorMap = {ok:G.ok, info:G.acc, warn:G.warn, bad:G.bad};
+  const iconMap = {ok:'\u2705', info:'\u{1F4A1}', warn:'\u26A0\uFE0F', bad:'\u{1F6A8}'};
+
+  return React.createElement('div', {style:{background:'rgba(255,255,255,0.82)',backdropFilter:'saturate(180%) blur(18px)',WebkitBackdropFilter:'saturate(180%) blur(18px)',border:'1px solid rgba(0,122,255,0.25)',borderRadius:16,padding:16,marginBottom:14,boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 8px 28px rgba(0,122,255,0.08)'}},
+    React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:collapsed?0:12,cursor:'pointer'}, onClick:()=>setCollapsed(!collapsed)},
+      React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+        React.createElement('span', {style:{fontSize:18}}, '\u{1F9E0}'),
+        React.createElement('div', {style:{fontSize:13,letterSpacing:0.6,color:G.acc,fontWeight:700,textTransform:'uppercase'}}, 'Coach del Dia'),
+        React.createElement('span', {style:{fontSize:11,color:G.mu,background:G.alt,padding:'2px 8px',borderRadius:10}}, advices.length + (advices.length===1?' consejo':' consejos'))
+      ),
+      React.createElement('span', {style:{fontSize:12,color:G.mu}}, collapsed?'\u25BC':'\u25B2')
+    ),
+    !collapsed && React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:10}},
+      advices.map((a, i) => {
+        const c = colorMap[a.nivel] || G.acc;
+        return React.createElement('div', {key:i, style:{background:c+'0D',border:'1px solid '+c+'44',borderRadius:12,padding:'11px 13px'}},
+          React.createElement('div', {style:{fontWeight:700,color:c,fontSize:13,marginBottom:5,display:'flex',alignItems:'center',gap:7}},
+            React.createElement('span', {style:{fontSize:15}}, iconMap[a.nivel]||'\u{1F4A1}'),
+            React.createElement('span', null, a.titulo)
+          ),
+          React.createElement('div', {style:{color:G.dim,fontSize:14,lineHeight:1.5}}, a.texto),
+          a.ref && React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:5,fontStyle:'italic'}}, 'Ref: '+a.ref)
+        );
+      })
+    )
   );
 }
 
@@ -2413,6 +2619,8 @@ function TabEntreno({user, cfg}) {
         </div>
       </Sec>
 
+      <CoachDelDia user={user} cfg={cfg} fecha={fecha} dia={dia} meta={meta} reg={reg} />
+
       {/* ─── SUPLEMENTOS DEL DIA (sync con Nutricion) ─── */}
       {pestEnt==='suplementos' && (() => {
         const tipoDia = prog.tipo || 'media';
@@ -2588,10 +2796,10 @@ function TabEntreno({user, cfg}) {
           )}
           {/* Energ\u00EDa predicha */}
           {sa.energyPrediction.pct && (
-            <div style={{background:'#0f172a',borderRadius:8,padding:'8px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:40,height:40,borderRadius:'50%',border:'3px solid '+(sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'),display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:sa.energyPrediction.pct>=75?'#10b981':sa.energyPrediction.pct>=55?'#f59e0b':'#ef4444'}}>{sa.energyPrediction.pct}%</div>
+            <div style={{background:'#f5f5f7',borderRadius:8,padding:'8px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:40,height:40,borderRadius:'50%',border:'3px solid '+(sa.energyPrediction.pct>=75?G.ok:sa.energyPrediction.pct>=55?G.warn:G.bad),display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:sa.energyPrediction.pct>=75?G.ok:sa.energyPrediction.pct>=55?G.warn:G.bad}}>{sa.energyPrediction.pct}%</div>
               <div style={{flex:1}}>
-                <div style={{fontSize:15,fontWeight:700,color:'#e2e8f0'}}>{'\u{26A1}'} {sa.energyPrediction.msg}</div>
+                <div style={{fontSize:15,fontWeight:700,color:G.dim}}>{'\u{26A1}'} {sa.energyPrediction.msg}</div>
                 <div style={{fontSize:15,color:G.mu,marginTop:2}}>{'Basado en sue\u00F1o, calidad, despertares y estado pre-entreno'}</div>
               </div>
             </div>
@@ -2601,13 +2809,13 @@ function TabEntreno({user, cfg}) {
             <div style={{marginBottom:10}}>
               <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F3CB}'} Impacto en tu entrenamiento hoy:</div>
               {sa.impacto.map((r,i) => (
-                <div key={i} style={{background:r.color+'11',borderLeft:'3px solid '+r.color,borderRadius:'0 6px 6px 0',padding:'6px 10px',marginBottom:4,fontSize:15,color:'#e2e8f0',lineHeight:1.4}}>{r.icon} {r.txt}</div>
+                <div key={i} style={{background:r.color+'11',borderLeft:'3px solid '+r.color,borderRadius:'0 6px 6px 0',padding:'6px 10px',marginBottom:4,fontSize:15,color:G.dim,lineHeight:1.4}}>{r.icon} {r.txt}</div>
               ))}
             </div>
           )}
           {/* Recomendaci\u00F3n de siesta */}
           {sa.siesta.msg && (
-            <div style={{background:sa.siesta.recomendada?'#6366f115':'#10b98111',border:'1px solid '+(sa.siesta.recomendada?'#6366f144':'#10b98144'),borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:15,color:'#e2e8f0',lineHeight:1.4}}>
+            <div style={{background:sa.siesta.recomendada?'#6366f115':'#10b98111',border:'1px solid '+(sa.siesta.recomendada?'#6366f144':'#10b98144'),borderRadius:8,padding:'8px 12px',marginBottom:10,fontSize:15,color:G.dim,lineHeight:1.4}}>
               {sa.siesta.msg}
             </div>
           )}
@@ -2616,7 +2824,7 @@ function TabEntreno({user, cfg}) {
             <details style={{marginBottom:6}}>
               <summary style={{fontSize:15,color:'#a855f7',cursor:'pointer',fontWeight:600,marginBottom:6}}>{'\u{1F319}'} Consejos para esta noche ({sa.consejosNoche.length-1} tips)</summary>
               {sa.consejosNoche.map((c,i) => (
-                <div key={i} style={{background:c.isHeader?c.color+'22':c.color+'0a',borderLeft:c.isHeader?'3px solid '+c.color:'2px solid '+c.color+'44',borderRadius:'0 6px 6px 0',padding:c.isHeader?'6px 10px':'5px 10px',marginBottom:3,fontSize:c.isHeader?11:10,color:c.isHeader?c.color:'#cbd5e1',fontWeight:c.isHeader?700:400,lineHeight:1.4}}>{c.icon} {c.txt}</div>
+                <div key={i} style={{background:c.isHeader?c.color+'22':c.color+'0a',borderLeft:c.isHeader?'3px solid '+c.color:'2px solid '+c.color+'44',borderRadius:'0 6px 6px 0',padding:c.isHeader?'6px 10px':'5px 10px',marginBottom:3,fontSize:c.isHeader?11:10,color:c.isHeader?c.color:G.dim,fontWeight:c.isHeader?700:400,lineHeight:1.4}}>{c.icon} {c.txt}</div>
               ))}
             </details>
           )}
@@ -2643,11 +2851,11 @@ function TabEntreno({user, cfg}) {
 
       {React.createElement('div', {style:{background:wkTimer.running?G.acc+'15':G.sur,border:'2px solid '+(wkTimer.running?G.acc:wkTimer.elapsed>0?G.ok:G.bor),borderRadius:16,padding:'16px 20px',marginBottom:14,textAlign:'center',transition:'all 0.3s'}},
         React.createElement('div', {style:{fontSize:13,fontFamily:'monospace',color:G.mu,marginBottom:6,letterSpacing:2,textTransform:'uppercase'}}, '\u{23F1}\uFE0F Cron\u00f3metro de Rutina'),
-        React.createElement('div', {style:{fontSize:wkTimer.running?48:36,fontFamily:'monospace',fontWeight:700,color:wkTimer.running?G.acc:wkTimer.elapsed>0?G.ok:'#94a3b8',letterSpacing:3,marginBottom:10,transition:'all 0.3s',textShadow:wkTimer.running?'0 0 20px '+G.acc+'44':'none'}},
+        React.createElement('div', {style:{fontSize:wkTimer.running?48:36,fontFamily:'monospace',fontWeight:700,color:wkTimer.running?G.acc:wkTimer.elapsed>0?G.ok:G.mu,letterSpacing:3,marginBottom:10,transition:'all 0.3s',textShadow:wkTimer.running?'0 0 20px '+G.acc+'44':'none'}},
           fmtElapsed(wkTimer.elapsed)
         ),
         React.createElement('div', {style:{display:'flex',justifyContent:'center',gap:10,flexWrap:'wrap'}},
-          !wkTimer.running && wkTimer.elapsed===0 && React.createElement('button', {onClick:wkStart,style:{background:G.acc,color:'#0f172a',border:'none',borderRadius:25,padding:'12px 32px',fontSize:18,fontWeight:700,fontFamily:'monospace',cursor:'pointer',letterSpacing:1}}, '\u{25B6} INICIAR RUTINA'),
+          !wkTimer.running && wkTimer.elapsed===0 && React.createElement('button', {onClick:wkStart,style:{background:G.acc,color:'#fff',border:'none',borderRadius:25,padding:'12px 32px',fontSize:18,fontWeight:700,fontFamily:'monospace',cursor:'pointer',letterSpacing:1}}, '\u{25B6} INICIAR RUTINA'),
           wkTimer.running && React.createElement('button', {onClick:wkStop,style:{background:G.bad,color:'#fff',border:'none',borderRadius:25,padding:'12px 32px',fontSize:18,fontWeight:700,fontFamily:'monospace',cursor:'pointer',letterSpacing:1}}, '\u{25A0} FINALIZAR'),
           !wkTimer.running && wkTimer.elapsed>0 && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',justifyContent:'center'}},
             React.createElement('span', {style:{fontSize:16,color:G.ok,fontFamily:'monospace',fontWeight:700}}, '\u{2705} Rutina: ' + Math.round(wkTimer.elapsed/60) + ' min' + (meta.durMin ? ' (guardado)' : '')),
@@ -2727,7 +2935,7 @@ function TabEntreno({user, cfg}) {
                       <div style={{padding:'8px 12px',fontSize:15,color:G.dim,lineHeight:1.7,background:rc+'08',borderRadius:8,marginBottom:8}}>{ej.tecnica}</div>
                     )}
                     {showTec[key+'_p'] && ej.precaucion && (
-                      <div style={{padding:'8px 12px',fontSize:15,color:'#fca5a5',lineHeight:1.6,background:'#ef444410',borderRadius:8,marginBottom:8,borderLeft:'3px solid #ef4444'}}>{ej.precaucion}</div>
+                      <div style={{padding:'8px 12px',fontSize:15,color:'#c53030',lineHeight:1.6,background:'#ef444410',borderRadius:8,marginBottom:8,borderLeft:'3px solid #ef4444'}}>{ej.precaucion}</div>
                     )}
                     {ej.video && (
                       React.createElement('a', {href:ej.video, target:'_blank', rel:'noopener noreferrer', style:{display:'inline-flex',alignItems:'center',gap:6,background:G.acc+'22',border:'1px solid '+G.acc+'44',borderRadius:8,padding:'6px 12px',marginBottom:10,fontSize:15,color:G.acc,textDecoration:'none',cursor:'pointer',fontWeight:600}},
@@ -2785,7 +2993,7 @@ function TabEntreno({user, cfg}) {
                                 React.createElement('span', {style:{fontSize:15}}, advice.icono),
                                 React.createElement('span', null, advice.veredicto)
                               ),
-                              React.createElement('div', {style:{color:'#cbd5e1'}}, advice.consejo),
+                              React.createElement('div', {style:{color:G.dim}}, advice.consejo),
                               React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:3,fontStyle:'italic'}}, 'Ref: '+advice.ref)
                             ),
                             !isLastSet && !esBi && React.createElement(RestTimer, {key:'rt'+si, btipo:bloque.btipo, esBiserie:false, compact:true}),
@@ -2823,7 +3031,7 @@ function TabEntreno({user, cfg}) {
                   </div>
                 ) : warmupTimer.running ? (
                   <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <div style={{flex:1,background:'#1e293b',borderRadius:8,height:8,overflow:'hidden'}}>
+                    <div style={{flex:1,background:'#e5e5ea',borderRadius:8,height:8,overflow:'hidden'}}>
                       <div style={{height:'100%',background:'#0891b2',borderRadius:8,transition:'width 0.3s',width:Math.max(0,100-warmupTimer.left/6)+'%'}}/>
                     </div>
                     <span style={{fontSize:18,fontWeight:700,color:'#0891b2',fontFamily:'monospace',minWidth:50}}>{Math.floor(warmupTimer.left/60)}:{String(warmupTimer.left%60).padStart(2,'0')}</span>
@@ -2873,7 +3081,7 @@ function TabEntreno({user, cfg}) {
             <div style={{marginBottom:10}}>
               <div style={{fontSize:15,color:'#f59e0b',fontWeight:600,marginBottom:4}}>{'\u{1F31E}'} Consejos medio d\u00EDa:</div>
               {midTips.map((t,i) => (
-                <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:'#cbd5e1',fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
+                <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:G.dim,fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
               ))}
             </div>
           ) : null;
@@ -2885,7 +3093,7 @@ function TabEntreno({user, cfg}) {
             <div>
               <div style={{fontSize:15,color:'#6366f1',fontWeight:600,marginBottom:4}}>{'\u{1F319}'} Consejos para cerrar el d\u00EDa:</div>
               {endTips.map((t,i) => (
-                <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:'#cbd5e1',fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
+                <div key={i} style={{background:t.color+'11',borderLeft:(t.isHeader?'3px':'2px')+' solid '+t.color+(t.isHeader?'':'44'),borderRadius:'0 6px 6px 0',padding:'5px 10px',marginBottom:3,fontSize:t.isHeader?11:10,color:t.isHeader?t.color:G.dim,fontWeight:t.isHeader?700:400,lineHeight:1.4}}>{t.icon} {t.txt}</div>
               ))}
             </div>
           ) : null;
@@ -3045,14 +3253,14 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
             isChk ? '\u2713' : ''
           ),
           React.createElement('div', {style:{flex:1}},
-            React.createElement('div', {style:{fontSize:15,fontWeight:600,color:isChk?'#e2e8f0':G.dim}}, sup.emoji + ' ' + sup.nombre,
-              sup.rompeAyuno && React.createElement('span', {style:{fontSize:11,marginLeft:6,padding:'1px 6px',background:'#ef444422',color:'#fca5a5',borderRadius:8,fontWeight:700,letterSpacing:0.5}}, 'ROMPE AYUNO')
+            React.createElement('div', {style:{fontSize:15,fontWeight:600,color:isChk?G.dim:G.dim}}, sup.emoji + ' ' + sup.nombre,
+              sup.rompeAyuno && React.createElement('span', {style:{fontSize:11,marginLeft:6,padding:'1px 6px',background:'#ef444422',color:'#c53030',borderRadius:8,fontWeight:700,letterSpacing:0.5}}, 'ROMPE AYUNO')
             ),
             React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, sup.timing),
             sup.info && isChk && React.createElement('div', {style:{fontSize:13,color:G.dim,marginTop:4,fontStyle:'italic',lineHeight:1.4}}, sup.info)
           )
         ),
-        lastBreak && lastBreak.id===sup.id && React.createElement('div', {style:{marginTop:4,padding:'8px 10px',background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,fontSize:13,color:'#fca5a5',lineHeight:1.4}},
+        lastBreak && lastBreak.id===sup.id && React.createElement('div', {style:{marginTop:4,padding:'8px 10px',background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,fontSize:13,color:'#c53030',lineHeight:1.4}},
           React.createElement('div', {style:{fontWeight:700,marginBottom:2}}, '\u{26A0}\uFE0F Ayuno cortado a las '+lastBreak.hora),
           React.createElement('div', null, sup.nombre+' contiene ~'+sup.kcal+'kcal, '+sup.p+'g prote. Activa mTOR/insulina \u2192 sale de fasted state. Ref: Anton 2018.')
         )
@@ -3105,14 +3313,14 @@ function QtyControl({value, onChange, step, min, unit, pu}) {
   const mn = min || 0;
   const isPorc = pu && pu > 0 && (unit==='porc'||unit==='scoop'||unit==='dosis'||unit==='ud'||unit==='cda'||unit==='shot'||unit==='copa'||unit==='lata'||unit==='sc');
   const porciones = isPorc ? Math.round((v / pu)*10)/10 : 0;
-  const btnS = {width:36,height:36,borderRadius:8,border:'1px solid '+G.bor,background:G.alt,color:'#e2e8f0',fontSize:18,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0};
+  const btnS = {width:36,height:36,borderRadius:8,border:'1px solid '+G.bor,background:G.alt,color:G.dim,fontSize:18,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0};
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
     React.createElement('button', {onClick:()=>onChange(Math.max(mn, v-st)), style:btnS}, '\u2212'),
     React.createElement('div', {style:{minWidth:56,textAlign:'center'}},
       isPorc ? React.createElement(React.Fragment, null,
-        React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}}, porciones + ' ' + (unit||'')),
+        React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:G.dim}}, porciones + ' ' + (unit||'')),
         React.createElement('div', {style:{fontSize:15,color:G.mu,fontFamily:'monospace'}}, v+'g')
-      ) : React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:'#e2e8f0'}}, v + (unit||'g'))
+      ) : React.createElement('div', {style:{fontSize:15,fontWeight:700,fontFamily:'monospace',color:G.dim}}, v + (unit||'g'))
     ),
     React.createElement('button', {onClick:()=>onChange(v+st), style:btnS}, '+')
   );
@@ -3145,7 +3353,7 @@ function FoodItemRow({alId, qty, onQtyChange, onRemove, stepOverride, userId, da
   const semCol = SEM_COLORS[sem.luz];
   return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:G.alt,borderRadius:8,marginBottom:4,flexWrap:'wrap',borderLeft:'3px solid '+semCol}},
     React.createElement('div', {onClick:()=>setShowTip(!showTip), style:{cursor:'pointer',fontSize:15,lineHeight:1}}, SEM_LABELS[sem.luz]),
-    React.createElement('div', {style:{flex:'1 1 80px',fontSize:15,color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontWeight:600,minWidth:70}}, al.n),
+    React.createElement('div', {style:{flex:'1 1 80px',fontSize:15,color:sem.luz==='r'?'#c53030':G.dim,fontWeight:600,minWidth:70}}, al.n),
     React.createElement(QtyControl, {value:qty, onChange:onQtyChange, step:step, min:0, unit:unit, pu:al.pu}),
     React.createElement(StepToggle, {step, setStep, pu:al.pu}),
     React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:G.dim,minWidth:100,textAlign:'right'}},
@@ -3202,7 +3410,7 @@ function AddFoodSelector({onAdd, exclude, userId, dayType}) {
     // Barra de b\u00FAsqueda
     React.createElement('div', {style:{display:'flex',gap:6,marginBottom:8,alignItems:'center'}},
       React.createElement('div', {style:{flex:1,position:'relative'}},
-        React.createElement('input', {ref:searchRef, value:search, onChange:e=>{setSearch(e.target.value);if(e.target.value.length>=2)setCat(null);}, placeholder:'\u{1F50D} Buscar alimento...', style:{width:'100%',padding:'10px 14px',paddingLeft:16,fontSize:15,background:G.sur,border:'1px solid '+G.acc+'55',borderRadius:10,color:'#e2e8f0',outline:'none'}}),
+        React.createElement('input', {ref:searchRef, value:search, onChange:e=>{setSearch(e.target.value);if(e.target.value.length>=2)setCat(null);}, placeholder:'\u{1F50D} Buscar alimento...', style:{width:'100%',padding:'10px 14px',paddingLeft:16,fontSize:15,background:G.sur,border:'1px solid '+G.acc+'55',borderRadius:10,color:G.dim,outline:'none'}}),
         search && React.createElement('button', {onClick:()=>setSearch(''), style:{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:G.mu,fontSize:18,cursor:'pointer'}}, '\u2715')
       ),
       React.createElement('button', {onClick:()=>{setOpen(false);setCat(null);setSearch('');setFilter('all');}, style:{background:'none',border:'1px solid '+G.bor,borderRadius:8,padding:'8px 10px',color:G.mu,fontSize:15,cursor:'pointer',flexShrink:0}}, 'Cerrar')
@@ -3223,7 +3431,7 @@ function AddFoodSelector({onAdd, exclude, userId, dayType}) {
     showResults && React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,maxHeight:250,overflowY:'auto'}},
       results.map(({id,al,sem}) => {
         const catInfo = AL_CATS.find(c=>c.id===al.cat);
-        return React.createElement('button', {key:id, onClick:()=>handleAdd(id, al), style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#fca5a5':'#e2e8f0',fontSize:15,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',flexDirection:'column',gap:2}},
+        return React.createElement('button', {key:id, onClick:()=>handleAdd(id, al), style:{background:G.sur,border:'1px solid '+SEM_COLORS[sem.luz]+'66',borderLeft:'3px solid '+SEM_COLORS[sem.luz],borderRadius:8,padding:'6px 8px',color:sem.luz==='r'?'#c53030':G.dim,fontSize:15,cursor:'pointer',textAlign:'left',fontWeight:500,display:'flex',flexDirection:'column',gap:2}},
           React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
             React.createElement('span',{style:{fontSize:15}},SEM_LABELS[sem.luz]),
             al.n
@@ -3267,7 +3475,7 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
       ),
       React.createElement('div', {style:{flex:1}},
         React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}},
-          React.createElement('span', {style:{fontSize:15,fontWeight:700,color:isChecked?G.ok:'#e2e8f0'}}, comida.label),
+          React.createElement('span', {style:{fontSize:15,fontWeight:700,color:isChecked?G.ok:G.dim}}, comida.label),
           React.createElement('span', {style:{fontSize:15,color:G.mu,fontFamily:'monospace'}}, comida.hora)
         ),
         React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',letterSpacing:0.5,color:G.mu,marginBottom:4}}, 'SUGERIDO:'),
@@ -3744,6 +3952,8 @@ function TabNutricion({user, cfg}) {
         <SaveStatus status={saveStatus} message={saveMessage} onRetry={forceManualSave} />
       </Sec>
 
+      <CoachDelDia user={user} cfg={cfg} fecha={fecha} dia={dia} meta={{}} reg={{}} />
+
       {/* ─── VISTA: PLAN DEL DIA ─── */}
       {vista==='plan' && (
         <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} cfg={cfg} userId={user.id}
@@ -3778,7 +3988,7 @@ function TabNutricion({user, cfg}) {
           return alertas.length > 0 && (
             <div style={{marginTop:10}}>
               {alertas.map((a,i) => (
-                <div key={i} style={{background:a.tipo==='bad'?'#ef444418':a.tipo==='warn'?'#f59e0b18':'#22c55e18',border:'1px solid '+(a.tipo==='bad'?'#ef444444':a.tipo==='warn'?'#f59e0b44':'#22c55e44'),borderRadius:8,padding:'8px 12px',marginBottom:6,fontSize:15,color:a.tipo==='bad'?'#fca5a5':a.tipo==='warn'?'#fde68a':'#86efac',display:'flex',gap:8,alignItems:'center'}}>
+                <div key={i} style={{background:a.tipo==='bad'?'#ef444418':a.tipo==='warn'?'#f59e0b18':'#22c55e18',border:'1px solid '+(a.tipo==='bad'?'#ef444444':a.tipo==='warn'?'#f59e0b44':'#22c55e44'),borderRadius:8,padding:'8px 12px',marginBottom:6,fontSize:15,color:a.tipo==='bad'?'#c53030':a.tipo==='warn'?'#b45309':'#15803d',display:'flex',gap:8,alignItems:'center'}}>
                   <span style={{fontSize:15,flexShrink:0}}>{a.icon}</span>
                   <span>{a.msg}</span>
                 </div>
@@ -3838,7 +4048,7 @@ function TabNutricion({user, cfg}) {
         <Rating label="Hambre general" value={data.hambre||''} onChange={v=>upd('hambre',v)} color={G.warn} mode="negative" />
         <div style={{marginTop:8}}>
           <div style={{fontSize:15,color:G.mu,marginBottom:4}}>Digestion</div>
-          <select value={data.digestion||''} onChange={e=>upd('digestion',e.target.value)} style={{background:G.alt,border:'1px solid '+G.bor,color:'#e2e8f0',borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none'}}>
+          <select value={data.digestion||''} onChange={e=>upd('digestion',e.target.value)} style={{background:G.alt,border:'1px solid '+G.bor,color:G.dim,borderRadius:8,padding:'7px 10px',fontSize:15,width:'100%',outline:'none'}}>
             <option value="">—</option>
             <option>Excelente</option>
             <option>Buena</option>
@@ -4461,7 +4671,7 @@ function TabNutricion({user, cfg}) {
                 // Header receta
                 React.createElement('div', {onClick:()=>setOpenRec(isOpen?null:r.id), style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',cursor:'pointer'}},
                   React.createElement('div', null,
-                    React.createElement('div', {style:{fontSize:15,fontWeight:700,color:'#e2e8f0'}}, r.nombre),
+                    React.createElement('div', {style:{fontSize:15,fontWeight:700,color:G.dim}}, r.nombre),
                     React.createElement('div', {style:{display:'flex',gap:6,marginTop:4,flexWrap:'wrap'}},
                       r.tags.map(t => React.createElement('span', {key:t, style:{fontSize:15,background:G.acc+'15',color:G.acc,borderRadius:10,padding:'1px 8px',fontWeight:600}}, t)),
                       React.createElement('span', {style:{fontSize:15,color:G.mu}}, '\u{23F1}\uFE0F '+r.tiempo)
@@ -4482,7 +4692,7 @@ function TabNutricion({user, cfg}) {
                   // Rompe ayuno?
                   React.createElement('div', {style:{fontSize:15,color:r.rompeAyuno?'#ef4444':G.ok,fontWeight:600,marginBottom:8}}, r.rompeAyuno ? '\u{26A0}\uFE0F Rompe ayuno (contiene calor\u00edas/amino\u00e1cidos)' : '\u{2705} Compatible con ayuno'),
                   // Ingredientes
-                  React.createElement('div', {style:{fontWeight:700,fontSize:15,color:'#e2e8f0',marginBottom:6}}, '\u{1F6D2} Ingredientes:'),
+                  React.createElement('div', {style:{fontWeight:700,fontSize:15,color:G.dim,marginBottom:6}}, '\u{1F6D2} Ingredientes:'),
                   r.ingredientes.map((ing,i) =>
                     React.createElement('div', {key:i, style:{display:'flex',justifyContent:'space-between',fontSize:15,color:G.mu,padding:'3px 0',borderBottom:'1px solid '+G.bor+'44'}},
                       React.createElement('span', null, ing.nombre+' \u2014 '+ing.cant),
@@ -4490,7 +4700,7 @@ function TabNutricion({user, cfg}) {
                     )
                   ),
                   // Pasos
-                  React.createElement('div', {style:{fontWeight:700,fontSize:15,color:'#e2e8f0',marginTop:10,marginBottom:6}}, '\u{1F468}\u200D\u{1F373} Preparaci\u00f3n:'),
+                  React.createElement('div', {style:{fontWeight:700,fontSize:15,color:G.dim,marginTop:10,marginBottom:6}}, '\u{1F468}\u200D\u{1F373} Preparaci\u00f3n:'),
                   r.pasos.map((paso,i) =>
                     React.createElement('div', {key:i, style:{fontSize:15,color:G.mu,padding:'3px 0',display:'flex',gap:8}},
                       React.createElement('span', {style:{fontWeight:700,color:G.acc,flexShrink:0}}, (i+1)+'.'),
@@ -4762,7 +4972,7 @@ function TabLogistica({user, cfg}) {
           return React.createElement('div', {key:item.id, onClick:()=>toggleShopItem(catKey, item.id), style:{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:isBought?G.ok+'15':G.alt,border:'1px solid '+(isBought?G.ok+'55':G.bor),borderRadius:10,marginBottom:6,cursor:'pointer',transition:'all 0.2s',textDecoration:isBought?'line-through':'none'}},
             React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isBought?G.ok:G.bor),background:isBought?G.ok:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15,color:'#fff'}}, isBought?'\u2713':''),
             React.createElement('div', {style:{flex:1}},
-              React.createElement('div', {style:{fontSize:15,fontWeight:600,color:isBought?G.mu:'#e2e8f0'}}, item.nombre),
+              React.createElement('div', {style:{fontSize:15,fontWeight:600,color:isBought?G.mu:G.dim}}, item.nombre),
               React.createElement('div', {style:{fontSize:13,color:G.mu,marginTop:2}}, item.nota)
             ),
             React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:cat.color,fontWeight:700,flexShrink:0}}, cantidad+' '+item.unidad)
@@ -4784,7 +4994,7 @@ function TabLogistica({user, cfg}) {
           return React.createElement('div', {key:supp.id, style:{background:G.alt,border:'1px solid '+alertColor+'55',borderRadius:10,padding:'10px 12px',marginBottom:8}},
             React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}},
               React.createElement('div', {style:{flex:1}},
-                React.createElement('div', {style:{fontSize:15,fontWeight:700,color:'#e2e8f0'}}, supp.nombre),
+                React.createElement('div', {style:{fontSize:15,fontWeight:700,color:G.dim}}, supp.nombre),
                 React.createElement('div', {style:{fontSize:13,color:G.mu,marginTop:2}}, supp.presentacion+' \u2022 '+supp.dosisDia+supp.unidad+'/d\u00EDa \u2022 '+supp.usa),
                 React.createElement('div', {style:{fontSize:12,color:G.dim,marginTop:2}}, supp.marca+' \u2022 \u20A1'+supp.precio.toLocaleString())
               ),
@@ -5243,7 +5453,7 @@ function TabBalance({user, cfg}) {
                 )
               )
             ),
-            ingesta.alcG>0 && React.createElement('div',{style:{background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:15,color:'#fca5a5',textAlign:'center'}},
+            ingesta.alcG>0 && React.createElement('div',{style:{background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:15,color:'#c53030',textAlign:'center'}},
               '\u{26A0}\u{FE0F} Alcohol: '+ingesta.alcG+'g = '+Math.round(ingesta.alcG*7)+' kcal vac\u00EDas (no aportan nutrientes, inhiben recuperaci\u00F3n muscular)'
             ),
             React.createElement('div',{style:{fontSize:15,color:G.mu,textAlign:'center',fontFamily:'monospace'}},'Fuente: '+(ingesta.fuente==='tracker'?'Tracker de alimentos':ingesta.fuente==='plan'?'Plan del D\u00EDa (checklist)':'Registro manual'))
@@ -5316,7 +5526,7 @@ function TabBalance({user, cfg}) {
       React.createElement('div',{style:{fontSize:15,color:G.mu,marginBottom:10}},'Impacto de alimentos consumidos en SNC, sue\u00F1o, ansiedad y temblor'),
       holisticRecs.map((r,i) => React.createElement('div',{key:'h'+i,style:{display:'flex',gap:8,alignItems:'flex-start',marginBottom:8,padding:'8px 10px',background:G.bg,borderRadius:10,border:'1px solid '+r.color+'33',borderLeft:'3px solid '+r.color}},
         React.createElement('span',{style:{fontSize:15,flexShrink:0}},r.icon),
-        React.createElement('span',{style:{fontSize:15,color:r.color==='#ef4444'?'#fca5a5':r.color===G.ok?'#86efac':r.color,lineHeight:'1.5'}},r.txt)
+        React.createElement('span',{style:{fontSize:15,color:r.color==='#ef4444'?'#c53030':r.color===G.ok?'#15803d':r.color,lineHeight:'1.5'}},r.txt)
       ))
     )
   );
