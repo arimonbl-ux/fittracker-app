@@ -2293,7 +2293,7 @@ function TabEntreno({user, cfg}) {
             </div>
             <div>
               <div style={{fontSize:15,color:G.mu,marginBottom:3}}>{'\u{1F374}'} {'\u00DAltima ingesta'}</div>
-              <Inp type="time" value={meta.ultimaIngesta||''} onChange={e=>{updMeta('ultimaIngesta',e.target.value); const ui=e.target.value; if(ui){const now=new Date(); const [uh,um]=ui.split(':').map(Number); let diffMin=(now.getHours()*60+now.getMinutes())-(uh*60+um); if(diffMin<0) diffMin+=1440; updMeta('ayuno', (diffMin/60).toFixed(1));}}} />
+              <Inp type="time" value={meta.ultimaIngesta||''} onChange={e=>{const ui=e.target.value; let ayunoV=meta.ayuno; if(ui){const now=new Date(); const [uh,um]=ui.split(':').map(Number); let diffMin=(now.getHours()*60+now.getMinutes())-(uh*60+um); if(diffMin<0) diffMin+=1440; ayunoV=(diffMin/60).toFixed(1);} const nm={...meta,ultimaIngesta:ui,ayuno:ayunoV}; setMeta(nm); debouncedSave(reg,nm);}} />
               {meta.ultimaIngesta && (() => {
                 const now = new Date();
                 const [uh,um] = meta.ultimaIngesta.split(':').map(Number);
@@ -2660,8 +2660,17 @@ function TabEntreno({user, cfg}) {
         {(() => {
           const sem = getSemPeriodo(fecha);
           const tips = autoCoachAnalysis(meta, prog, sem, cfg.motivacion||MOTIVACION_A, cfg.meditacion||MEDITACION_A);
+          const recs = Array.isArray(meta.coachRecs) ? meta.coachRecs : (meta.coachRecs ? [meta.coachRecs] : []);
           return (
             <div>
+              {recs.length > 0 && (
+                <div style={{background:'linear-gradient(135deg,'+G.acc+'22,'+G.warn+'15)',border:'2px solid '+G.acc+'66',borderRadius:12,padding:'12px 14px',marginBottom:12}}>
+                  <div style={{fontSize:15,color:G.acc,fontWeight:700,marginBottom:8,fontFamily:'monospace',letterSpacing:1}}>{'\u{1F393}'} {'PLAN PERSONALIZADO DEL COACH'}</div>
+                  {recs.map((r,i) => (
+                    <div key={i} style={{fontSize:15,color:'#f1f5f9',lineHeight:1.6,marginBottom:6,whiteSpace:'pre-wrap'}}>{r}</div>
+                  ))}
+                </div>
+              )}
               {tips.map((tip, i) => (
                 <div key={i} style={{background:G.alt,border:'1px solid '+G.bor,borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:15,color:G.dim,lineHeight:1.6}}>
                   {tip}
