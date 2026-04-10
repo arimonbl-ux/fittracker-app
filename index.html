@@ -1965,6 +1965,8 @@ function TabEntreno({user, cfg}) {
   const [streak, setStreak] = useState({weeks:0,totalSessions:0,thisWeek:0});
   const [planData, setPlanData] = useState({}); // sincronizado con TabNutricion planData
   const planSaveRef = useRef(null);
+  const [prevIngesta, setPrevIngesta] = useState(null); // {fecha, hora} ultima ingesta reciente previa
+  const [nowTick, setNowTick] = useState(Date.now()); // para refrescar contador de ayuno
   const [openEj, setOpenEj] = useState(null); // key del ejercicio expandido (null=todos cerrados)
   const [showTec, setShowTec] = useState({}); // keys de tecnica expandida
   const [warmupDone, setWarmupDone] = useState(false); // warmup completado
@@ -1991,12 +1993,42 @@ function TabEntreno({user, cfg}) {
 
   const prog = cfg.prog[dia] || cfg.prog[1];
 
+  // Tick cada 60s para refrescar contador de ayuno en curso
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
   useEffect(() => {
     setSaveStatus(null);
     setLoading(true);
     // Cargar sesi\u00f3n actual Y sesi\u00f3n anterior del mismo d\u00eda
     // Cargar streak en paralelo (no bloquea carga principal)
     getStreak(user.id).then(s => setStreak(s)).catch(()=>{});
+    // Buscar ultima ingesta mas reciente en los ultimos 3 dias (para mostrar ayuno continuo cross-day)
+    (async () => {
+      try {
+        const { data: rows } = await sb.from('sesiones_entreno')
+          .select('fecha,notas')
+          .eq('user_id', user.id)
+          .lte('fecha', fecha)
+          .order('fecha', {ascending:false})
+          .limit(5);
+        let found = null;
+        for(const r of (rows||[])) {
+          try {
+            const n = JSON.parse(r.notas||'{}');
+            if(n.ultimaIngesta && n.ultimaIngesta.length >= 4) {
+              // Saltar si es del mismo dia actual y ya hay ultimaIngesta en meta (usar esa directamente)
+              if(r.fecha === fecha) { found = {fecha:r.fecha, hora:n.ultimaIngesta}; break; }
+              found = {fecha:r.fecha, hora:n.ultimaIngesta};
+              break;
+            }
+          } catch {}
+        }
+        setPrevIngesta(found);
+      } catch(e) { setPrevIngesta(null); }
+    })();
     // Cargar planData de nutricion (suplementos sincronizados con TabNutricion)
     getNutricion(user.id, fecha).then(({data:nd}) => {
       try {
@@ -2413,14 +2445,33 @@ function TabEntreno({user, cfg}) {
             <div>
               <div style={{fontSize:15,color:G.mu,marginBottom:3}}>{'\u{1F374}'} {'\u00DAltima ingesta'}</div>
               <Inp type="time" value={meta.ultimaIngesta||''} onChange={e=>{const ui=e.target.value; let ayunoV=meta.ayuno; if(ui){const now=new Date(); const [uh,um]=ui.split(':').map(Number); let diffMin=(now.getHours()*60+now.getMinutes())-(uh*60+um); if(diffMin<0) diffMin+=1440; ayunoV=(diffMin/60).toFixed(1);} const nm={...meta,ultimaIngesta:ui,ayuno:ayunoV}; setMeta(nm); debouncedSave(reg,nm);}} />
-              {meta.ultimaIngesta && (() => {
+              {(() => {
+                // Calcular ayuno en curso: si hoy tiene ultimaIngesta usar esa, sino usar la previa de otro dia
                 const now = new Date();
-                const [uh,um] = meta.ultimaIngesta.split(':').map(Number);
-                let diffMin = (now.getHours()*60+now.getMinutes()) - (uh*60+um);
-                if(diffMin < 0) diffMin += 1440;
-                const hrs = (diffMin/60).toFixed(1);
-                const isGood = parseFloat(hrs) >= 12;
-                return <div style={{marginTop:4,padding:'4px 8px',background:isGood?G.ok+'22':G.warn+'22',borderRadius:6,textAlign:'center',fontSize:15,fontWeight:700,fontFamily:'monospace',color:isGood?G.ok:G.warn}}>{hrs}h {'ayuno'}</div>;
+                let fuente = null;
+                if(meta.ultimaIngesta) {
+                  fuente = {fecha: fecha, hora: meta.ultimaIngesta, esHoy: true};
+                } else if(prevIngesta && prevIngesta.hora) {
+                  fuente = {fecha: prevIngesta.fecha, hora: prevIngesta.hora, esHoy: false};
+                }
+                if(!fuente) return null;
+                const [uh,um] = fuente.hora.split(':').map(Number);
+                // Parsear fecha fuente + hora como Date real
+                const [yy,mm,dd] = fuente.fecha.split('-').map(Number);
+                const tsFuente = new Date(yy, mm-1, dd, uh, um);
+                const diffMs = now.getTime() - tsFuente.getTime();
+                const diffHrs = diffMs / (1000*60*60);
+                if(diffHrs < 0 || diffHrs > 48) return null;
+                const hrsInt = Math.floor(diffHrs);
+                const minsRem = Math.floor((diffHrs - hrsInt) * 60);
+                const isGood = diffHrs >= 12;
+                const fechaTxt = fuente.esHoy ? 'hoy' : new Date(yy,mm-1,dd).toLocaleDateString('es-CR',{weekday:'short',day:'2-digit',month:'short'});
+                return (
+                  <div style={{marginTop:4,padding:'6px 8px',background:isGood?G.ok+'22':G.warn+'22',borderRadius:6,textAlign:'center',fontFamily:'monospace',color:isGood?G.ok:G.warn}}>
+                    <div style={{fontSize:16,fontWeight:700}}>{hrsInt+'h '+minsRem+'m ayuno'}</div>
+                    {!fuente.esHoy && <div style={{fontSize:13,marginTop:2,opacity:0.85}}>{'desde '+fechaTxt+' '+fuente.hora}</div>}
+                  </div>
+                );
               })()}
             </div>
           </div>
