@@ -115,6 +115,84 @@ const calc1RM = (peso, reps) => {
   if(r === 1) return w;
   return Math.round(w * (1 + r/30) * 10) / 10;
 };
+// ─── IA REACTIVA: analiza un set vs target planificado y vs sesion previa ──
+// Retorna {veredicto, consejo, ref, color, icono} o null si no hay data suficiente
+const reactiveAdvice = (ej, prevBest, currentSet, periodo) => {
+  const reps = parseInt(currentSet.reps);
+  const rir = parseInt(currentSet.rir);
+  const rpe = parseInt(currentSet.rpe);
+  const peso = parseFloat(currentSet.peso);
+  if(!reps || !peso) return null;
+  // Target planificado del ejercicio
+  const targetRepsRange = String(ej.reps||'').match(/(\d+)(?:-(\d+))?/);
+  const tMin = targetRepsRange ? parseInt(targetRepsRange[1]) : 0;
+  const tMax = targetRepsRange && targetRepsRange[2] ? parseInt(targetRepsRange[2]) : tMin;
+  const tRir = parseInt(ej.rir) || null;
+  // Sin RPE y sin RIR: no podemos analizar fatiga
+  if(!rpe && !rir) return null;
+  const advices = [];
+  // ─── FATIGA ACUMULADA: reps < target AND (rpe >= 9 OR rir <= 0) ───
+  if(reps < tMin && ((rpe && rpe>=9) || (rir!==null && rir<=0))) {
+    advices.push({
+      veredicto: 'FATIGA / PESO EXCESIVO',
+      consejo: 'Hiciste '+reps+' reps con '+(rpe?'RPE '+rpe:'RIR '+rir)+' cuando el target era '+ej.reps+' a RIR '+ej.rir+'. Bajá 2.5-5% en la próxima serie o corta aquí. Forzar más deteriora forma y fatiga SNC.',
+      ref: 'Zourdos 2016, Helms 2018',
+      color: '#ef4444',
+      icono: '\u{1F6A8}'
+    });
+  }
+  // ─── PROGRESIÓN REAL: reps >= target AND rpe moderado (<=8) ───
+  else if(reps >= tMin && ((rpe && rpe<=8) || (rir!==null && rir>=1))) {
+    if(prevBest && prevBest.peso && parseFloat(prevBest.peso) < peso) {
+      advices.push({
+        veredicto: 'PROGRESION CONFIRMADA',
+        consejo: 'Subiste el peso ('+prevBest.peso+'→'+peso+'kg) y mantenes reps con esfuerzo controlado. Va bien. Próxima sesion podés apuntar a '+(peso+2.5)+'kg si RPE<8.',
+        ref: 'Schoenfeld 2017, progressive overload',
+        color: '#10b981',
+        icono: '\u{1F4C8}'
+      });
+    } else if(reps > tMax) {
+      advices.push({
+        veredicto: 'READY FOR NEXT JUMP',
+        consejo: 'Superaste el rango target ('+reps+' vs '+ej.reps+'). Próxima sesion subí a '+(peso+2.5)+'kg. Mantener reps en rango bajo.',
+        ref: 'Double progression model (Wendler)',
+        color: '#10b981',
+        icono: '\u{1F3AF}'
+      });
+    }
+  }
+  // ─── EGO LIFTING: RIR 0 consistente + periodo no INTENS ───
+  if(rir!==null && rir===0 && periodo!==3) {
+    advices.push({
+      veredicto: 'EGO LIFTING WARNING',
+      consejo: 'RIR 0 en periodo '+(periodo===1?'BASE':periodo===2?'CARGA':'DESCARGA')+' no es óptimo. El fallo sistemático drena SNC, compromete volumen semanal y aumenta riesgo lesión. Apuntá a RIR 1-2 salvo INTENSIFICACIÓN.',
+      ref: 'Morán-Navarro 2017, Pareja-Blanco 2020',
+      color: '#f59e0b',
+      icono: '\u{26A0}'
+    });
+  }
+  // ─── DISCREPANCIA RPE/RIR: RPE alto con RIR alto es inconsistente ───
+  if(rpe && rir!==null && rpe>=9 && rir>=2) {
+    advices.push({
+      veredicto: 'INCONSISTENCIA RPE/RIR',
+      consejo: 'RPE '+rpe+' con RIR '+rir+' no cuadra. Si fue realmente duro, RIR debería ser 0-1. Calibrá: RPE 9 = 1 rep en reserva; RPE 10 = fallo total. Precisión en autoevaluación mejora progresión.',
+      ref: 'Zourdos RIR-based RPE scale 2016',
+      color: '#a855f7',
+      icono: '\u{1F914}'
+    });
+  }
+  // ─── CARGA MUY BAJA vs prevBest ───
+  if(prevBest && prevBest.peso && parseFloat(prevBest.peso) > peso*1.08 && rpe && rpe<=6) {
+    advices.push({
+      veredicto: 'CARGA SUBOPTIMA',
+      consejo: 'Estás '+Math.round((1-peso/parseFloat(prevBest.peso))*100)+'% por debajo del peso previo ('+prevBest.peso+'kg) con RPE '+rpe+'. Podés subir sin riesgo. Excepto si es DESCARGA intencional.',
+      ref: 'MEV/MRV model (Israetel)',
+      color: '#38bdf8',
+      icono: '\u{1F4A1}'
+    });
+  }
+  return advices.length > 0 ? advices[0] : null;
+};
 // Peso sugerido seg\u00fan periodo actual (NSCA periodization model)
 const suggestWeight = (prevPeso, prevReps, periodo) => {
   const w = parseFloat(prevPeso);
@@ -441,21 +519,22 @@ const getDayType_M = (dia) => {
 
 const SUPLEMENTOS = {
   AM: [
-    {id:'eaa',nombre:'EAA 10g',timing:'Pre-entreno en ayunas',emoji:'\u{1F4CA}'},
-    {id:'colageno',nombre:'Col\u00E1geno Multi',timing:'Con EAA',emoji:'\u{1F9B4}'},
-    {id:'ashwa',nombre:'Ashwagandha KSM-66 600mg',timing:'Con caf\u00E9',emoji:'\u{1F33F}'},
-    {id:'cafe',nombre:'Caf\u00E9 negro',timing:'5:30-6:00 AM',emoji:'\u{2615}'},
-    {id:'mstak',nombre:'Animal M-Stak (pack)',timing:'30-45 min pre-entreno con caf\u00E9',emoji:'\u{1F525}'}
+    {id:'eaa',nombre:'EAA 10g',timing:'Pre-entreno en ayunas',emoji:'\u{1F4CA}',rompeAyuno:true,kcal:40,p:10,c:0,g:0},
+    {id:'colageno',nombre:'Col\u00E1geno Multi',timing:'Con EAA',emoji:'\u{1F9B4}',rompeAyuno:true,kcal:36,p:9,c:0,g:0},
+    {id:'arginina',nombre:'L-Arginina 3-6g',timing:'20-30 min pre-entreno en ayunas (NO\u00B3 booster)',emoji:'\u{1F4A8}',rompeAyuno:false,kcal:12,p:3,c:0,g:0,info:'Precursor NO\u00B3 \u2192 vasodilataci\u00F3n, pump, entrega O\u00B2/nutrientes. Sinergia con citrulina. Tomar con agua, sin prote\u00EDna (compite por transportadores). Ref: Bescos 2012, \u00C1lvares 2011.'},
+    {id:'ashwa',nombre:'Ashwagandha KSM-66 600mg',timing:'Con caf\u00E9',emoji:'\u{1F33F}',rompeAyuno:false,kcal:0,p:0,c:0,g:0},
+    {id:'cafe',nombre:'Caf\u00E9 negro',timing:'5:30-6:00 AM',emoji:'\u{2615}',rompeAyuno:false,kcal:2,p:0,c:0,g:0},
+    {id:'mstak',nombre:'Animal M-Stak (pack)',timing:'30-45 min pre-entreno con caf\u00E9',emoji:'\u{1F525}',rompeAyuno:true,kcal:80,p:4,c:8,g:0}
   ],
   POST: [
-    {id:'creatina',nombre:'Creatina 5g',timing:'Post inmediato',emoji:'\u{26A1}'},
-    {id:'proteina',nombre:'Prote\u00EDna (Carnivor/Whey)',timing:'Post inmediato',emoji:'\u{1F4AA}'},
-    {id:'glutamina',nombre:'Glutamina 5g',timing:'Post inmediato con prote\u00EDna',emoji:'\u{1F9EA}'}
+    {id:'creatina',nombre:'Creatina 5g',timing:'Post inmediato',emoji:'\u{26A1}',rompeAyuno:false,kcal:0,p:0,c:0,g:0},
+    {id:'proteina',nombre:'Prote\u00EDna (Carnivor/Whey)',timing:'Post inmediato',emoji:'\u{1F4AA}',rompeAyuno:true,kcal:160,p:40,c:0,g:0},
+    {id:'glutamina',nombre:'Glutamina 5g',timing:'Post inmediato con prote\u00EDna',emoji:'\u{1F9EA}',rompeAyuno:true,kcal:20,p:5,c:0,g:0}
   ],
   PM: [
-    {id:'magnesio',nombre:'Magnesio Bisglicinato',timing:'30-45 min antes de dormir',emoji:'\u{1F31C}'},
-    {id:'omega3',nombre:'Omega-3 EPA+DHA 2-3g',timing:'Con cena o pre-sue\u00F1o',emoji:'\u{1F41F}'},
-    {id:'k2',nombre:'K2 MK-7 100mcg',timing:'Con Omega-3',emoji:'\u{1F48A}'}
+    {id:'magnesio',nombre:'Magnesio Bisglicinato',timing:'30-45 min antes de dormir',emoji:'\u{1F31C}',rompeAyuno:false,kcal:0,p:0,c:0,g:0},
+    {id:'omega3',nombre:'Omega-3 EPA+DHA 2-3g',timing:'Con cena o pre-sue\u00F1o',emoji:'\u{1F41F}',rompeAyuno:true,kcal:18,p:0,c:0,g:2},
+    {id:'k2',nombre:'K2 MK-7 100mcg',timing:'Con Omega-3',emoji:'\u{1F48A}',rompeAyuno:false,kcal:0,p:0,c:0,g:0}
   ]
 };
 
@@ -479,7 +558,7 @@ const PLANES = {
   alta: {
     label:'D\u00CDA ALTA (Lun/Mar)',color:'#ef4444',
     comidas:[
-      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','EAA 10g + Col\u00E1geno + Ashwagandha','Miel 15g en caf\u00E9 (carbo pre-piernas)'],macros:'P:20g C:12g G:0',kcal:128},
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','L-Arginina 5g con agua (20-30 min antes, pump)','EAA 10g + Col\u00E1geno + Ashwagandha','Miel 15g en caf\u00E9 (carbo pre-piernas)'],macros:'P:20g C:12g G:0',kcal:128},
       {id:'intra',hora:'Durante entreno',label:'Intra-entreno',items:['Agua 750ml + sal de mar + electrolitos'],macros:'P:0 C:0 G:0',kcal:0},
       {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g'],macros:'P:40g C:2g G:1g',kcal:177},
       {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['4 huevos + aguacate + espinaca','O: 200g carne + vegetales'],macros:'P:30g C:3g G:25g',kcal:357},
@@ -493,7 +572,7 @@ const PLANES = {
   media: {
     label:'D\u00CDA MEDIA (Mi\u00E9/Vie)',color:'#f59e0b',
     comidas:[
-      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','EAA 10g + Col\u00E1geno + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','L-Arginina 3-5g con agua (pre-entreno)','EAA 10g + Col\u00E1geno + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
       {id:'intra',hora:'Durante entreno',label:'Intra-entreno',items:['Agua 750ml + sal'],macros:'P:0 C:0 G:0',kcal:0},
       {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g','SIN carbo estrat\u00E9gico'],macros:'P:40g C:2g G:1g',kcal:177},
       {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o','O: 150g carne + ensalada'],macros:'P:25g C:3g G:18g',kcal:274},
@@ -507,7 +586,7 @@ const PLANES = {
   media_baja: {
     label:'BRAZOS / CF OPCIONAL (S\u00E1b)',color:'#a855f7',
     comidas:[
-      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','EAA 10g + Col\u00E1geno + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
+      {id:'pre',hora:'5:30 AM',label:'Pre-entreno',items:['Animal M-Stak (pack) + Caf\u00E9 negro','L-Arginina 3-5g con agua (pre-entreno)','EAA 10g + Col\u00E1geno + Ashwagandha'],macros:'P:20g C:0 G:0',kcal:80},
       {id:'post',hora:'Post inmediato',label:'Post-entreno',items:['Creatina 5g + Glutamina 5g','Whey/Carnivor 40g'],macros:'P:40g C:2g G:1g',kcal:177},
       {id:'c1',hora:'~8:00 AM',label:'Comida 1',items:['3 huevos + aguacate peque\u00F1o + vegetales'],macros:'P:25g C:3g G:18g',kcal:274},
       {id:'c2',hora:'~12:00 PM',label:'Comida 2',items:['200g carne + ensalada'],macros:'P:40g C:4g G:12g',kcal:284},
@@ -673,6 +752,7 @@ const ALIMENTOS = {
   creatina_s:{n:'Creatina 5g',p:0,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:5},
   glutamina_s:{n:'Glutamina 5g',p:0,c:0,g:0,s:1,cat:'sup',u:'dosis',pu:5},
   animal_mstak:{n:'Animal M-Stak (pack)',p:0,c:0,g:0,s:1,cat:'sup',u:'pack',pu:1},
+  arginina:{n:'L-Arginina',p:25,c:0,g:0,s:1,cat:'sup',u:'g',pu:5},
   // ── Frutas ──
   banano:{n:'Banano',p:1.1,c:23,g:0.3,s:1,cat:'fru',u:'ud',pu:120},
   manzana:{n:'Manzana',p:0.3,c:14,g:0.2,s:1,cat:'fru',u:'ud',pu:180},
@@ -2346,6 +2426,13 @@ function TabEntreno({user, cfg}) {
           const nr = {...(planData.sup_real||{}), [key]:items};
           updatePlanData({...planData, sup_real:nr});
         };
+        const handleBreakFast = (hora, sup) => {
+          if(!meta.ultimaIngesta) {
+            const nm = {...meta, ultimaIngesta: hora};
+            setMeta(nm);
+            debouncedSave(reg, nm);
+          }
+        };
         return (
           <Sec title={'\u{1F48A} SUPLEMENTOS DEL D\u00CDA'} color={G.coa}>
             <div style={{fontSize:15,color:G.mu,marginBottom:10,fontStyle:'italic'}}>
@@ -2360,7 +2447,7 @@ function TabEntreno({user, cfg}) {
               suplementos:cfg.suplementos,
               realItems:supReal['am']||{},
               onRealUpdate:(items)=>updateSupReal('am', items),
-              userId:user.id, dayType:tipoDia
+              userId:user.id, dayType:tipoDia, onBreakFast:handleBreakFast
             })}
             {isCrossfit && React.createElement(SupChecklist, {
               timing:'AM',
@@ -2371,7 +2458,7 @@ function TabEntreno({user, cfg}) {
               suplementos:cfg.suplementos,
               realItems:supReal['am']||{},
               onRealUpdate:(items)=>updateSupReal('am', items),
-              userId:user.id, dayType:tipoDia
+              userId:user.id, dayType:tipoDia, onBreakFast:handleBreakFast
             })}
             {/* Durante entreno: nota informativa */}
             {!isDescanso && (
@@ -2396,7 +2483,7 @@ function TabEntreno({user, cfg}) {
               suplementos:cfg.suplementos,
               realItems:supReal['post']||{},
               onRealUpdate:(items)=>updateSupReal('post', items),
-              userId:user.id, dayType:tipoDia
+              userId:user.id, dayType:tipoDia, onBreakFast:handleBreakFast
             })}
             {React.createElement(SupChecklist, {
               timing:'PM',
@@ -2407,7 +2494,7 @@ function TabEntreno({user, cfg}) {
               suplementos:cfg.suplementos,
               realItems:supReal['pm']||{},
               onRealUpdate:(items)=>updateSupReal('pm', items),
-              userId:user.id, dayType:tipoDia
+              userId:user.id, dayType:tipoDia, onBreakFast:handleBreakFast
             })}
           </Sec>
         );
@@ -2678,6 +2765,8 @@ function TabEntreno({user, cfg}) {
                           const isLastSet = si === ej.sets - 1;
                           const isLastEjInBi = esBi && (bloque.ejercicios.indexOf(ej) === bloque.ejercicios.length - 1);
                           const showTimerAfter = !isLastSet || (isLastSet && isLastEjInBi);
+                          // IA REACTIVA: analizar este set
+                          const advice = reactiveAdvice(ej, prevBest, s, getSemPeriodo(fecha));
                           return React.createElement(React.Fragment, {key:si},
                             React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
                               React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
@@ -2690,6 +2779,14 @@ function TabEntreno({user, cfg}) {
                               React.createElement(Inp, {value:s.rir||'',onChange:e=>updSet(key,si,'rir',e.target.value),placeholder:ej.rir,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
                               React.createElement(Inp, {value:s.rpe||'',onChange:e=>updSet(key,si,'rpe',e.target.value),placeholder:'8',style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
                               React.createElement(Inp, {value:s.notas||'',onChange:e=>updSet(key,si,'notas',e.target.value),placeholder:'...',style:{textAlign:'center',padding:'5px 2px',fontSize:15}})
+                            ),
+                            advice && React.createElement('div', {style:{marginTop:4,marginBottom:6,padding:'8px 10px',background:advice.color+'15',border:'1px solid '+advice.color+'55',borderRadius:8,fontSize:13,lineHeight:1.4}},
+                              React.createElement('div', {style:{fontWeight:700,color:advice.color,marginBottom:3,display:'flex',alignItems:'center',gap:6}},
+                                React.createElement('span', {style:{fontSize:15}}, advice.icono),
+                                React.createElement('span', null, advice.veredicto)
+                              ),
+                              React.createElement('div', {style:{color:'#cbd5e1'}}, advice.consejo),
+                              React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:3,fontStyle:'italic'}}, 'Ref: '+advice.ref)
                             ),
                             !isLastSet && !esBi && React.createElement(RestTimer, {key:'rt'+si, btipo:bloque.btipo, esBiserie:false, compact:true}),
                             isLastSet && esBi && !isLastEjInBi && React.createElement(RestTimer, {key:'trans'+si, btipo:bloque.btipo, esBiserie:true, compact:true}),
@@ -2906,9 +3003,10 @@ function TabEntreno({user, cfg}) {
 }
 
 // ─── PLAN DEL DIA COMPONENTS ──────────────────────────────────────────────────
-function SupChecklist({timing, label, color, checked, onChange, suplementos, realItems, onRealUpdate, userId, dayType}) {
+function SupChecklist({timing, label, color, checked, onChange, suplementos, realItems, onRealUpdate, userId, dayType, onBreakFast}) {
   const items = (suplementos||SUPLEMENTOS)[timing] || [];
   const [showTracker, setShowTracker] = useState(false);
+  const [lastBreak, setLastBreak] = useState(null);
   const ri = realItems || {};
   const riEntries = Object.entries(ri).filter(([,q])=>q>0);
   const riTot = riEntries.reduce((acc,[alId,qty]) => {
@@ -2925,21 +3023,41 @@ function SupChecklist({timing, label, color, checked, onChange, suplementos, rea
         items.filter(s => (checked||[]).includes(s.id)).length + '/' + items.length
       )
     ),
-    items.map(sup =>
-      React.createElement('div', {key:sup.id, onClick:()=>{
-        const cur = checked||[];
-        const next = cur.includes(sup.id) ? cur.filter(x=>x!==sup.id) : [...cur, sup.id];
-        onChange(next);
-      }, style:{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:(checked||[]).includes(sup.id)?color+'15':G.alt,border:'1px solid '+((checked||[]).includes(sup.id)?color+'55':G.bor),borderRadius:10,marginBottom:6,cursor:'pointer',transition:'all 0.2s'}},
-        React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+((checked||[]).includes(sup.id)?color:G.bor),background:(checked||[]).includes(sup.id)?color:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15,color:'#fff',transition:'all 0.2s'}},
-          (checked||[]).includes(sup.id) ? '\u2713' : ''
+    items.map(sup => {
+      const isChk = (checked||[]).includes(sup.id);
+      return React.createElement('div', {key:sup.id, style:{marginBottom:6}},
+        React.createElement('div', {onClick:()=>{
+          const cur = checked||[];
+          const willAdd = !cur.includes(sup.id);
+          const next = cur.includes(sup.id) ? cur.filter(x=>x!==sup.id) : [...cur, sup.id];
+          onChange(next);
+          // Auto-cortar ayuno si rompeAyuno y se esta marcando (no desmarcando)
+          if(willAdd && sup.rompeAyuno && onBreakFast) {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2,'0');
+            const mm = String(now.getMinutes()).padStart(2,'0');
+            onBreakFast(`${hh}:${mm}`, sup);
+            setLastBreak({id:sup.id, hora:`${hh}:${mm}`, sup:sup});
+            setTimeout(()=>setLastBreak(null), 8000);
+          }
+        }, style:{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:isChk?color+'15':G.alt,border:'1px solid '+(isChk?color+'55':G.bor),borderRadius:10,cursor:'pointer',transition:'all 0.2s'}},
+          React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isChk?color:G.bor),background:isChk?color:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15,color:'#fff',transition:'all 0.2s'}},
+            isChk ? '\u2713' : ''
+          ),
+          React.createElement('div', {style:{flex:1}},
+            React.createElement('div', {style:{fontSize:15,fontWeight:600,color:isChk?'#e2e8f0':G.dim}}, sup.emoji + ' ' + sup.nombre,
+              sup.rompeAyuno && React.createElement('span', {style:{fontSize:11,marginLeft:6,padding:'1px 6px',background:'#ef444422',color:'#fca5a5',borderRadius:8,fontWeight:700,letterSpacing:0.5}}, 'ROMPE AYUNO')
+            ),
+            React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, sup.timing),
+            sup.info && isChk && React.createElement('div', {style:{fontSize:13,color:G.dim,marginTop:4,fontStyle:'italic',lineHeight:1.4}}, sup.info)
+          )
         ),
-        React.createElement('div', {style:{flex:1}},
-          React.createElement('div', {style:{fontSize:15,fontWeight:600,color:(checked||[]).includes(sup.id)?'#e2e8f0':G.dim}}, sup.emoji + ' ' + sup.nombre),
-          React.createElement('div', {style:{fontSize:15,color:G.mu,marginTop:2}}, sup.timing)
+        lastBreak && lastBreak.id===sup.id && React.createElement('div', {style:{marginTop:4,padding:'8px 10px',background:'#ef444422',border:'1px solid #ef444466',borderRadius:8,fontSize:13,color:'#fca5a5',lineHeight:1.4}},
+          React.createElement('div', {style:{fontWeight:700,marginBottom:2}}, '\u{26A0}\uFE0F Ayuno cortado a las '+lastBreak.hora),
+          React.createElement('div', null, sup.nombre+' contiene ~'+sup.kcal+'kcal, '+sup.p+'g prote. Activa mTOR/insulina \u2192 sale de fasted state. Ref: Anton 2018.')
         )
-      )
-    ),
+      );
+    }),
     // ─── TRACKER REAL para suplementos (carnivor, whey, cafe, miel, etc.) ───
     React.createElement('div', {style:{marginTop:6,borderTop:'1px solid '+G.bor,paddingTop:8}},
       React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
@@ -3218,7 +3336,7 @@ function PlanMealBlock({comida, isChecked, onCheck, realItems, onRealUpdate, use
   );
 }
 
-function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
+function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId, onBreakFast}) {
   const tipo = cfg.getDayType(dia);
   const plan = cfg.planes[tipo];
   if(!plan) return null;
@@ -3305,7 +3423,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
       suplementos:cfg.suplementos,
       realItems:supReal['am']||{},
       onRealUpdate:(items)=>updateSupReal('am', items),
-      userId:userId, dayType:tipo
+      userId:userId, dayType:tipo, onBreakFast:onBreakFast
     }),
 
     // ─── COMIDAS DEL DIA con tracker real ───
@@ -3333,7 +3451,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
       suplementos:cfg.suplementos,
       realItems:supReal['post']||{},
       onRealUpdate:(items)=>updateSupReal('post', items),
-      userId:userId, dayType:tipo
+      userId:userId, dayType:tipo, onBreakFast:onBreakFast
     }),
 
     // CrossFit: suplementos AM reubicados
@@ -3344,7 +3462,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
       suplementos:cfg.suplementos,
       realItems:supReal['am']||{},
       onRealUpdate:(items)=>updateSupReal('am', items),
-      userId:userId, dayType:tipo
+      userId:userId, dayType:tipo, onBreakFast:onBreakFast
     }),
 
     // ─── SUPLEMENTOS PM con tracker real ───
@@ -3355,7 +3473,7 @@ function PlanDelDia({fecha, dia, planData, onUpdate, cfg, userId}) {
       suplementos:cfg.suplementos,
       realItems:supReal['pm']||{},
       onRealUpdate:(items)=>updateSupReal('pm', items),
-      userId:userId, dayType:tipo
+      userId:userId, dayType:tipo, onBreakFast:onBreakFast
     }),
 
     // ─── RESUMEN CONSUMIDO HOY ───
@@ -3628,7 +3746,8 @@ function TabNutricion({user, cfg}) {
 
       {/* ─── VISTA: PLAN DEL DIA ─── */}
       {vista==='plan' && (
-        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} cfg={cfg} userId={user.id} />
+        <PlanDelDia fecha={fecha} dia={dia} planData={planData} onUpdate={updatePlanData} cfg={cfg} userId={user.id}
+          onBreakFast={(hora, sup) => { if(!data.ayuno_fin) upd('ayuno_fin', hora); }} />
       )}
 
       {/* ─── VISTA: REGISTRO ACTUAL ─── */}
@@ -3918,6 +4037,405 @@ function TabNutricion({user, cfg}) {
               'Hornear 18-20 min.'
             ],
             macroPorcion:{p:44,c:5,g:36,k:524}
+          },
+          {
+            id:'pollo_curry_coco',
+            nombre:'Pollo al Curry con Leche de Coco',
+            tags:['almuerzo','cena'],
+            tiempo:'25 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'C\u00FArcuma antiinflamatoria + grasas MCT del coco. Ideal post-entreno.',
+            ingredientes:[
+              {nombre:'Pechuga pollo',cant:'300g',macros:{p:93,c:0,g:11}},
+              {nombre:'Leche coco entera',cant:'150ml',macros:{p:2,c:4,g:30}},
+              {nombre:'Curry en polvo',cant:'2 cdtas',macros:{p:0,c:2,g:0}},
+              {nombre:'C\u00FArcuma',cant:'1 cdta',macros:{p:0,c:0,g:0}},
+              {nombre:'Jengibre fresco',cant:'10g',macros:{p:0,c:1,g:0}},
+              {nombre:'Espinaca',cant:'60g',macros:{p:2,c:2,g:0}},
+              {nombre:'Aceite coco',cant:'10ml',macros:{p:0,c:0,g:10}}
+            ],
+            pasos:[
+              'Dorar pollo en aceite de coco con jengibre rallado.',
+              'Agregar especias y mezclar 1 min hasta aromatizar.',
+              'Verter leche de coco y cocinar a fuego medio 10 min.',
+              'A\u00F1adir espinacas al final y retirar del fuego.',
+              'Servir con arroz de coliflor o solo.'
+            ],
+            macroPorcion:{p:49,c:5,g:26,k:450}
+          },
+          {
+            id:'bistec_mantequilla',
+            nombre:'Bistec con Mantequilla de Ajo y Esp\u00E1rragos',
+            tags:['almuerzo','cena','post-entreno'],
+            tiempo:'20 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Maximum protein hit. Esp\u00E1rragos aportan ars\u00E9nico (s\u00ED, bueno) y folatos.',
+            ingredientes:[
+              {nombre:'Lomo de res',cant:'250g',macros:{p:65,c:0,g:38}},
+              {nombre:'Mantequilla',cant:'15g',macros:{p:0,c:0,g:12}},
+              {nombre:'Ajo picado',cant:'3 dientes',macros:{p:0,c:2,g:0}},
+              {nombre:'Esp\u00E1rragos',cant:'150g',macros:{p:3,c:3,g:0}},
+              {nombre:'Aceite oliva',cant:'5ml',macros:{p:0,c:0,g:5}},
+              {nombre:'Sal gruesa, pimienta',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Sacar carne del refri 20 min antes. Secar con papel.',
+              'Calentar sart\u00E9n a fuego alto. Sellar carne 2-3 min por lado.',
+              'Bajar fuego, agregar mantequilla y ajo, ba\u00F1ar carne 2 min.',
+              'Retirar y dejar reposar 5 min cubierta.',
+              'Mientras, saltear esp\u00E1rragos con aceite oliva.',
+              'Servir juntos.'
+            ],
+            macroPorcion:{p:68,c:5,g:55,k:787}
+          },
+          {
+            id:'gallina_sopa',
+            nombre:'Caldo de Pata (Colag\u00E9nico)',
+            tags:['comida','post-entreno','recuperaci\u00F3n'],
+            tiempo:'3h',
+            porciones:4,
+            rompeAyuno:true,
+            nota:'Col\u00E1geno natural para tendones, piel e intestino. Glicina calma SNC (Yamadera 2007). Ideal para recuperaci\u00F3n articular post-CrossFit.',
+            ingredientes:[
+              {nombre:'Patas de cerdo',cant:'600g',macros:{p:132,c:0,g:96}},
+              {nombre:'Cebolla',cant:'1 unidad',macros:{p:1,c:9,g:0}},
+              {nombre:'Ajo',cant:'4 dientes',macros:{p:0,c:3,g:0}},
+              {nombre:'Zanahoria',cant:'1 unidad (100g)',macros:{p:1,c:10,g:0}},
+              {nombre:'Apio',cant:'2 tallos',macros:{p:0,c:2,g:0}},
+              {nombre:'Sal, laurel, tomillo',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Hervir patas 5 min, descartar agua (limpia impurezas).',
+              'Agregar agua limpia, vegetales troceados, especias.',
+              'Cocinar a fuego muy bajo 2.5-3 h (col\u00E1geno se extrae).',
+              'Colar, guardar caldo. La carne puede separarse.',
+              'Tomar tazas 200-300ml con sal de mar.'
+            ],
+            macroPorcion:{p:34,c:6,g:24,k:376}
+          },
+          {
+            id:'huevos_rellenos',
+            nombre:'Huevos Rellenos con Aguacate y At\u00FAn',
+            tags:['snack','almuerzo'],
+            tiempo:'15 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Alta prote\u00EDna, bajos carbos, portable. Perfecto para almuerzo de oficina.',
+            ingredientes:[
+              {nombre:'Huevos',cant:'6 unidades',macros:{p:39,c:3,g:33}},
+              {nombre:'Aguacate',cant:'60g',macros:{p:1,c:5,g:9}},
+              {nombre:'At\u00FAn lata',cant:'80g',macros:{p:21,c:0,g:1}},
+              {nombre:'Mostaza Dijon',cant:'1 cdta',macros:{p:0,c:0,g:0}},
+              {nombre:'Lim\u00F3n',cant:'1/2 unidad',macros:{p:0,c:1,g:0}}
+            ],
+            pasos:[
+              'Hervir huevos 10 min. Enfriar y pelar.',
+              'Cortar por la mitad y reservar yemas.',
+              'Mezclar yemas, aguacate, at\u00FAn, mostaza y lim\u00F3n.',
+              'Rellenar claras con la mezcla.',
+              'Espolvorear paprika.'
+            ],
+            macroPorcion:{p:30,c:4,g:21,k:325}
+          },
+          {
+            id:'pizza_keto',
+            nombre:'Pizza Keto Fathead',
+            tags:['cena','cheat saludable'],
+            tiempo:'30 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Base de queso + almendra. Zero harinas. Para cuando extra\u00F1\u00E1s pizza sin salirte del keto.',
+            ingredientes:[
+              {nombre:'Queso mozzarella rallado',cant:'170g',macros:{p:37,c:4,g:37}},
+              {nombre:'Harina de almendras',cant:'85g',macros:{p:18,c:6,g:45}},
+              {nombre:'Queso crema',cant:'30g',macros:{p:2,c:1,g:10}},
+              {nombre:'Huevo',cant:'1 unidad',macros:{p:7,c:1,g:5}},
+              {nombre:'Or\u00E9gano, ajo en polvo',cant:'al gusto',macros:{p:0,c:0,g:0}},
+              {nombre:'Salsa tomate sin az\u00FAcar',cant:'60g',macros:{p:1,c:6,g:0}},
+              {nombre:'Mozza para topping',cant:'60g',macros:{p:13,c:1,g:13}},
+              {nombre:'Pepperoni',cant:'30g',macros:{p:6,c:0,g:12}}
+            ],
+            pasos:[
+              'Fundir queso mozza + queso crema 1 min en microondas.',
+              'Mezclar con huevo, harina almendra y especias hasta formar masa.',
+              'Extender sobre papel horno en forma de pizza.',
+              'Hornear 180\u00B0C 10 min hasta dorar.',
+              'Agregar salsa, mozza, pepperoni y hornear 5 min m\u00E1s.'
+            ],
+            macroPorcion:{p:42,c:10,g:61,k:757}
+          },
+          {
+            id:'ensalada_atun_huevo',
+            nombre:'Ensalada Power Bowl At\u00FAn',
+            tags:['almuerzo','post-entreno'],
+            tiempo:'10 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'5 min de prep, completa nutricionalmente. Ideal para d\u00EDas ocupados de oficina.',
+            ingredientes:[
+              {nombre:'At\u00FAn en agua',cant:'160g (2 latas)',macros:{p:42,c:0,g:2}},
+              {nombre:'Huevo duro',cant:'2 unidades',macros:{p:13,c:1,g:11}},
+              {nombre:'Aguacate',cant:'70g',macros:{p:1,c:6,g:11}},
+              {nombre:'Espinaca',cant:'50g',macros:{p:1,c:2,g:0}},
+              {nombre:'Pepino',cant:'60g',macros:{p:0,c:2,g:0}},
+              {nombre:'Aceite oliva',cant:'10ml',macros:{p:0,c:0,g:10}},
+              {nombre:'Lim\u00F3n, sal',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Escurrir at\u00FAn y poner en bowl.',
+              'Cortar huevos, aguacate y pepino en cubos.',
+              'Mezclar con espinaca.',
+              'Ali\u00F1ar con aceite, lim\u00F3n, sal.'
+            ],
+            macroPorcion:{p:57,c:11,g:34,k:578}
+          },
+          {
+            id:'chicharron_aguacate',
+            nombre:'Chicharr\u00F3n con Aguacate y Lim\u00F3n',
+            tags:['snack','almuerzo','costarricense'],
+            tiempo:'5 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Cl\u00E1sico tico 100% keto. Chicharr\u00F3n artesanal sin harina es zero carbos.',
+            ingredientes:[
+              {nombre:'Chicharr\u00F3n',cant:'100g',macros:{p:22,c:0,g:31}},
+              {nombre:'Aguacate',cant:'100g',macros:{p:2,c:8,g:15}},
+              {nombre:'Lim\u00F3n',cant:'1 unidad',macros:{p:0,c:2,g:0}},
+              {nombre:'Sal',cant:'pizca',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Calentar chicharr\u00F3n en sart\u00E9n seca 1 min.',
+              'Cortar aguacate en rodajas.',
+              'Rociar con lim\u00F3n y sal. Servir.'
+            ],
+            macroPorcion:{p:24,c:10,g:46,k:550}
+          },
+          {
+            id:'smoothie_keto_postworkout',
+            nombre:'Smoothie Post-Entreno Keto',
+            tags:['post-entreno','desayuno'],
+            tiempo:'3 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Absorci\u00F3n r\u00E1pida post-entreno. MCT para energ\u00EDa instant\u00E1nea. Colageno repara tejido.',
+            ingredientes:[
+              {nombre:'Whey Vanilla 40g',cant:'1 scoop',macros:{p:30,c:2,g:1}},
+              {nombre:'Leche coco sin az\u00FAcar',cant:'200ml',macros:{p:0,c:1,g:4}},
+              {nombre:'Aceite MCT',cant:'10ml',macros:{p:0,c:0,g:10}},
+              {nombre:'Col\u00E1geno',cant:'10g',macros:{p:9,c:0,g:0}},
+              {nombre:'Canela',cant:'1/2 cdta',macros:{p:0,c:0,g:0}},
+              {nombre:'Hielo',cant:'al gusto',macros:{p:0,c:0,g:0}},
+              {nombre:'Stevia',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Licuar todo 30-40 segundos.',
+              'Servir inmediatamente post-entreno.'
+            ],
+            macroPorcion:{p:39,c:3,g:15,k:303}
+          },
+          {
+            id:'tortilla_espanola_keto',
+            nombre:'Tortilla Espa\u00F1ola Keto (con calabac\u00EDn)',
+            tags:['desayuno','comida'],
+            tiempo:'20 min',
+            porciones:4,
+            rompeAyuno:true,
+            nota:'Sustituye papa por calabac\u00EDn. Misma textura, 1/10 de los carbos.',
+            ingredientes:[
+              {nombre:'Huevos',cant:'6 unidades',macros:{p:39,c:3,g:33}},
+              {nombre:'Calabac\u00EDn',cant:'300g',macros:{p:4,c:9,g:1}},
+              {nombre:'Cebolla',cant:'1/2 unidad',macros:{p:1,c:5,g:0}},
+              {nombre:'Aceite oliva',cant:'20ml',macros:{p:0,c:0,g:20}},
+              {nombre:'Sal y pimienta',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Cortar calabac\u00EDn en rodajas finas, cebolla en juliana.',
+              'Sofreir con aceite hasta ablandar (10 min).',
+              'Batir huevos en bowl, agregar verduras cocidas.',
+              'Verter en sart\u00E9n, cocinar 5 min tapado.',
+              'Voltear con plato, cocinar 3 min m\u00E1s.'
+            ],
+            macroPorcion:{p:11,c:4,g:14,k:186}
+          },
+          {
+            id:'fat_bombs_chocolate',
+            nombre:'Fat Bombs de Chocolate y Coco',
+            tags:['snack','pre-sue\u00F1o'],
+            tiempo:'10 min + 1h congelar',
+            porciones:8,
+            rompeAyuno:true,
+            nota:'Para antojo dulce sin salirse del keto. 100% grasa saludable.',
+            ingredientes:[
+              {nombre:'Aceite de coco',cant:'60ml',macros:{p:0,c:0,g:60}},
+              {nombre:'Mantequilla de mac',cant:'100g',macros:{p:8,c:6,g:65}},
+              {nombre:'Cacao en polvo',cant:'20g',macros:{p:4,c:10,g:3}},
+              {nombre:'Stevia o monk fruit',cant:'al gusto',macros:{p:0,c:0,g:0}},
+              {nombre:'Vainilla',cant:'1/2 cdta',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Derretir aceite coco y mantequilla de mac en ba\u00F1o mar\u00EDa.',
+              'Agregar cacao, stevia, vainilla y mezclar bien.',
+              'Verter en moldes de silicona peque\u00F1os.',
+              'Congelar 1h hasta solidificar.',
+              'Guardar en refri o congelador.'
+            ],
+            macroPorcion:{p:2,c:2,g:16,k:160}
+          },
+          {
+            id:'pancakes_keto',
+            nombre:'Pancakes Keto con Harina de Coco',
+            tags:['desayuno','post-entreno'],
+            tiempo:'15 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Para Melissa: dulce sin romper keto. 4g carbos netos por porci\u00F3n.',
+            ingredientes:[
+              {nombre:'Harina de coco',cant:'30g',macros:{p:6,c:6,g:5}},
+              {nombre:'Huevos',cant:'3 unidades',macros:{p:20,c:2,g:17}},
+              {nombre:'Leche coco',cant:'60ml',macros:{p:0,c:0,g:2}},
+              {nombre:'Stevia',cant:'al gusto',macros:{p:0,c:0,g:0}},
+              {nombre:'Canela',cant:'1/2 cdta',macros:{p:0,c:0,g:0}},
+              {nombre:'Mantequilla cocinar',cant:'10g',macros:{p:0,c:0,g:8}}
+            ],
+            pasos:[
+              'Batir huevos con stevia y canela.',
+              'Incorporar leche de coco y harina de coco.',
+              'Dejar reposar 2 min (la harina de coco absorbe).',
+              'Cocinar en sart\u00E9n caliente con mantequilla, 2 min por lado.',
+              'Servir con queso crema o mantequilla de mac encima.'
+            ],
+            macroPorcion:{p:13,c:4,g:16,k:212}
+          },
+          {
+            id:'cebiche_keto',
+            nombre:'Cebiche de Tilapia Keto',
+            tags:['almuerzo','cena','costarricense'],
+            tiempo:'20 min + marinar',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Sin papa, sin tostadas. Pura prote\u00EDna + c\u00EDtrico + aguacate.',
+            ingredientes:[
+              {nombre:'Tilapia fresca',cant:'400g',macros:{p:104,c:0,g:11}},
+              {nombre:'Lim\u00F3n',cant:'8 unidades',macros:{p:0,c:16,g:0}},
+              {nombre:'Cebolla morada',cant:'1/2 unidad',macros:{p:1,c:5,g:0}},
+              {nombre:'Culantro fresco',cant:'30g',macros:{p:1,c:2,g:0}},
+              {nombre:'Aguacate',cant:'100g',macros:{p:2,c:8,g:15}},
+              {nombre:'Chile dulce',cant:'30g',macros:{p:0,c:2,g:0}},
+              {nombre:'Aceite oliva',cant:'10ml',macros:{p:0,c:0,g:10}},
+              {nombre:'Sal',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Cortar tilapia en cubos peque\u00F1os.',
+              'Marinar en jugo de lim\u00F3n con sal 15-20 min.',
+              'Picar cebolla, chile, culantro muy fino.',
+              'Mezclar con pescado, agregar aceite oliva.',
+              'A\u00F1adir aguacate en cubos al servir.'
+            ],
+            macroPorcion:{p:54,c:17,g:18,k:446}
+          },
+          {
+            id:'crustless_quiche',
+            nombre:'Quiche de Espinaca y Queso (sin masa)',
+            tags:['desayuno','almuerzo'],
+            tiempo:'40 min',
+            porciones:6,
+            rompeAyuno:true,
+            nota:'Meal prep perfecto: hacer domingo, comer toda la semana. Re-calienta en microondas.',
+            ingredientes:[
+              {nombre:'Huevos',cant:'8 unidades',macros:{p:52,c:4,g:44}},
+              {nombre:'Crema de leche',cant:'150ml',macros:{p:2,c:5,g:55}},
+              {nombre:'Espinaca',cant:'200g',macros:{p:6,c:7,g:1}},
+              {nombre:'Queso mozza rallado',cant:'100g',macros:{p:22,c:2,g:22}},
+              {nombre:'Tocineta',cant:'100g',macros:{p:13,c:1,g:42}},
+              {nombre:'Sal, pimienta, nuez moscada',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Precalentar horno a 180\u00B0C.',
+              'Cocinar tocineta hasta crujiente, reservar.',
+              'Saltear espinaca 2 min, escurrir bien.',
+              'Batir huevos con crema, sal y especias.',
+              'Mezclar con espinaca, tocineta y queso.',
+              'Verter en molde engrasado, hornear 30-35 min.',
+              'Dejar reposar 10 min antes de cortar.'
+            ],
+            macroPorcion:{p:16,c:3,g:27,k:319}
+          },
+          {
+            id:'pinchos_pollo_tocineta',
+            nombre:'Pinchos de Pollo Envuelto en Tocineta',
+            tags:['almuerzo','cena','meal-prep'],
+            tiempo:'25 min',
+            porciones:2,
+            rompeAyuno:true,
+            nota:'Meal prep de lujo. Grasa de tocineta mantiene pollo jugoso.',
+            ingredientes:[
+              {nombre:'Pechuga pollo',cant:'400g',macros:{p:124,c:0,g:14}},
+              {nombre:'Tocineta',cant:'120g',macros:{p:16,c:1,g:50}},
+              {nombre:'Aj\u00ED dulce',cant:'1 unidad',macros:{p:1,c:6,g:0}},
+              {nombre:'Cebolla',cant:'1 unidad',macros:{p:1,c:9,g:0}},
+              {nombre:'Aceite oliva',cant:'10ml',macros:{p:0,c:0,g:10}},
+              {nombre:'Ajo, p\u00E1prika, sal',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Cortar pollo en cubos de 3cm. Marinar con especias y aceite 10 min.',
+              'Envolver cada cubo con media tira de tocineta.',
+              'Ensartar en palitos alternando con chile y cebolla.',
+              'Asar en sart\u00E9n/plancha 10-12 min girando.',
+              'Tambi\u00E9n funcionan al horno 200\u00B0C x 15 min.'
+            ],
+            macroPorcion:{p:71,c:8,g:37,k:649}
+          },
+          {
+            id:'carne_mechada_keto',
+            nombre:'Carne Mechada con Aguacate',
+            tags:['comida','cena','costarricense'],
+            tiempo:'1.5h',
+            porciones:4,
+            rompeAyuno:true,
+            nota:'Batch cooking tico. Carne deshebrada guarda 5 d\u00EDas en refri.',
+            ingredientes:[
+              {nombre:'Falda de res',cant:'600g',macros:{p:156,c:0,g:90}},
+              {nombre:'Cebolla',cant:'1 unidad',macros:{p:1,c:9,g:0}},
+              {nombre:'Ajo',cant:'4 dientes',macros:{p:0,c:3,g:0}},
+              {nombre:'Tomate',cant:'2 unidades',macros:{p:2,c:9,g:0}},
+              {nombre:'Chile dulce',cant:'1 unidad',macros:{p:1,c:6,g:0}},
+              {nombre:'Culantro',cant:'20g',macros:{p:0,c:1,g:0}},
+              {nombre:'Aguacate',cant:'200g',macros:{p:4,c:17,g:30}},
+              {nombre:'Aceite oliva',cant:'15ml',macros:{p:0,c:0,g:15}},
+              {nombre:'Sal, comino, laurel',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Cocinar falda en olla de presi\u00F3n con agua, sal, laurel 45 min.',
+              'Deshebrar con tenedores cuando enfr\u00EDe.',
+              'Sofre\u00EDr cebolla, ajo, chile dulce y tomate picado.',
+              'Agregar carne deshebrada, comino y culantro. Saltear 5 min.',
+              'Servir con aguacate al lado. Acompa\u00F1ar de ensalada.'
+            ],
+            macroPorcion:{p:41,c:11,g:34,k:515}
+          },
+          {
+            id:'yogurt_griego_colageno',
+            nombre:'Yogurt Griego con Col\u00E1geno y Canela',
+            tags:['desayuno','post-entreno','snack'],
+            tiempo:'2 min',
+            porciones:1,
+            rompeAyuno:true,
+            nota:'Para Melissa: probi\u00F3ticos + prote\u00EDna r\u00E1pida. Col\u00E1geno para piel y tendones.',
+            ingredientes:[
+              {nombre:'Yogurt griego natural',cant:'200g',macros:{p:20,c:8,g:10}},
+              {nombre:'Col\u00E1geno hidrolizado',cant:'10g',macros:{p:9,c:0,g:0}},
+              {nombre:'Nueces',cant:'15g',macros:{p:2,c:2,g:10}},
+              {nombre:'Canela',cant:'1/2 cdta',macros:{p:0,c:0,g:0}},
+              {nombre:'Stevia',cant:'al gusto',macros:{p:0,c:0,g:0}}
+            ],
+            pasos:[
+              'Mezclar yogurt con col\u00E1geno hasta disolver.',
+              'Agregar nueces picadas y canela.',
+              'Endulzar con stevia si deseas.'
+            ],
+            macroPorcion:{p:31,c:10,g:20,k:344}
           }
         ];
 
@@ -3996,6 +4514,321 @@ function TabNutricion({user, cfg}) {
       })()}
 
     </div>
+  );
+}
+
+// ─── TAB LOGISTICA (Compras semanales + Inventario suplementos) ──────────────
+// Catalogo de items de compra semanal con cantidades sugeridas por usuario
+const SHOPPING_CATALOG = {
+  proteinas: {
+    label:'\u{1F969} PROTE\u00CDNAS',
+    color:'#ef4444',
+    items:[
+      {id:'pollo', nombre:'Pechuga de pollo', unidad:'kg', ariel:2.5, melissa:1.5, nota:'Base prote\u00EDna'},
+      {id:'res', nombre:'Carne res (lomo/posta)', unidad:'kg', ariel:1.5, melissa:0.8, nota:'Hierro heme, creatina natural'},
+      {id:'res_molida', nombre:'Carne molida', unidad:'kg', ariel:1, melissa:0.5, nota:'Picadillos, wraps, hamburguesas'},
+      {id:'tilapia', nombre:'Tilapia filete', unidad:'kg', ariel:1, melissa:0.8, nota:'Proteina magra, bajo mercurio'},
+      {id:'salmon', nombre:'Salm\u00F3n', unidad:'kg', ariel:0.5, melissa:0.5, nota:'Omega-3 EPA/DHA'},
+      {id:'cerdo', nombre:'Cerdo lomo', unidad:'kg', ariel:1, melissa:0.5, nota:'Variedad, bajo grasa'},
+      {id:'huevo', nombre:'Huevos', unidad:'ud', ariel:30, melissa:20, nota:'Base diaria'},
+      {id:'atun', nombre:'At\u00FAn en agua', unidad:'latas', ariel:6, melissa:4, nota:'R\u00E1pido, emergencia'},
+      {id:'camarones', nombre:'Camarones', unidad:'kg', ariel:0.5, melissa:0.5, nota:'Opcional, bajo calor\u00EDas'},
+      {id:'higado_res', nombre:'H\u00EDgado de res', unidad:'kg', ariel:0.3, melissa:0.2, nota:'Vitamina A, B12, hierro, folato'}
+    ]
+  },
+  grasas: {
+    label:'\u{1F9C8} GRASAS Y L\u00C1CTEOS',
+    color:'#f59e0b',
+    items:[
+      {id:'aguacate', nombre:'Aguacates', unidad:'ud', ariel:7, melissa:5, nota:'1/d\u00EDa'},
+      {id:'aceite_oliva', nombre:'Aceite oliva extra virgen', unidad:'botella 500ml', ariel:1, melissa:1, nota:'Cocinar y aderezar'},
+      {id:'aceite_coco', nombre:'Aceite coco virgen', unidad:'frasco 500g', ariel:1, melissa:1, nota:'MCT, cocinar'},
+      {id:'mantequilla', nombre:'Mantequilla', unidad:'barra 200g', ariel:2, melissa:1, nota:'Grass-fed ideal'},
+      {id:'queso_crema', nombre:'Queso crema Dos Pinos', unidad:'envase 220g', ariel:2, melissa:1, nota:'Snacks, wraps'},
+      {id:'queso', nombre:'Queso maduro', unidad:'kg', ariel:0.5, melissa:0.3, nota:'Parmesano/mozzarella'},
+      {id:'nueces', nombre:'Nueces/almendras mix', unidad:'bolsa 200g', ariel:2, melissa:1, nota:'Snack, magnesio'}
+    ]
+  },
+  vegetales: {
+    label:'\u{1F96C} VEGETALES Y VERDURAS',
+    color:'#10b981',
+    items:[
+      {id:'espinaca', nombre:'Espinaca fresca', unidad:'bolsa 250g', ariel:3, melissa:2, nota:'Base ensaladas'},
+      {id:'lechuga', nombre:'Lechuga romana/mix', unidad:'ud', ariel:3, melissa:2, nota:'Base ensaladas'},
+      {id:'brocoli', nombre:'Br\u00F3coli', unidad:'cabeza', ariel:2, melissa:2, nota:'Cocido, fibra'},
+      {id:'coliflor', nombre:'Coliflor', unidad:'cabeza', ariel:1, melissa:1, nota:'Arroz de coliflor'},
+      {id:'calabacin', nombre:'Calabac\u00EDn', unidad:'kg', ariel:1, melissa:0.5, nota:'Fideos veg, saltado'},
+      {id:'pepino', nombre:'Pepino', unidad:'ud', ariel:3, melissa:2, nota:'Ensalada, hidrataci\u00F3n'},
+      {id:'aji', nombre:'Aj\u00ED dulce (chile)', unidad:'kg', ariel:0.3, melissa:0.3, nota:'Saltados, rellenos'},
+      {id:'cebolla', nombre:'Cebolla', unidad:'kg', ariel:1, melissa:0.5, nota:'Base sabores'},
+      {id:'ajo', nombre:'Ajo', unidad:'cabezas', ariel:3, melissa:2, nota:'Alicina, sabor'},
+      {id:'limon', nombre:'Limones', unidad:'ud', ariel:10, melissa:6, nota:'Aderezos, agua'}
+    ]
+  },
+  liquidos: {
+    label:'\u{1F4A7} L\u00CDQUIDOS Y BEBIDAS',
+    color:'#38bdf8',
+    items:[
+      {id:'agua', nombre:'Agua bot/filtro', unidad:'L', ariel:25, melissa:18, nota:'~3-4L/d\u00EDa'},
+      {id:'cafe', nombre:'Caf\u00E9 negro grano', unidad:'bolsa 500g', ariel:1, melissa:1, nota:'Diario pre-entreno'},
+      {id:'te_verde', nombre:'T\u00E9 verde/Jamaica', unidad:'caja', ariel:1, melissa:1, nota:'Antioxidantes, EGCG'},
+      {id:'sal_mar', nombre:'Sal de mar/Himalaya', unidad:'paquete', ariel:1, melissa:1, nota:'Electrolitos, keto'}
+    ]
+  },
+  condimentos: {
+    label:'\u{1F9C2} CONDIMENTOS',
+    color:'#a855f7',
+    items:[
+      {id:'stevia', nombre:'Stevia/monk fruit', unidad:'frasco', ariel:1, melissa:1, nota:'Endulzante keto'},
+      {id:'vinagre_manzana', nombre:'Vinagre de manzana', unidad:'botella', ariel:1, melissa:1, nota:'Glucosa post-comida'},
+      {id:'canela', nombre:'Canela molida', unidad:'frasco', ariel:1, melissa:1, nota:'Sensibilidad insulina'},
+      {id:'curcuma', nombre:'C\u00FArcuma', unidad:'frasco', ariel:1, melissa:1, nota:'Antiinflamatorio'},
+      {id:'comino', nombre:'Comino', unidad:'frasco', ariel:1, melissa:1, nota:'Sabor carnes'}
+    ]
+  }
+};
+
+// Catalogo de suplementos con dosis diaria, presentacion y calculo de duracion
+const SUPP_STOCK_CATALOG = {
+  ariel: [
+    {id:'eaa', nombre:'EAA en polvo', presentacion:'bote 500g', dosisDia:10, usa:'Pre-entreno (AM)', unidad:'g', marca:'Primaforce/MRM', precio:28000},
+    {id:'colageno', nombre:'Col\u00E1geno Multi', presentacion:'bote 300g', dosisDia:10, usa:'Con EAA', unidad:'g', marca:'Vital Proteins', precio:25000},
+    {id:'arginina', nombre:'L-Arginina', presentacion:'bote 300g', dosisDia:5, usa:'Pre-entreno NO booster', unidad:'g', marca:'NOW/BulkSupp', precio:18000},
+    {id:'ashwa', nombre:'Ashwagandha KSM-66', presentacion:'frasco 60 caps', dosisDia:1, usa:'Cortisol AM', unidad:'cap', marca:'Himalaya/Jarrow', precio:15000},
+    {id:'mstak', nombre:'Animal M-Stak', presentacion:'caja 21 packs', dosisDia:1, usa:'Pre-entreno 4d/wk', unidad:'pack', marca:'Universal', precio:42000, diasActivos:4},
+    {id:'creatina', nombre:'Creatina monohidrato', presentacion:'bote 500g', dosisDia:5, usa:'Post inmediato', unidad:'g', marca:'Creapure/Optimum', precio:22000},
+    {id:'proteina', nombre:'Prote\u00EDna Whey/Carnivor', presentacion:'bote 2kg', dosisDia:40, usa:'Post-entreno', unidad:'g', marca:'MuscleMeds/Optimum', precio:65000},
+    {id:'glutamina', nombre:'Glutamina', presentacion:'bote 300g', dosisDia:5, usa:'Post-entreno con prote', unidad:'g', marca:'NOW', precio:18000},
+    {id:'magnesio', nombre:'Magnesio Bisglicinato', presentacion:'frasco 120 caps', dosisDia:2, usa:'Pre-sue\u00F1o', unidad:'cap', marca:'Doctor\'s Best', precio:20000},
+    {id:'omega3', nombre:'Omega-3 EPA/DHA', presentacion:'frasco 120 softgels', dosisDia:3, usa:'Con cena', unidad:'softgel', marca:'Nordic/Carlson', precio:30000},
+    {id:'k2', nombre:'Vitamina K2 MK-7', presentacion:'frasco 60 caps', dosisDia:1, usa:'Con Omega-3', unidad:'cap', marca:'Thorne/Life Ext', precio:18000}
+  ],
+  melissa: [
+    {id:'lteanina', nombre:'L-Teanina', presentacion:'frasco 90 caps', dosisDia:1, usa:'Con caf\u00E9 AM', unidad:'cap', marca:'NOW/Doctor\'s Best', precio:16000},
+    {id:'proteina', nombre:'Prote\u00EDna Whey/Plant', presentacion:'bote 1kg', dosisDia:25, usa:'Post-entreno', unidad:'g', marca:'Optimum/Vega', precio:38000},
+    {id:'colageno', nombre:'Col\u00E1geno hidrolizado', presentacion:'bote 300g', dosisDia:10, usa:'Con prote post', unidad:'g', marca:'Vital Proteins', precio:25000},
+    {id:'omega3', nombre:'Omega-3 EPA/DHA', presentacion:'frasco 120 softgels', dosisDia:2, usa:'Primera comida', unidad:'softgel', marca:'Nordic/Carlson', precio:30000},
+    {id:'magnesio', nombre:'Magnesio Bisglicinato', presentacion:'frasco 120 caps', dosisDia:2, usa:'Pre-sue\u00F1o ansiedad', unidad:'cap', marca:'Doctor\'s Best', precio:20000},
+    {id:'ashwa', nombre:'Ashwagandha KSM-66 300mg', presentacion:'frasco 60 caps', dosisDia:1, usa:'Pre-sue\u00F1o cortisol', unidad:'cap', marca:'Himalaya/Jarrow', precio:15000}
+  ]
+};
+
+// Parsea la presentaci\u00F3n para extraer cantidad total del envase
+const parsePresentacion = (pres) => {
+  const match = pres.match(/(\d+(?:\.\d+)?)\s*(g|kg|caps|softgels|packs)/i);
+  if(!match) return null;
+  let qty = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  if(unit === 'kg') qty *= 1000;
+  return qty;
+};
+
+function TabLogistica({user, cfg}) {
+  const [vista, setVista] = useState('compras');
+  const [shopList, setShopList] = useState({});
+  const [stockList, setStockList] = useState({});
+  const [loading, setLoading] = useState(true);
+  const userKey = cfg.nombre.toLowerCase();
+
+  // Cargar datos desde Supabase (tabla mediciones usando tipo='logistica')
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await sb.from('nutricion')
+          .select('notas')
+          .eq('user_id', user.id)
+          .eq('fecha', '2099-12-31') // Registro permanente para logistica
+          .maybeSingle();
+        if(data && data.notas) {
+          const n = JSON.parse(data.notas);
+          setShopList(n.shopList || {});
+          setStockList(n.stockList || {});
+        }
+      } catch(e) { console.error('Load logistica:', e); }
+      setLoading(false);
+    })();
+  }, [user.id]);
+
+  // Guardar con debounce
+  const saveRef = useRef(null);
+  const saveData = (nShop, nStock) => {
+    if(saveRef.current) clearTimeout(saveRef.current);
+    saveRef.current = setTimeout(async () => {
+      try {
+        await sb.from('nutricion').upsert({
+          user_id: user.id,
+          fecha: '2099-12-31',
+          notas: JSON.stringify({ shopList: nShop, stockList: nStock })
+        }, { onConflict:'user_id,fecha' });
+      } catch(e) { console.error('Save logistica:', e); }
+    }, 800);
+  };
+
+  const toggleShopItem = (catKey, itemId) => {
+    const nShop = {...shopList};
+    const key = `${catKey}.${itemId}`;
+    if(nShop[key]) {
+      // Marcar como comprado con timestamp
+      nShop[key] = { ...nShop[key], comprado: !nShop[key].comprado, fechaCompra: !nShop[key].comprado ? new Date().toISOString() : null };
+    } else {
+      nShop[key] = { comprado: true, fechaCompra: new Date().toISOString() };
+    }
+    setShopList(nShop);
+    saveData(nShop, stockList);
+  };
+
+  const resetWeek = () => {
+    if(!confirm('Reset lista de compras semanal? Se guardar\u00E1 el historial.')) return;
+    const nShop = {};
+    setShopList(nShop);
+    saveData(nShop, stockList);
+  };
+
+  // Actualizar stock de suplemento (al comprar: registrar fecha compra)
+  const markSuppBought = (suppId) => {
+    const supp = (SUPP_STOCK_CATALOG[userKey]||SUPP_STOCK_CATALOG.ariel).find(s=>s.id===suppId);
+    if(!supp) return;
+    const nStock = {...stockList};
+    nStock[suppId] = {
+      fechaCompra: new Date().toISOString(),
+      presentacion: supp.presentacion,
+      dosisDia: supp.dosisDia,
+      diasActivos: supp.diasActivos || 7
+    };
+    setStockList(nStock);
+    saveData(shopList, nStock);
+  };
+
+  const deleteSuppStock = (suppId) => {
+    const nStock = {...stockList};
+    delete nStock[suppId];
+    setStockList(nStock);
+    saveData(shopList, nStock);
+  };
+
+  // Calcular dias restantes hasta necesidad de recompra
+  const calcDuracion = (supp, stockEntry) => {
+    if(!stockEntry || !stockEntry.fechaCompra) return null;
+    const cantTotal = parsePresentacion(supp.presentacion);
+    if(!cantTotal) return null;
+    const dosisDia = supp.dosisDia;
+    const diasSem = supp.diasActivos || 7;
+    const consumoSemanal = dosisDia * diasSem;
+    const duracionSemanas = cantTotal / consumoSemanal;
+    const duracionDias = Math.round(duracionSemanas * 7);
+    const fechaCompra = new Date(stockEntry.fechaCompra);
+    const hoyDt = new Date();
+    const diasPasados = Math.floor((hoyDt - fechaCompra) / (1000*60*60*24));
+    const diasRest = duracionDias - diasPasados;
+    const fechaAgotado = new Date(fechaCompra.getTime() + duracionDias*24*60*60*1000);
+    return { duracionDias, diasPasados, diasRest, fechaAgotado, pctRest: Math.max(0, Math.round((diasRest/duracionDias)*100)) };
+  };
+
+  if(loading) return React.createElement('div', {style:{color:G.mu,fontFamily:'monospace',padding:20,textAlign:'center'}}, 'Cargando log\u00EDstica...');
+
+  const catalogShop = SHOPPING_CATALOG;
+  const catalogSupp = SUPP_STOCK_CATALOG[userKey] || SUPP_STOCK_CATALOG.ariel;
+  // Stats shopping
+  const totalItems = Object.values(catalogShop).reduce((a,c)=>a+c.items.length,0);
+  const boughtItems = Object.values(shopList).filter(v=>v.comprado).length;
+  const shopPct = totalItems>0 ? Math.round(boughtItems/totalItems*100) : 0;
+
+  return React.createElement('div', null,
+    React.createElement(Sec, null,
+      React.createElement('div', {style:{display:'flex',gap:0,marginBottom:10,background:G.alt,borderRadius:10,padding:3,border:'1px solid '+G.bor}},
+        [['compras','COMPRAS SEMANA','\u{1F6D2}'],['stock','SUPLEMENTOS MES','\u{1F48A}']].map(([v,l,ic]) => (
+          React.createElement('button', {key:v, onClick:()=>setVista(v), style:{flex:1,background:vista===v?G.acc:'transparent',color:vista===v?'#fff':G.dim,border:'none',borderRadius:8,padding:'8px 10px',fontSize:15,fontWeight:700,fontFamily:'monospace',letterSpacing:0.5,cursor:'pointer',transition:'all 0.2s'}},
+            ic+' '+l
+          )
+        ))
+      ),
+      vista==='compras' && React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+        React.createElement('div', null,
+          React.createElement('div', {style:{fontSize:18,fontWeight:700,color:G.acc,fontFamily:'monospace'}}, shopPct+'%'),
+          React.createElement('div', {style:{fontSize:15,color:G.mu}}, boughtItems+'/'+totalItems+' items')
+        ),
+        React.createElement('button', {onClick:resetWeek, style:{background:G.bad+'22',color:G.bad,border:'1px solid '+G.bad+'44',borderRadius:7,padding:'6px 12px',fontSize:15,fontWeight:700,cursor:'pointer'}}, '\u{1F504} Reset semana')
+      )
+    ),
+
+    // ─── VISTA COMPRAS ───
+    vista==='compras' && Object.entries(catalogShop).map(([catKey, cat]) =>
+      React.createElement(Sec, {key:catKey, title:cat.label, color:cat.color},
+        cat.items.map(item => {
+          const key = `${catKey}.${item.id}`;
+          const state = shopList[key] || {};
+          const isBought = state.comprado;
+          const cantidad = item[userKey] || item.ariel;
+          return React.createElement('div', {key:item.id, onClick:()=>toggleShopItem(catKey, item.id), style:{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:isBought?G.ok+'15':G.alt,border:'1px solid '+(isBought?G.ok+'55':G.bor),borderRadius:10,marginBottom:6,cursor:'pointer',transition:'all 0.2s',textDecoration:isBought?'line-through':'none'}},
+            React.createElement('div', {style:{width:28,height:28,borderRadius:8,border:'2px solid '+(isBought?G.ok:G.bor),background:isBought?G.ok:G.alt,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15,color:'#fff'}}, isBought?'\u2713':''),
+            React.createElement('div', {style:{flex:1}},
+              React.createElement('div', {style:{fontSize:15,fontWeight:600,color:isBought?G.mu:'#e2e8f0'}}, item.nombre),
+              React.createElement('div', {style:{fontSize:13,color:G.mu,marginTop:2}}, item.nota)
+            ),
+            React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:cat.color,fontWeight:700,flexShrink:0}}, cantidad+' '+item.unidad)
+          );
+        })
+      )
+    ),
+
+    // ─── VISTA STOCK SUPLEMENTOS ───
+    vista==='stock' && React.createElement(React.Fragment, null,
+      React.createElement(Sec, {title:'\u{1F48A} INVENTARIO SUPLEMENTOS', color:G.coa},
+        React.createElement('div', {style:{fontSize:13,color:G.mu,marginBottom:10,fontStyle:'italic',lineHeight:1.4}}, 'Al abrir un nuevo envase, marc\u00E1 "Comprado hoy". La app calcula cu\u00E1ndo se va a acabar seg\u00FAn tu dosis diaria y te avisa con anticipaci\u00F3n.'),
+        catalogSupp.map(supp => {
+          const stock = stockList[supp.id];
+          const dur = stock ? calcDuracion(supp, stock) : null;
+          const alertColor = !stock ? G.mu : dur && dur.diasRest < 0 ? G.bad : dur && dur.diasRest <= 7 ? G.warn : G.ok;
+          const alertMsg = !stock ? 'Sin registro' : dur && dur.diasRest < 0 ? `AGOTADO hace ${-dur.diasRest}d` : dur && dur.diasRest <= 7 ? `Comprar en ${dur.diasRest}d` : dur ? `${dur.diasRest}d restantes` : '';
+          const fechaAgotadoStr = dur ? dur.fechaAgotado.toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'}) : '';
+          return React.createElement('div', {key:supp.id, style:{background:G.alt,border:'1px solid '+alertColor+'55',borderRadius:10,padding:'10px 12px',marginBottom:8}},
+            React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}},
+              React.createElement('div', {style:{flex:1}},
+                React.createElement('div', {style:{fontSize:15,fontWeight:700,color:'#e2e8f0'}}, supp.nombre),
+                React.createElement('div', {style:{fontSize:13,color:G.mu,marginTop:2}}, supp.presentacion+' \u2022 '+supp.dosisDia+supp.unidad+'/d\u00EDa \u2022 '+supp.usa),
+                React.createElement('div', {style:{fontSize:12,color:G.dim,marginTop:2}}, supp.marca+' \u2022 \u20A1'+supp.precio.toLocaleString())
+              ),
+              React.createElement('div', {style:{textAlign:'right',flexShrink:0}},
+                React.createElement('div', {style:{fontSize:13,fontWeight:700,color:alertColor,fontFamily:'monospace'}}, alertMsg),
+                dur && React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:2}}, fechaAgotadoStr)
+              )
+            ),
+            dur && React.createElement('div', {style:{marginTop:6,height:5,background:G.sur,borderRadius:3,overflow:'hidden'}},
+              React.createElement('div', {style:{height:'100%',width:dur.pctRest+'%',background:alertColor,borderRadius:3,transition:'width 0.3s'}})
+            ),
+            React.createElement('div', {style:{display:'flex',gap:6,marginTop:8}},
+              React.createElement('button', {onClick:()=>markSuppBought(supp.id), style:{flex:1,background:G.acc+'22',color:G.acc,border:'1px solid '+G.acc+'55',borderRadius:7,padding:'6px 10px',fontSize:13,fontWeight:700,cursor:'pointer'}}, '\u{1F6D2} Comprado hoy'),
+              stock && React.createElement('button', {onClick:()=>deleteSuppStock(supp.id), style:{background:G.bad+'15',color:G.bad,border:'1px solid '+G.bad+'33',borderRadius:7,padding:'6px 10px',fontSize:13,fontWeight:700,cursor:'pointer'}}, '\u{1F5D1}\uFE0F')
+            )
+          );
+        })
+      ),
+      // Resumen costo mensual estimado
+      React.createElement(Sec, {title:'\u{1F4B0} COSTO MENSUAL ESTIMADO', color:G.ok},
+        (() => {
+          const items = catalogSupp.map(s => {
+            const cantTotal = parsePresentacion(s.presentacion);
+            if(!cantTotal) return null;
+            const consumoMes = s.dosisDia * (s.diasActivos || 7) * 4.3;
+            const envasesMes = consumoMes / cantTotal;
+            const costoMes = Math.round(envasesMes * s.precio);
+            return {...s, envasesMes:envasesMes.toFixed(2), costoMes};
+          }).filter(Boolean);
+          const total = items.reduce((a,i)=>a+i.costoMes,0);
+          return React.createElement(React.Fragment, null,
+            items.map(i => React.createElement('div', {key:i.id, style:{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid '+G.bor+'44',fontSize:14}},
+              React.createElement('span', {style:{color:G.dim}}, i.nombre),
+              React.createElement('span', {style:{color:G.mu,fontFamily:'monospace'}}, i.envasesMes+'x \u2022 \u20A1'+i.costoMes.toLocaleString())
+            )),
+            React.createElement('div', {style:{marginTop:10,padding:'10px 12px',background:G.ok+'15',borderRadius:8,display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:700}},
+              React.createElement('span', {style:{color:G.ok}}, 'TOTAL MES'),
+              React.createElement('span', {style:{color:G.ok,fontFamily:'monospace'}}, '\u20A1'+total.toLocaleString())
+            ),
+            React.createElement('div', {style:{fontSize:12,color:G.mu,marginTop:6,fontStyle:'italic'}}, 'Estimado basado en dosis diarias y d\u00EDas activos. Los precios son referenciales \u2014 edita en c\u00F3digo si cambian.')
+          );
+        })()
+      )
+    )
   );
 }
 
@@ -4494,6 +5327,7 @@ const TABS = [
   {id:'entreno', label:'ENTRENO', icon:'H'},
   {id:'nutri', label:'NUTRICION', icon:'N'},
   {id:'balance', label:'BALANCE', icon:'B'},
+  {id:'logistica', label:'LOGISTICA', icon:'L'},
   {id:'progreso', label:'PROGRESO', icon:'P'}
 ];
 
@@ -4560,6 +5394,7 @@ function App() {
         tab==='entreno' && React.createElement(TabEntreno, {user:user, cfg:cfg}),
         tab==='nutri' && React.createElement(TabNutricion, {user:user, cfg:cfg}),
         tab==='balance' && React.createElement(TabBalance, {user:user, cfg:cfg}),
+        tab==='logistica' && React.createElement(TabLogistica, {user:user, cfg:cfg}),
         tab==='progreso' && React.createElement(TabProgreso, {user:user})
       )
     )
