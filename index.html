@@ -1948,7 +1948,7 @@ function TabEntreno({user, cfg}) {
   const [dia, setDia] = useState(diaHoy());
   const [fecha, setFecha] = useState(hoy());
   const [reg, setReg] = useState({});
-  const [meta, setMeta] = useState({inicio:'',fin:'',durMin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:'',userNotes:''});
+  const [meta, setMeta] = useState({inicio:'',fin:'',durMin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ultimaIngesta:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:'',userNotes:''});
   const [saveStatus, setSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [saveMessage, setSaveMessage] = useState('');
   const [vista, setVista] = useState('hoy');
@@ -1999,7 +1999,7 @@ function TabEntreno({user, cfg}) {
         try { const n = JSON.parse(current.data.notas||'{}'); setMeta(m=>({...m,...n})); } catch {}
       } else {
         setReg({});
-        setMeta({inicio:'',fin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
+        setMeta({inicio:'',fin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ultimaIngesta:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
       }
       // Sesi\u00f3n anterior para peso sugerido
       if(prev) {
@@ -2292,8 +2292,17 @@ function TabEntreno({user, cfg}) {
               <Inp type="time" value={meta.horaAcostarse} onChange={e=>updMeta('horaAcostarse',e.target.value)} />
             </div>
             <div>
-              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>Horas ayuno</div>
-              <Inp type="number" min="0" max="24" step="0.5" value={meta.ayuno} onChange={e=>updMeta('ayuno',e.target.value)} placeholder="12" style={{textAlign:'center'}} />
+              <div style={{fontSize:15,color:G.mu,marginBottom:3}}>{'\u{1F374}'} {'\u00DAltima ingesta'}</div>
+              <Inp type="time" value={meta.ultimaIngesta||''} onChange={e=>{updMeta('ultimaIngesta',e.target.value); const ui=e.target.value; if(ui){const now=new Date(); const [uh,um]=ui.split(':').map(Number); let diffMin=(now.getHours()*60+now.getMinutes())-(uh*60+um); if(diffMin<0) diffMin+=1440; updMeta('ayuno', (diffMin/60).toFixed(1));}}} />
+              {meta.ultimaIngesta && (() => {
+                const now = new Date();
+                const [uh,um] = meta.ultimaIngesta.split(':').map(Number);
+                let diffMin = (now.getHours()*60+now.getMinutes()) - (uh*60+um);
+                if(diffMin < 0) diffMin += 1440;
+                const hrs = (diffMin/60).toFixed(1);
+                const isGood = parseFloat(hrs) >= 12;
+                return <div style={{marginTop:4,padding:'4px 8px',background:isGood?G.ok+'22':G.warn+'22',borderRadius:6,textAlign:'center',fontSize:15,fontWeight:700,fontFamily:'monospace',color:isGood?G.ok:G.warn}}>{hrs}h {'ayuno'}</div>;
+              })()}
             </div>
           </div>
           {/* Resumen */}
@@ -2447,17 +2456,17 @@ function TabEntreno({user, cfg}) {
                       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
                         {ej.tecnica && (
                           <span onClick={(e)=>{e.stopPropagation();setShowTec(p=>({...p,[key+'_t']:!p[key+'_t']}))}} style={{display:'inline-flex',alignItems:'center',gap:4,cursor:'pointer',userSelect:'none',background:showTec[key+'_t']?rc+'22':rc+'11',border:'1px solid '+rc+'33',borderRadius:20,padding:'4px 14px',fontSize:15,color:rc,fontWeight:600,transition:'background 0.2s'}}>
-                            {'\u{1F4CB}'} T\u00e9cnica <span style={{fontSize:15,transition:'transform 0.2s',display:'inline-block',transform:showTec[key+'_t']?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
+                            {'\u{1F4CB}'} {'T\u00e9cnica'} <span style={{fontSize:15,transition:'transform 0.2s',display:'inline-block',transform:showTec[key+'_t']?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
                           </span>
                         )}
                         {ej.precaucion && (
                           <span onClick={(e)=>{e.stopPropagation();setShowTec(p=>({...p,[key+'_p']:!p[key+'_p']}))}} style={{display:'inline-flex',alignItems:'center',gap:4,cursor:'pointer',userSelect:'none',background:showTec[key+'_p']?'#ef444422':'#ef444411',border:'1px solid #ef444444',borderRadius:20,padding:'4px 14px',fontSize:15,color:'#ef4444',fontWeight:600,transition:'background 0.2s'}}>
-                            {'\u26A0\uFE0F'} Precauci\u00f3n <span style={{fontSize:15,transition:'transform 0.2s',display:'inline-block',transform:showTec[key+'_p']?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
+                            {'\u26A0\uFE0F'} {'Precauci\u00f3n'} <span style={{fontSize:15,transition:'transform 0.2s',display:'inline-block',transform:showTec[key+'_p']?'rotate(90deg)':'rotate(0deg)'}}>{'\u25B6'}</span>
                           </span>
                         )}
                       </div>
                     )}
-                    {(showTec[key+'_t'] || bloque.btipo==='warmup') && ej.tecnica && (
+                    {(showTec[key+'_t'] !== undefined ? showTec[key+'_t'] : bloque.btipo==='warmup') && ej.tecnica && (
                       <div style={{padding:'8px 12px',fontSize:15,color:G.dim,lineHeight:1.7,background:rc+'08',borderRadius:8,marginBottom:8}}>{ej.tecnica}</div>
                     )}
                     {showTec[key+'_p'] && ej.precaucion && (
@@ -2582,12 +2591,12 @@ function TabEntreno({user, cfg}) {
         <div style={{fontSize:15,color:'#f59e0b',marginBottom:8,fontFamily:'monospace'}}>{'Registra tu energ\u00EDa a lo largo del d\u00EDa para consejos personalizados'}</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:10}}>
           <div>
-            <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} Medio d\u00EDa (~12-2PM)</div>
-            <Rating label="Energ\u00EDa mid-day" value={meta.eMid} onChange={v=>updMeta('eMid',v)} color={'#f59e0b'} onSave={forceManualSave} mode="positive" />
+            <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F31E}'} {'Medio d\u00EDa (~12-2PM)'}</div>
+            <Rating label={'Energ\u00EDa mid-day'} value={meta.eMid} onChange={v=>updMeta('eMid',v)} color={'#f59e0b'} onSave={forceManualSave} mode="positive" />
           </div>
           <div>
-            <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F319}'} Final del d\u00EDa (~8-10PM)</div>
-            <Rating label="Energ\u00EDa end-day" value={meta.eEnd} onChange={v=>updMeta('eEnd',v)} color={'#6366f1'} onSave={forceManualSave} mode="positive" />
+            <div style={{fontSize:15,color:G.mu,marginBottom:4,fontWeight:600}}>{'\u{1F319}'} {'Final del d\u00EDa (~8-10PM)'}</div>
+            <Rating label={'Energ\u00EDa end-day'} value={meta.eEnd} onChange={v=>updMeta('eEnd',v)} color={'#6366f1'} onSave={forceManualSave} mode="positive" />
           </div>
         </div>
         {/* Consejos mid-day */}
