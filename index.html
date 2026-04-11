@@ -2103,6 +2103,35 @@ function CoachDelDia({user, cfg, fecha, dia, meta, reg}) {
   const buildAdvice = () => {
     if(!trends) return [];
     const advice = [];
+
+    // ─── PROTOCOLO ESPECIAL 2026-04-12 (Post-Binge Recovery) ───
+    if(fecha === '2026-04-12' && user && user.email && /fmontero|arimon/i.test(user.email||'')) {
+      advice.push({
+        nivel:'warn',
+        titulo:'Protocolo Post-Binge activo HOY',
+        texto:'Contexto: salida de cetosis 10/04 + dispepsia epigastrica 2h post-ingesta. Objetivo 36-48h: reentrada cetosis + proteccion gastrica + preservar masa magra. HOY: PESAS (NO CrossFit). Split PULL + CADENA POSTERIOR. Ayuno 14-16h, romper post-entreno. Core SOLO antiextension/antirrotacion (bird dog, dead bug, pallof). Cardio zona 2 final 15 min. Ver documento Protocolo_Pesas_Post_Binge_2026-04-12.docx.',
+        ref:'Protocolo personal 11/04/2026'
+      });
+      advice.push({
+        nivel:'info',
+        titulo:'Secuencia entreno hoy (resumen)',
+        texto:'Warmup 10 min. A) Jalon supinado 4x8-10 RIR2 + Remo Pendlay 3x6-8 RIR2. B) Pullover 3x12-15 + Face pull 3x15. C) RDL 4x8-10 + Hip thrust 3x10-12. D) Curl martillo+Ext polea superserie 3x12/12. E) Bird dog+Dead bug+Pallof 3 rondas. Cardio Z2 15 min. Cero compresion abdominal, cero impacto.',
+        ref:'Helms RP, Israetel MEV'
+      });
+      advice.push({
+        nivel:'info',
+        titulo:'Nutricion y suplementacion hoy',
+        texto:'Romper ayuno post-entreno: 4 huevos + aguacate. Mediodia: salmon/atun + ensalada verde. Cena: pollo + brocoli + caldo de huesos primero. Sin CHO refinados, sin frituras, sin lacteos altos en lactosa. Supl: L-Arg 5g pre, EAA 10g intra, creatina 5g post, whey 25g opcional, ashwa 600mg tarde, Mg 400mg + melatonina 0.3mg noche.',
+        ref:'Phinney-Volek, Salehi 2019'
+      });
+      advice.push({
+        nivel:'bad',
+        titulo:'Banderas rojas - suspender si aparecen',
+        texto:'Dolor epigastrico pre/intra/post entreno. Nauseas, reflujo, plenitud extrema. Mareo, vision borrosa, hipoglucemia. Taquicardia reposo >90 lpm sostenida. Ante cualquiera: detener sesion, electrolitos, descanso y reevaluar 24h. Retomar CrossFit SOLO con cetonas confirmadas >1.0 mmol/L + cero sintomas gastricos 48h.',
+        ref:'ACSM, criterio clinico'
+      });
+    }
+
     const suenoHoy = parseFloat(meta.sueno||'0');
     const calHoy = parseFloat(meta.suenoCalidad||'0');
     const ePost = parseInt(meta.ePost||'0');
