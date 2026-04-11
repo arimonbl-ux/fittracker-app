@@ -389,21 +389,22 @@ const PROG = {
       {nombre:'Curl martillo',musculo:'B\u00EDceps braquial',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Agarre neutro pulgar arriba. Sin supinacion.'},
       {nombre:'Extension codo mecate',musculo:'Tr\u00EDceps',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Polea alta, palmas enfrentadas. Codos fijos. Separa los extremos al extender.'}]}
   ]},
-  6:{nombre:'Brazos + Pendientes',tipo:'media',carbos:'20-30 g',cardio:'Caminata 20 min zona 2',cf_opcional:true,bloques:[
+  6:{nombre:'Brazos + Compensacion',tipo:'media',carbos:'20-30 g',cardio:'Caminata 20 min zona 2',bloques:[
     {nombre:'Calentamiento General',btipo:'warmup',esfuerzo:'facil',ejercicios:[
       {nombre:'Cardio zona 1-2',musculo:'Cardiovascular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'Caminadora o bicicleta suave. FC 100-120 bpm.'},
       {nombre:'Movilidad codo + mu\u00f1eca',musculo:'Articular',sets:1,reps:'5 min',rir:'-',cadencia:'-',tecnica:'MU\u00d1ECA: Circulos 15/direcci\u00f3n + extensi\u00f3n/flexi\u00f3n pasiva 15s cada una. CODO: Pronaci\u00f3n/supinaci\u00f3n sin peso 15 reps. HOMBRO: Circulos ligeros + band pull-aparts 15 reps. BICEPS: Estiramiento pasivo brazo extendido palma arriba contra pared 20s/lado. TRICEPS: Brazo arriba, codo doblado, empujar con otra mano 20s/lado.'}]},
-    {nombre:'Bloque A',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
+    {nombre:'Bloque A \u2014 Fuerza',btipo:'fuerza',esfuerzo:'fuerte',ejercicios:[
       {nombre:'Curl barra EZ',musculo:'B\u00EDceps',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre supino en EZ. Codos fijos. Contrae al maximo arriba.'},
       {nombre:'Press cerrado barra',musculo:'Tr\u00EDceps + Pecho',sets:4,reps:'8-10',rir:'2',cadencia:'3-1-2',tecnica:'Agarre ancho de hombros. Baja al pecho bajo. Codos pegados al cuerpo.'}]},
-    {nombre:'Bloque B',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+    {nombre:'Bloque B \u2014 Aislamiento',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
       {nombre:'Curl concentrado',musculo:'B\u00EDceps pico',sets:3,reps:'12',rir:'2',cadencia:'3-0-2',tecnica:'Sentado. Codo apoyado en muslo. Supinacion completa. Contrae al maximo.'},
       {nombre:'Patada triceps mancuerna',musculo:'Tr\u00EDceps largo',sets:3,reps:'12',rir:'2',cadencia:'2-1-2',tecnica:'Torso paralelo. Extiende completamente atras. Aprieta 1 seg.'}]},
-    {nombre:'Bloque C \u2014 Pendientes',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
-      {nombre:'Ejercicio pendiente 1',musculo:'Segun faltante de la semana',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Revisa que grupo muscular quedo sin completar esta semana. Priorizar el mas rezagado.'},
-      {nombre:'Ejercicio pendiente 2',musculo:'Segun faltante de la semana',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Segundo ejercicio de compensacion. Si la semana fue completa, omitir y hacer CrossFit.'}]},
-    {nombre:'CrossFit (opcional)',btipo:'metcon',esfuerzo:'fuerte',ejercicios:[
-      {nombre:'CrossFit WOD',musculo:'Cuerpo completo',sets:1,reps:'WOD completo',rir:'-',cadencia:'-',tecnica:'Si semana quedo completa y cargas bien hechas, CrossFit completo con WOD. Si no, pesas con pendientes. Registrar en notas.',precaucion:'Escuchar cuerpo. Si fatiga acumulada >7, solo movilidad.'}]}
+    {nombre:'Bloque C \u2014 Compensacion semanal',btipo:'aislamiento',esfuerzo:'medio',ejercicios:[
+      {nombre:'Curl predicador con barra Z',musculo:'B\u00EDceps braquial',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Banco predicador. Brazos totalmente apoyados. No extender por completo abajo para mantener tension. Si el biceps ya esta bombardeado, sustituir por curl martillo con mancuerna unilateral 3x10/lado.'},
+      {nombre:'Extension tr\u00EDceps polea con cuerda',musculo:'Tr\u00EDceps cabeza lateral y larga',sets:3,reps:'10-12',rir:'2',cadencia:'3-1-2',tecnica:'Polea alta con cuerda. Codos pegados al torso, solo mueve antebrazo. Al final del recorrido separa los extremos de la cuerda y aprieta 1 seg. Si triceps saturado, sustituir por face pull 3x15 (posterior hombro es el mas comun rezagado).'}]},
+    {nombre:'Bloque D \u2014 Core antiextension',btipo:'core',esfuerzo:'medio',ejercicios:[
+      {nombre:'Bird dog',musculo:'Core / estabilizadores',sets:3,reps:'10 por lado',rir:'-',cadencia:'2-1-1',tecnica:'Cuadrupedia. Extender brazo opuesto a pierna. Mantener cadera neutra, no rotar. 1 seg arriba.'},
+      {nombre:'Pallof press con banda',musculo:'Antirrotacion core',sets:3,reps:'12 por lado',rir:'-',cadencia:'2-2-2',tecnica:'De lado a la banda, extender brazos al frente resistiendo la rotacion. 2 seg en extension. Sin impulso.'}]}
   ]},
   0:{nombre:'Pump / Descanso',tipo:'baja',carbos:'15-20 g',cardio:'Caminata suave 20-30 min opcional',bloques:[
     {nombre:'Activacion ligera (opcional)',btipo:'pump',esfuerzo:'facil',ejercicios:[
@@ -597,7 +598,7 @@ const PLANES = {
       {id:'cena',hora:'~6:00 PM',label:'Cena',items:['200g pechuga/tilapia + vegetales ligeros'],macros:'P:45g C:3g G:6g',kcal:246},
       {id:'ayuno',hora:'~6:30-7:00 PM',label:'Ayuno temprano',items:['Cerrar ventana para ayuno extendido dominical'],macros:'',kcal:0}
     ],
-    resumen:{prot:170,carbs:12,grasa:37,kcal:1061,nota:'Brazos + pendientes. Si CF completo, a\u00F1adir snack pre-WOD'}
+    resumen:{prot:170,carbs:12,grasa:37,kcal:1061,nota:'Brazos + compensacion semanal + core antiextension'}
   },
   descanso: {
     label:'DESCANSO (Dom)',color:'#8e8e93',
