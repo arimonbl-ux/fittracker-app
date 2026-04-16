@@ -3863,6 +3863,8 @@ function TabNutricion({user, cfg}) {
   const [planData, setPlanData] = useState({});
   const [saveStatus, setSaveStatus] = useState(null);
   const [saveMessage, setSaveMessage] = useState('');
+  const [openRec, setOpenRec] = useState(null);
+  const [filtroTag, setFiltroTag] = useState('todas');
   const saveDebounceRef = useRef(null);
   const saveTimeoutRef = useRef(null);
   const planSaveRef = useRef(null);
@@ -4765,8 +4767,7 @@ function TabNutricion({user, cfg}) {
           {id:'ensalada_atun_palta',nombre:'Ensalada Atun + Palta Keto',tags:['almuerzo','ambos','media','rompe-ayuno'],tiempo:'10 min',porciones:1,rompeAyuno:true,nota:'Atun omega-3, palta fat, minimal carbs. Perfecto rompe-ayuno o almuerzo ligero.',ingredientes:[{nombre:'Atun en agua (drenado)',cant:'100g',macros:{p:26,c:0,g:1}},{nombre:'Palta',cant:'100g',macros:{p:2,c:1.5,g:15}},{nombre:'Lechuga romana',cant:'80g',macros:{p:1.2,c:1.5,g:0.2}},{nombre:'Tomate cherry',cant:'50g',macros:{p:0.3,c:1.5,g:0.1}},{nombre:'Aceite oliva EV',cant:'15ml',macros:{p:0,c:0,g:15}},{nombre:'Limon + sal',cant:'al gusto',macros:{p:0,c:0,g:0}}],pasos:['Desmenuzar atun, agregar limon.','Palta en cubos.','Base: lechuga + tomate + cebolla.','Top con atun-palta.','Drizzle aceite, sal, pimienta.'],macroPorcion:{p:30,c:6,g:31,k:399}}
         ];
 
-        const [openRec, setOpenRec] = React.useState(null);
-        const [filtroTag, setFiltroTag] = React.useState('todas');
+        // openRec and filtroTag hooks moved to top-level TabNutricion
 
         const allTags = ['todas',...[...new Set(RECETAS.flatMap(r=>r.tags))]];
         const filtered = filtroTag==='todas' ? RECETAS : RECETAS.filter(r=>r.tags.includes(filtroTag));
