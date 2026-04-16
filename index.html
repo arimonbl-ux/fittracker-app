@@ -64,17 +64,21 @@ const getEntreno = (uid, fecha, dia) =>
   sb.from('sesiones_entreno').select('*').eq('user_id',uid).eq('fecha',fecha).eq('dia_semana',dia).single();
 const getHistorialEntreno = (uid) =>
   sb.from('sesiones_entreno').select('fecha,dia_semana,notas').eq('user_id',uid).order('fecha',{ascending:false}).limit(30);
-// Obtener la sesi\u00f3n anterior del MISMO d\u00eda de entrenamiento (para peso sugerido)
-const getPrevSession = async (uid, dia, fechaActual) => {
+// Obtener las \u00FAltimas N sesiones del MISMO d\u00EDa de entrenamiento (para historial de pesos)
+const getPrevSessions = async (uid, dia, fechaActual, limit=5) => {
   const {data} = await sb.from('sesiones_entreno')
     .select('fecha,ejercicios,notas')
     .eq('user_id', uid)
     .eq('dia_semana', dia)
     .lt('fecha', fechaActual)
     .order('fecha', {ascending:false})
-    .limit(1)
-    .single();
-  return data;
+    .limit(limit);
+  return data || [];
+};
+// Compat wrapper: devuelve solo la m\u00E1s reciente (usado en carga inicial)
+const getPrevSession = async (uid, dia, fechaActual) => {
+  const arr = await getPrevSessions(uid, dia, fechaActual, 1);
+  return arr.length > 0 ? arr[0] : null;
 };
 // Streak: calcula racha de semanas consecutivas entrenando
 const getStreak = async (uid) => {
@@ -197,14 +201,160 @@ const reactiveAdvice = (ej, prevBest, currentSet, periodo) => {
   }
   return advices.length > 0 ? advices[0] : null;
 };
-// Peso sugerido seg\u00fan periodo actual (NSCA periodization model)
+// ─── MOTOR DE PESO RECOMENDADO (basado en historial multi-sesi\u00F3n) ────────────
+// Construye historial de pesos para un ejercicio (key) a partir de N sesiones previas
+// Retorna [{fecha, peso, reps, rm, rir, rpe}, ...] ordenado cronol\u00F3gicamente (antiguo\u2192reciente)
+const buildExerciseHistory = (prevSessions, key) => {
+  if(!prevSessions || prevSessions.length === 0) return [];
+  const history = [];
+  prevSessions.forEach(session => {
+    const ejercicios = session.ejercicios || {};
+    const sets = ejercicios[key];
+    if(!sets) return;
+    // Buscar el mejor set de esa sesi\u00F3n (mayor 1RM)
+    let best = null;
+    Object.values(sets).forEach(s => {
+      const w = parseFloat(s.peso), r = parseInt(s.reps);
+      if(!w || !r || r < 1) return;
+      const rm = calc1RM(w, r);
+      if(!best || rm > best.rm) {
+        best = {fecha: session.fecha, peso: w, reps: r, rm, rir: s.rir||'', rpe: s.rpe||''};
+      }
+    });
+    // Tambi\u00E9n extraer TODOS los sets para promedios por set
+    const allSets = [];
+    Object.entries(sets).forEach(([si, s]) => {
+      const w = parseFloat(s.peso), r = parseInt(s.reps);
+      if(w && r) allSets.push({si: parseInt(si), peso: w, reps: r, rm: calc1RM(w,r), rir: s.rir, rpe: s.rpe});
+    });
+    if(best) {
+      best.allSets = allSets;
+      history.push(best);
+    }
+  });
+  // Ordenar cronol\u00F3gicamente (m\u00E1s antiguo primero)
+  history.sort((a,b) => a.fecha.localeCompare(b.fecha));
+  return history;
+};
+
+// Calcula tendencia de 1RM: +1 = progresando, 0 = plateau, -1 = regresando
+// Usa regresi\u00F3n lineal simple sobre los 1RM hist\u00F3ricos
+const calcTrend = (history) => {
+  if(history.length < 2) return {slope: 0, trend: 'nuevo', pct: 0};
+  const n = history.length;
+  const xs = history.map((_,i) => i);
+  const ys = history.map(h => h.rm);
+  const xMean = xs.reduce((a,b)=>a+b,0)/n;
+  const yMean = ys.reduce((a,b)=>a+b,0)/n;
+  let num = 0, den = 0;
+  for(let i=0; i<n; i++) {
+    num += (xs[i]-xMean)*(ys[i]-yMean);
+    den += (xs[i]-xMean)*(xs[i]-xMean);
+  }
+  const slope = den !== 0 ? num/den : 0;
+  const pctChange = yMean > 0 ? (slope / yMean) * 100 : 0;
+  let trend = 'plateau';
+  if(pctChange > 1.5) trend = 'progresando';
+  else if(pctChange < -1.5) trend = 'regresando';
+  return {slope, trend, pct: Math.round(pctChange*10)/10};
+};
+
+// Peso sugerido inteligente basado en historial + periodizaci\u00F3n + RPE/RIR previo
+// (NSCA periodization + Helms 2018 + Zourdos autoregulation + Israetel MRV)
 const suggestWeight = (prevPeso, prevReps, periodo) => {
   const w = parseFloat(prevPeso);
   if(!w) return null;
-  const mods = {1:1.0, 2:1.05, 3:1.0, 4:0.85}; // BASE=mismo, CARGA=+5%, INTENS=mismo(m\u00e1s reps), DESCARGA=-15%
+  const mods = {1:1.0, 2:1.05, 3:1.0, 4:0.85};
   const suggested = Math.round(w * (mods[periodo]||1) * 10) / 10;
   const labels = {1:'= anterior (BASE)', 2:'+5% progresivo (CARGA)', 3:'= mantener (INTENS)', 4:'-15% recuperar (DESCARGA)'};
   return {peso:suggested, label:labels[periodo]||''};
+};
+
+// Recomendaci\u00F3n avanzada por ejercicio con historial completo
+// Retorna {peso, label, trend, history, perSetSuggestions, confidence}
+const smartWeightRec = (history, periodo, ej) => {
+  if(!history || history.length === 0) return null;
+  const latest = history[history.length - 1];
+  const trendData = calcTrend(history);
+  const lastRpe = parseInt(latest.rpe) || 0;
+  const lastRir = parseInt(latest.rir);
+  const lastRirVal = isNaN(lastRir) ? null : lastRir;
+  const targetReps = String(ej.reps||'').match(/(\d+)/);
+  const tReps = targetReps ? parseInt(targetReps[1]) : 8;
+  // Grupo muscular para determinar incremento (upper vs lower)
+  const musc = (ej.musculo||'').toLowerCase();
+  const isLower = musc.includes('cuad') || musc.includes('isquio') || musc.includes('pierna') || musc.includes('gl\u00FAt') || musc.includes('cadena') || musc.includes('gemel');
+  const microStep = isLower ? 2.5 : 1.25; // kg incremento m\u00EDnimo
+  // ── Fase 1: Peso base seg\u00FAn autoregulaci\u00F3n (Helms/Zourdos) ──
+  let basePeso = latest.peso;
+  let reason = '';
+  // Si RPE < 7.5 Y cumpli\u00F3 reps target \u2192 puede subir
+  if((lastRpe > 0 && lastRpe < 7.5) || (lastRirVal !== null && lastRirVal >= 3)) {
+    if(latest.reps >= tReps) {
+      basePeso = latest.peso + microStep;
+      reason = 'RPE bajo + reps OK \u2192 +' + microStep + 'kg';
+    }
+  }
+  // Si RPE 7.5-8.5 Y reps en target \u2192 mantener (zona \u00F3ptima)
+  else if((lastRpe >= 7.5 && lastRpe <= 8.5) || (lastRirVal !== null && lastRirVal >= 1 && lastRirVal <= 2)) {
+    if(latest.reps >= tReps) {
+      reason = 'RPE \u00F3ptimo, mantener peso';
+    } else {
+      reason = 'Reps por debajo de target, mantener';
+    }
+  }
+  // Si RPE > 8.5 O RIR 0 O no lleg\u00F3 a target reps \u2192 bajar
+  else if((lastRpe > 8.5) || (lastRirVal !== null && lastRirVal <= 0)) {
+    basePeso = latest.peso - microStep;
+    reason = 'RPE alto/fallo \u2192 -' + microStep + 'kg';
+  }
+  // Si hay tendencia descendente sostenida \u2192 reducir un poco m\u00E1s
+  if(trendData.trend === 'regresando' && history.length >= 3) {
+    basePeso = Math.min(basePeso, latest.peso * 0.95);
+    reason += ' | tendencia bajando';
+  }
+  // ── Fase 2: Modificador de periodizaci\u00F3n ──
+  const periMods = {1:1.0, 2:1.0, 3:1.0, 4:0.85};
+  // En CARGA la progresi\u00F3n ya se aplic\u00F3 arriba por autoregulaci\u00F3n
+  // En DESCARGA siempre reducir al 85%
+  const periLabel = {1:'BASE', 2:'CARGA', 3:'INTENS', 4:'DESCARGA'};
+  if(periodo === 4) {
+    basePeso = latest.peso * 0.85;
+    reason = 'DESCARGA -15%';
+  }
+  const finalPeso = Math.round(basePeso * 4) / 4; // Redondear a 0.25kg
+  // ── Fase 3: Sugerencia por set individual ──
+  const perSetSugg = [];
+  if(latest.allSets && latest.allSets.length > 0) {
+    // Ordenar por set index
+    const sorted = [...latest.allSets].sort((a,b) => a.si - b.si);
+    sorted.forEach((s, idx) => {
+      let setPeso = s.peso;
+      const sRpe = parseInt(s.rpe) || 0;
+      const sRir = parseInt(s.rir);
+      const sRirVal = isNaN(sRir) ? null : sRir;
+      if((sRpe > 0 && sRpe < 7.5) || (sRirVal !== null && sRirVal >= 3)) {
+        setPeso = s.peso + microStep;
+      } else if(sRpe > 8.5 || (sRirVal !== null && sRirVal <= 0)) {
+        setPeso = s.peso - microStep;
+      }
+      if(periodo === 4) setPeso = s.peso * 0.85;
+      perSetSugg.push({si: idx, peso: Math.round(setPeso * 4) / 4, prevPeso: s.peso, prevReps: s.reps});
+    });
+  }
+  // Confianza: m\u00E1s sesiones = m\u00E1s confiable
+  const confidence = Math.min(history.length / 5, 1); // 0-1
+  const confLabel = confidence >= 0.8 ? 'Alta' : confidence >= 0.4 ? 'Media' : 'Baja';
+  return {
+    peso: finalPeso,
+    label: reason + ' (' + (periLabel[periodo]||'') + ')',
+    trend: trendData,
+    history,
+    perSetSugg,
+    confidence,
+    confLabel,
+    latest
+  };
 };
 
 // Mapeo UI → BD para nutricion
@@ -2348,6 +2498,7 @@ function TabEntreno({user, cfg}) {
   const [loading, setLoading] = useState(true);
   const [prevReg, setPrevReg] = useState(null); // Registro sesi\u00f3n anterior (mismo d\u00eda)
   const [prevFecha, setPrevFecha] = useState('');
+  const [prevSessions, setPrevSessions] = useState([]); // \u00DAltimas 5 sesiones para historial pesos
   const [streak, setStreak] = useState({weeks:0,totalSessions:0,thisWeek:0});
   const [planData, setPlanData] = useState({}); // sincronizado con TabNutricion planData
   const planSaveRef = useRef(null);
@@ -2425,8 +2576,8 @@ function TabEntreno({user, cfg}) {
     }).catch(()=>setPlanData({}));
     Promise.all([
       getEntreno(user.id, fecha, dia),
-      getPrevSession(user.id, dia, fecha)
-    ]).then(([current, prev]) => {
+      getPrevSessions(user.id, dia, fecha, 5)
+    ]).then(([current, allPrev]) => {
       if(current.data) {
         setReg(current.data.ejercicios || {});
         try { const n = JSON.parse(current.data.notas||'{}'); setMeta(m=>({...m,...n})); } catch {}
@@ -2434,7 +2585,10 @@ function TabEntreno({user, cfg}) {
         setReg({});
         setMeta({inicio:'',fin:'',sueno:'',suenoCalidad:'',despertares:'',horaAcostarse:'',ayuno:'',ultimaIngesta:'',ePre:'',fPre:'',hPre:'',aPre:'',ePost:'',fPost:'',hPost:'',aPost:'',pump:'',eMid:'',eEnd:'',obs:'',coach:''});
       }
-      // Sesi\u00f3n anterior para peso sugerido
+      // Guardar todas las sesiones previas para historial de pesos
+      setPrevSessions(allPrev || []);
+      // Sesi\u00f3n m\u00e1s reciente para compatibilidad (prevReg)
+      const prev = allPrev && allPrev.length > 0 ? allPrev[0] : null;
       if(prev) {
         setPrevReg(prev.ejercicios || null);
         setPrevFecha(prev.fecha || '');
@@ -3043,7 +3197,7 @@ function TabEntreno({user, cfg}) {
                       )
                     )}
                     {(() => {
-                      // Peso anterior y sugerido
+                      // ── SISTEMA DE PESOS RECOMENDADOS (multi-sesi\u00F3n) ──
                       const prevSets = prevReg && prevReg[key] ? prevReg[key] : null;
                       const prevBest = prevSets ? Object.values(prevSets).reduce((best,s) => {
                         const w=parseFloat(s.peso), r=parseInt(s.reps);
@@ -3051,35 +3205,84 @@ function TabEntreno({user, cfg}) {
                         return best;
                       }, {}) : null;
                       const periodo = getSemPeriodo(fecha);
-                      const sug = prevBest && prevBest.peso ? suggestWeight(prevBest.peso, prevBest.reps, periodo) : null;
+                      // Historial multi-sesi\u00F3n para este ejercicio
+                      const ejHistory = buildExerciseHistory(prevSessions, key);
+                      const smartRec = smartWeightRec(ejHistory, periodo, ej);
+                      // Fallback al sistema simple si no hay historial
+                      const sug = smartRec ? {peso: smartRec.peso, label: smartRec.label} : (prevBest && prevBest.peso ? suggestWeight(prevBest.peso, prevBest.reps, periodo) : null);
+                      // Iconos de tendencia
+                      const trendIcon = smartRec ? (smartRec.trend.trend === 'progresando' ? '\u{2B06}\uFE0F' : smartRec.trend.trend === 'regresando' ? '\u{2B07}\uFE0F' : smartRec.trend.trend === 'plateau' ? '\u{27A1}\uFE0F' : '\u{1F195}') : '';
+                      const trendColor = smartRec ? (smartRec.trend.trend === 'progresando' ? G.ok : smartRec.trend.trend === 'regresando' ? G.bad : G.warn) : G.mu;
                       return React.createElement(React.Fragment, null,
-                        prevBest && prevBest.peso && React.createElement('div', {style:{background:G.acc+'11',border:'1px solid '+G.acc+'33',borderRadius:6,padding:'5px 8px',marginBottom:6,fontSize:15,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
+                        // ── Panel de historial de pesos ──
+                        ejHistory.length > 0 && React.createElement('div', {style:{background:'linear-gradient(135deg, '+G.acc+'08, '+G.coa+'06)',border:'1px solid '+G.acc+'22',borderRadius:10,padding:'8px 10px',marginBottom:8}},
+                          // Cabecera: tendencia + confianza
+                          React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
+                            React.createElement('span', {style:{fontSize:12,fontWeight:700,color:G.acc,fontFamily:'monospace',letterSpacing:1}}, '\u{1F4CA} HISTORIAL DE PESOS'),
+                            smartRec && React.createElement('span', {style:{fontSize:11,padding:'2px 8px',borderRadius:10,background:trendColor+'22',color:trendColor,fontWeight:600}}, trendIcon+' '+smartRec.trend.trend.toUpperCase()+(smartRec.trend.pct!==0?' ('+smartRec.trend.pct+'%)':''))
+                          ),
+                          // Mini barra de historial: muestra las \u00FAltimas sesiones como chips
+                          React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}},
+                            ejHistory.map((h,hi) => {
+                              const isLatest = hi === ejHistory.length - 1;
+                              return React.createElement('div', {key:hi, style:{background:isLatest?G.acc+'22':G.sur,border:'1px solid '+(isLatest?G.acc+'55':G.bor),borderRadius:8,padding:'4px 8px',fontSize:11,fontFamily:'monospace',lineHeight:1.3,minWidth:70,textAlign:'center'}},
+                                React.createElement('div', {style:{color:G.mu,fontSize:10}}, h.fecha.slice(5)),
+                                React.createElement('div', {style:{fontWeight:700,color:isLatest?G.acc:G.dim}}, h.peso+'kg \u00D7'+h.reps),
+                                React.createElement('div', {style:{color:G.mu,fontSize:10}}, '1RM\u2248'+h.rm+'kg')
+                              );
+                            })
+                          ),
+                          // Resumen: mejor anterior + confianza
+                          prevBest && prevBest.peso && React.createElement('div', {style:{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',fontSize:12,color:G.mu}},
+                            React.createElement('span', null, '\u{1F3C6} Mejor: '+prevBest.peso+'kg \u00D7'+prevBest.reps+(prevBest.rir?' RIR'+prevBest.rir:'')+(prevBest.rpe?' RPE'+prevBest.rpe:'')+' | 1RM\u2248'+prevBest.rm+'kg'),
+                            smartRec && React.createElement('span', {style:{marginLeft:'auto',fontSize:10,color:smartRec.confidence>=0.8?G.ok:smartRec.confidence>=0.4?G.warn:G.mu}}, '\u{1F4CA} Conf: '+smartRec.confLabel+' ('+ejHistory.length+'/5 sesiones)')
+                          )
+                        ),
+                        // ── Peso anterior simple (si solo hay 1 sesi\u00F3n o no hay historial) ──
+                        !ejHistory.length && prevBest && prevBest.peso && React.createElement('div', {style:{background:G.acc+'11',border:'1px solid '+G.acc+'33',borderRadius:6,padding:'5px 8px',marginBottom:6,fontSize:15,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
                           React.createElement('span', {style:{color:G.acc,fontFamily:'monospace',fontWeight:700}}, '\u{1F4CA} Anterior: '+prevBest.peso+'kg \u00d7'+prevBest.reps+(prevBest.rir?' RIR'+prevBest.rir:'')+(prevBest.rpe?' RPE'+prevBest.rpe:'')),
                           React.createElement('span', {style:{color:G.mu,fontSize:15}}, '1RM\u2248'+prevBest.rm+'kg'),
                           prevFecha && React.createElement('span', {style:{color:G.mu,fontSize:15,marginLeft:'auto'}}, prevFecha)
                         ),
-                        sug && React.createElement('div', {style:{background:G.ok+'11',border:'1px solid '+G.ok+'33',borderRadius:6,padding:'4px 8px',marginBottom:6,fontSize:15,color:G.ok,fontFamily:'monospace'}},
-                          '\u{1F3AF} Sugerido hoy: '+sug.peso+'kg '+sug.label
+                        // ── Peso recomendado hoy (inteligente) ──
+                        sug && React.createElement('div', {style:{background:G.ok+'11',border:'1px solid '+G.ok+'33',borderRadius:8,padding:'6px 10px',marginBottom:8,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
+                          React.createElement('span', {style:{fontSize:20,fontWeight:800,color:G.ok,fontFamily:'monospace'}}, '\u{1F3AF} '+sug.peso+'kg'),
+                          React.createElement('span', {style:{fontSize:12,color:G.ok,flex:1}}, sug.label),
+                          smartRec && smartRec.perSetSugg.length > 1 && React.createElement('span', {style:{fontSize:10,color:G.mu,fontStyle:'italic'}}, 'Ver peso por set \u{2193}')
                         ),
+                        // ── Headers de columnas ──
                         React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:4}},
                           ['#','PESO kg/lbs','REPS','CAD','RIR','RPE','NOTAS'].map(h =>
                             React.createElement('span', {key:h,style:{fontSize:15,color:G.mu,textAlign:'center',fontFamily:'monospace'}}, h)
                           )
                         ),
+                        // ── Sets con peso sugerido por set ──
                         Array.from({length:ej.sets}).map((_,si) => {
                           const s = reg[key]?.[si] || {};
                           const prevS = prevSets && prevSets[si] ? prevSets[si] : null;
-                          const phPeso = prevS && prevS.peso ? prevS.peso : (sug ? String(sug.peso) : '\u2014');
+                          // Placeholder inteligente: primero por-set del motor, luego sesi\u00F3n anterior, luego global
+                          const perSetPeso = smartRec && smartRec.perSetSugg[si] ? smartRec.perSetSugg[si].peso : null;
+                          const phPeso = perSetPeso ? String(perSetPeso) : (prevS && prevS.peso ? prevS.peso : (sug ? String(sug.peso) : '\u2014'));
+                          // Indicador de cambio vs sesi\u00F3n anterior para este set
+                          const prevSetPeso = prevS ? parseFloat(prevS.peso) : null;
+                          const sugSetPeso = perSetPeso || (sug ? sug.peso : null);
+                          const setDelta = (prevSetPeso && sugSetPeso) ? sugSetPeso - prevSetPeso : null;
                           const isLastSet = si === ej.sets - 1;
                           const isLastEjInBi = esBi && (bloque.ejercicios.indexOf(ej) === bloque.ejercicios.length - 1);
                           const showTimerAfter = !isLastSet || (isLastSet && isLastEjInBi);
                           // IA REACTIVA: analizar este set
                           const advice = reactiveAdvice(ej, prevBest, s, getSemPeriodo(fecha));
                           return React.createElement(React.Fragment, {key:si},
+                            // Indicador de peso sugerido por set (si hay data per-set)
+                            smartRec && smartRec.perSetSugg[si] && !s.peso && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginBottom:2,paddingLeft:25}},
+                              React.createElement('span', {style:{fontSize:10,color:trendColor,fontFamily:'monospace',fontWeight:600}}, 'Set '+(si+1)+': '+smartRec.perSetSugg[si].peso+'kg'),
+                              prevSetPeso && setDelta !== 0 && React.createElement('span', {style:{fontSize:10,color:setDelta>0?G.ok:setDelta<0?G.bad:G.mu}}, (setDelta>0?'+':'')+setDelta.toFixed(1)+'kg vs anterior'),
+                              smartRec.perSetSugg[si].prevPeso && React.createElement('span', {style:{fontSize:10,color:G.mu}}, '(fue '+smartRec.perSetSugg[si].prevPeso+'kg \u00D7'+smartRec.perSetSugg[si].prevReps+')')
+                            ),
                             React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
                               React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
                               React.createElement('div',{style:{position:'relative'}},
-                                React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
+                                React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15,borderColor:perSetPeso&&!s.peso?trendColor+'66':'',background:perSetPeso&&!s.peso?trendColor+'08':''}}),
                                 s.peso && parseFloat(s.peso)>0 && React.createElement('div',{style:{fontSize:10,color:G.mu,textAlign:'center',marginTop:-2,lineHeight:1}}, Math.round(parseFloat(s.peso)*2.205)+'lbs')
                               ),
                               React.createElement(Inp, {value:s.reps||'',onChange:e=>updSet(key,si,'reps',e.target.value),placeholder:ej.reps,style:{textAlign:'center',padding:'5px 2px',fontSize:15}}),
