@@ -494,7 +494,41 @@ const getPeriodDayInfo = (fecha, userId) => {
   const key = userId === MELISSA_ID ? 'melissa' : 'ariel';
   const plan = PERIODIZACION_15D[key];
   if(!plan) return null;
-  return plan.dias.find(d => d.fecha === fecha) || null;
+  const hit = plan.dias.find(d => d.fecha === fecha);
+  if(hit) return hit;
+  // Fallback v24 (19-may-2026): el plan 15D explicito vencio (15-29 abr). Calculamos
+  // fase del mesociclo ondulante 4 semanas (BASE/CARGA/INTENS/DESCARGA) usando
+  // getSemPeriodo + PROG vigente. Mantiene el bloque "Plan 15D" del Coach del Dia
+  // con valor (fase + foco + RIR) hasta que se cargue el siguiente bloque 15D
+  // personalizado del coach (HERCULES).
+  try {
+    const sem = getSemPeriodo(fecha);
+    const per = PERIODO[sem] || PERIODO[1];
+    const d = new Date(fecha+'T12:00:00');
+    let dia = d.getDay();
+    dia = dia === 0 ? 7 : dia; // Dom -> 7
+    const prog = (typeof PROG !== 'undefined' && PROG[dia]) ? PROG[dia] : null;
+    const foco = prog ? prog.nombre : 'Sin programa';
+    const cardio = (prog && prog.cardio) ? prog.cardio : 'Caminata Z2 20 min';
+    const tipo = (prog && prog.tipo) || 'media';
+    const rirBase = 2;
+    const rirTarget = Math.max(0, rirBase + (per.rirMod||0));
+    const volMap = {1:'moderado', 2:'alto', 3:'medio-alto', 4:'bajo'};
+    const intMap = {1:'RPE 7-7.5', 2:'RPE 7-8', 3:'RPE 8-9', 4:'RPE 6-6.5'};
+    return {
+      _expirado: true,
+      _planUltimoDia: plan.dias.length > 0 ? plan.dias[plan.dias.length-1].fecha : null,
+      semPeriodo: per.nombre,
+      foco: foco,
+      volumen: volMap[sem] || 'moderado',
+      intensidad: intMap[sem] || 'RPE 7-8',
+      rirTarget: rirTarget,
+      nutricion: tipo === 'alta' ? 'Carbs 40-60g periworkout, prot 1.8-2.2 g/kg' : (tipo === 'descanso' ? 'Mantenimiento keto, prot 1.6 g/kg' : 'Keto base + carbs estrategicos post-entreno, prot 1.8 g/kg'),
+      cardio: cardio,
+      sueno: sem === 4 ? '8-9h (descarga)' : '7.5h',
+      nota: 'Plan 15D explicito vencio (ultimo dia '+(plan.dias.length>0?plan.dias[plan.dias.length-1].fecha:'-')+'). Recomendacion calculada por fase mesociclo ondulante 4 sem (Israetel/Helms/Zourdos). Para plan 15D personalizado nuevo: solicitar a HERCULES.'
+    };
+  } catch(e) { console.error('getPeriodDayInfo fallback error', e); return null; }
 };
 
 // Calcular semana del periodo basado en fecha (semanas desde epoch mod 4 + 1)
@@ -2334,18 +2368,19 @@ function CoachDelDia({user, cfg, fecha, dia, meta, reg}) {
       });
     }
 
-    // ─── PERIODIZACION 15D DINAMICA ───
+    // ─── PERIODIZACION 15D DINAMICA (v24: + fallback si plan explicito vencio) ───
     const p15d = getPeriodDayInfo(fecha, user.id);
     if(p15d) {
+      const expirado = p15d._expirado === true;
       advice.push({
-        nivel:'info',
-        titulo:'\u{1F4C5} Plan 15D: ' + (p15d.semPeriodo||'') + ' \u2014 ' + (p15d.foco||''),
+        nivel: expirado ? 'warn' : 'info',
+        titulo: (expirado ? '\u26A0\uFE0F Plan 15D vencido — fase calculada: ' : '\u{1F4C5} Plan 15D: ') + (p15d.semPeriodo||'') + ' \u2014 ' + (p15d.foco||''),
         texto:'Volumen: '+(p15d.volumen||'-')+' | Intensidad: '+(p15d.intensidad||'-')+' | RIR target: '+(p15d.rirTarget!=null?p15d.rirTarget:'-')+'. Nutricion: '+(p15d.nutricion||'-')+'. Cardio: '+(p15d.cardio||'No')+'. Sueno meta: '+(p15d.sueno||'-')+'.',
         ref:'Periodizacion ondulante (Israetel, Helms, Zourdos)'
       });
       if(p15d.nota) {
         advice.push({
-          nivel:'info',
+          nivel: expirado ? 'warn' : 'info',
           titulo:'\u{1F9E0} Detalle del dia',
           texto:p15d.nota,
           ref:''
