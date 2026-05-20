@@ -9,20 +9,25 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
+/* v25 dark-mode-first · gym-readable · tipo Apple Health / WHOOP */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-:root{--bg:#f2f2f7;--sur:#ffffff;--alt:#f5f5f7;--bor:#d1d1d6;--acc:#007aff;--ok:#34c759;--warn:#ff9500;--bad:#ff3b30;--coa:#af52de;--dim:#1c1c1e;--mu:#8e8e93}
-body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,#007aff10 0%,transparent 55%),radial-gradient(ellipse at 80% 100%,#af52de0d 0%,transparent 55%);color:#1c1c1e;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:16px;min-height:100vh;letter-spacing:-0.01em}
-input,textarea,select{background:#ffffff;border:1px solid var(--bor);color:#1c1c1e;border-radius:10px;padding:10px 13px;font-size:16px;width:100%;outline:none;font-family:inherit;transition:border-color 0.18s,box-shadow 0.18s;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
-input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3.5px rgba(0,122,255,0.18)}
-input::placeholder,textarea::placeholder{color:#c7c7cc}
-button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0.18s,filter 0.15s;letter-spacing:-0.01em}
-button:hover{filter:brightness(1.03)}
+:root{--bg:#000000;--sur:#1c1c1e;--alt:#2c2c2e;--bor:#3a3a3c;--acc:#0a84ff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--coa:#bf5af2;--dim:#f2f2f7;--mu:#8e8e93;--ink:#ffffff}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 18% -10%,#0a84ff1a 0%,transparent 60%),radial-gradient(ellipse at 82% 110%,#bf5af214 0%,transparent 55%);color:var(--dim);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:16px;min-height:100vh;letter-spacing:-0.01em}
+input,textarea,select{background:#1c1c1e;border:1px solid var(--bor);color:var(--dim);border-radius:10px;padding:11px 14px;font-size:16px;width:100%;outline:none;font-family:inherit;transition:border-color 0.18s,box-shadow 0.18s;min-height:44px}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(10,132,255,0.28)}
+input::placeholder,textarea::placeholder{color:#636366}
+button{cursor:pointer;font-family:inherit;transition:transform 0.1s,box-shadow 0.18s,filter 0.15s;letter-spacing:-0.01em;min-height:36px}
+button:hover{filter:brightness(1.08)}
 button:active{transform:scale(0.97)}
 textarea{resize:vertical;min-height:56px}
-::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#8e8e93}
-.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes prPulse{0%,100%{box-shadow:0 0 8px #ff950022}50%{box-shadow:0 0 24px #ff950044,0 0 48px #ff950011}}
-.macCard{background:#ffffff;border:1px solid rgba(60,60,67,0.12);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.03)}
-.macGlass{background:rgba(255,255,255,0.78);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border:1px solid rgba(60,60,67,0.1);border-radius:16px}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#48484a;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#8e8e93}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes prPulse{0%,100%{box-shadow:0 0 8px #ff9f0a33}50%{box-shadow:0 0 24px #ff9f0a66,0 0 48px #ff9f0a22}}
+.macCard{background:#1c1c1e;border:1px solid rgba(255,255,255,0.08);border-radius:16px;box-shadow:0 1px 0 rgba(255,255,255,0.04) inset,0 8px 24px rgba(0,0,0,0.4)}
+.macGlass{background:rgba(28,28,30,0.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:16px}
+/* light mode opt-in (impreso, preferencia del sistema) */
+@media (prefers-color-scheme: light){body.lightModeOptIn{background:#f2f2f7;color:#1c1c1e}}
+/* tipografía hero: número de set legible desde 1m */
+.hero-num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;font-weight:800;letter-spacing:-0.04em}
 </style>
 </head>
 <body>
@@ -1365,7 +1370,8 @@ const NavSemana = ({fecha, setFecha, dia, setDia}) => {
 // Paleta optimizada WCAG AA: todos los textos >4.5:1, bordes >3:1, capas distinguibles
 // Base azul profundo (sin violeta) reduce fatiga ocular en uso prolongado (Knoblauch et al. 1991)
 // Acentos Tailwind blue/emerald/amber/red-400 para m\u00e1xima vibrancia en OLED/LCD
-const G = { bg:'#f2f2f7',sur:'#ffffff',alt:'#f5f5f7',bor:'#d1d1d6',acc:'#007aff',ok:'#34c759',warn:'#ff9500',bad:'#ff3b30',coa:'#af52de',dim:'#1c1c1e',mu:'#8e8e93' };
+const G = { bg:'#000000',sur:'#1c1c1e',alt:'#2c2c2e',bor:'#3a3a3c',acc:'#0a84ff',ok:'#30d158',warn:'#ff9f0a',bad:'#ff453a',coa:'#bf5af2',dim:'#f2f2f7',mu:'#8e8e93',ink:'#ffffff' };
+const APP_VERSION = 'v25';
 
 // ─── OBSERVACIONES PREDEFINIDAS ──────────────────────────────────────────────
 const OBS_OPTIONS = [
@@ -3314,8 +3320,8 @@ function TabEntreno({user, cfg}) {
                               prevSetPeso && setDelta !== 0 && React.createElement('span', {style:{fontSize:10,color:setDelta>0?G.ok:setDelta<0?G.bad:G.mu}}, (setDelta>0?'+':'')+setDelta.toFixed(1)+'kg vs anterior'),
                               smartRec.perSetSugg[si].prevPeso && React.createElement('span', {style:{fontSize:10,color:G.mu}}, '(fue '+smartRec.perSetSugg[si].prevPeso+'kg \u00D7'+smartRec.perSetSugg[si].prevReps+')')
                             ),
-                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'22px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
-                              React.createElement('div', {style:{fontSize:15,fontFamily:'monospace',color:rc,background:rc+'22',borderRadius:3,padding:'4px 0',textAlign:'center'}}, si+1),
+                            React.createElement('div', {style:{display:'grid',gridTemplateColumns:'30px 1fr 1fr 55px 44px 44px 44px',gap:3,marginBottom:3,alignItems:'center'}},
+                              React.createElement('div', {className:'hero-num',style:{fontSize:19,fontFamily:'-apple-system,SF Pro Display,system-ui',color:rc,background:rc+'1f',border:'1px solid '+rc+'55',borderRadius:6,padding:'6px 0',textAlign:'center',fontWeight:800,lineHeight:1}}, si+1),
                               React.createElement('div',{style:{position:'relative'}},
                                 React.createElement(Inp, {value:s.peso||'',onChange:e=>updSet(key,si,'peso',e.target.value),placeholder:phPeso,style:{textAlign:'center',padding:'5px 2px',fontSize:15,borderColor:perSetPeso&&!s.peso?trendColor+'66':'',background:perSetPeso&&!s.peso?trendColor+'08':''}}),
                                 s.peso && parseFloat(s.peso)>0 && React.createElement('div',{style:{fontSize:10,color:G.mu,textAlign:'center',marginTop:-2,lineHeight:1}}, Math.round(parseFloat(s.peso)*2.205)+'lbs')
@@ -5902,8 +5908,8 @@ function UserSelector({onSelect}) {
     {id:MELISSA_ID, nombre:'Melissa', desc:'45 a\u00F1os \u2022 Gym casa + Yoga \u2022 Keto fase 2', color:'#f0abfc', icon:'\u{1F9D8}'}
   ];
   return React.createElement('div', {style:{background:G.bg,minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,backgroundImage:'radial-gradient(ellipse at 20% 0%,#312e8133 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,#581c8722 0%,transparent 50%)'}},
-    React.createElement('div', {style:{fontFamily:'monospace',fontSize:15,fontWeight:700,letterSpacing:4,color:G.acc,marginBottom:6}}, 'FITTRACKER'),
-    React.createElement('div', {style:{fontSize:15,color:G.mu,marginBottom:30}}, 'Selecciona tu perfil'),
+    React.createElement('div', {style:{fontFamily:'-apple-system,SF Pro Display,system-ui',fontSize:28,fontWeight:800,letterSpacing:3,color:G.dim,marginBottom:4}}, 'FITTRACKER'),
+    React.createElement('div', {style:{fontFamily:'monospace',fontSize:11,color:G.mu,letterSpacing:1,marginBottom:24}}, APP_VERSION + ' · SELECCIONA TU PERFIL'),
     users.map(u =>
       React.createElement('button', {key:u.id, onClick:()=>onSelect(u.id), style:{background:G.sur+'cc',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',border:'2px solid '+u.color+'55',borderRadius:20,padding:'24px 30px',marginBottom:16,width:'100%',maxWidth:340,cursor:'pointer',textAlign:'left',boxShadow:'0 4px 24px rgba(0,0,0,0.25)',transition:'transform 0.15s,border-color 0.2s'}},
         React.createElement('div', {style:{display:'flex',alignItems:'center',gap:14}},
@@ -5944,7 +5950,10 @@ function App() {
     React.createElement('div', {style:{background:G.bg,minHeight:'100vh',maxWidth:640,margin:'0 auto'}},
       React.createElement('div', {style:{background:G.sur+'ee',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',borderBottom:'1px solid '+G.bor,padding:'10px 16px 0',position:'sticky',top:0,zIndex:10,boxShadow:'0 2px 16px rgba(0,0,0,0.3)'}},
         React.createElement('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-          React.createElement('div', {style:{fontFamily:'monospace',fontSize:15,fontWeight:700,letterSpacing:3,color:G.acc}}, 'FITTRACKER'),
+          React.createElement('div', {style:{display:'flex',alignItems:'baseline',gap:8}},
+            React.createElement('div', {style:{fontFamily:'-apple-system,SF Pro Display,system-ui',fontSize:17,fontWeight:800,letterSpacing:2,color:G.dim}}, 'FITTRACKER'),
+            React.createElement('div', {style:{fontFamily:'monospace',fontSize:11,fontWeight:600,letterSpacing:1,color:G.mu,opacity:0.7}}, APP_VERSION)
+          ),
           React.createElement('button', {onClick:()=>{setUserId(null);setUser(null);setTab('entreno');}, style:{background:'none',border:'1px solid '+G.bor,borderRadius:6,padding:'3px 10px',fontSize:15,color:cfg.nombre==='Melissa'?'#f0abfc':G.ok,cursor:'pointer',fontFamily:'monospace'}}, cfg.nombre + ' \u{25BC}')
         ),
         React.createElement('div', {style:{display:'flex',gap:2}},
