@@ -1373,6 +1373,13 @@ const NavSemana = ({fecha, setFecha, dia, setDia}) => {
 const G = { bg:'#000000',sur:'#1c1c1e',alt:'#2c2c2e',bor:'#3a3a3c',acc:'#0a84ff',ok:'#30d158',warn:'#ff9f0a',bad:'#ff453a',coa:'#bf5af2',dim:'#f2f2f7',mu:'#8e8e93',ink:'#ffffff' };
 const APP_VERSION = 'v25';
 
+// ─── FEATURE FLAGS ────────────────────────────────────────────────────────────
+// TrueCoach history tab: lectura del historial de coaching externo importado.
+// Activar SOLO cuando las tablas `truecoach_imports_workouts` + `truecoach_imports_items`
+// existan en Supabase (migración vive en el backend privado de v2).
+// Por defecto OFF — el tab no aparece en el navbar hasta activación explícita.
+const ENABLE_TRUECOACH_HISTORY = false;
+
 // ─── OBSERVACIONES PREDEFINIDAS ──────────────────────────────────────────────
 const OBS_OPTIONS = [
   {id:'excelente',label:'Excelente',emoji:'\u{1F525}',desc:'Fluj\u00E9, todo sali\u00F3 bien, gran pump'},
@@ -5893,13 +5900,95 @@ function TabBalance({user, cfg}) {
   );
 }
 
+// ─── TAB HISTORIAL (TrueCoach imports — read-only) ───────────────────────────
+// Muestra workouts importados desde TrueCoach (coach humano externo).
+// Lectura pura desde tablas `truecoach_imports_workouts` + `truecoach_imports_items`.
+// Data de coaching externo separada del resto de la app por diseño.
+// Activación: feature flag ENABLE_TRUECOACH_HISTORY (default OFF).
+function TabHistorial({user}) {
+  const [loading, setLoading] = useState(true);
+  const [workouts, setWorkouts] = useState([]);
+  const [error, setError] = useState(null);
+  const [filter, setFilter] = useState('completed');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    sb.from('truecoach_imports_workouts')
+      .select('id,fecha,titulo,state,items_count,coach_externo')
+      .eq('user_uuid', user)
+      .eq('state', filter)
+      .order('fecha', {ascending: false})
+      .limit(50)
+      .then(({data, error: err}) => {
+        if (cancelled) return;
+        if (err) {
+          setError(err.message || 'Error al cargar historial');
+          setWorkouts([]);
+        } else {
+          setWorkouts(data || []);
+        }
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [user, filter]);
+
+  return React.createElement('div', {style:{padding:6}},
+    React.createElement('div', {style:{fontFamily:'monospace',fontSize:11,color:G.mu,letterSpacing:1,marginBottom:14}},
+      'HISTORIAL COACH EXTERNO · read-only'
+    ),
+    React.createElement('div', {style:{display:'flex',gap:6,marginBottom:14}},
+      ['completed','missed','pending'].map(s =>
+        React.createElement('button', {
+          key:s,
+          onClick:()=>setFilter(s),
+          style:{
+            flex:1,padding:'8px',border:'1px solid '+G.bor,borderRadius:8,
+            background:filter===s?G.acc:G.sur,color:filter===s?G.ink:G.dim,
+            fontSize:12,fontWeight:600,fontFamily:'monospace',letterSpacing:1,
+            cursor:'pointer',textTransform:'uppercase'
+          }
+        }, s)
+      )
+    ),
+    loading && React.createElement('div', {style:{color:G.mu,fontSize:13,textAlign:'center',padding:30}}, 'Cargando...'),
+    error && React.createElement('div', {style:{color:G.bad,fontSize:13,padding:16,background:G.sur,borderRadius:8,border:'1px solid '+G.bor}},
+      'Error: ' + error,
+      React.createElement('div', {style:{fontSize:11,color:G.mu,marginTop:10,lineHeight:1.5}},
+        'Probablemente las tablas truecoach_imports_* no existen en Supabase. ',
+        'Las tablas se crean v\u00eda migraci\u00f3n del backend (repo privado v2).'
+      )
+    ),
+    !loading && !error && workouts.length === 0 && React.createElement('div', {style:{color:G.mu,fontSize:13,textAlign:'center',padding:30,fontStyle:'italic'}},
+      'Sin workouts importados con filtro "' + filter + '"'
+    ),
+    !loading && !error && workouts.length > 0 && React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:8}},
+      workouts.map(w =>
+        React.createElement('div', {key:w.id, style:{background:G.sur,padding:12,borderRadius:10,border:'1px solid '+G.bor}},
+          React.createElement('div', {style:{fontSize:11,color:G.mu,fontFamily:'monospace',letterSpacing:1,marginBottom:4}},
+            (w.fecha || '?') + ' · ' + (w.coach_externo || 'coach')
+          ),
+          React.createElement('div', {style:{fontSize:15,fontWeight:700,color:G.ink,marginBottom:6}},
+            w.titulo || '(sin título)'
+          ),
+          React.createElement('div', {style:{fontSize:12,color:G.dim}},
+            (w.items_count||0) + ' ejercicios · estado: ' + (w.state || '?')
+          )
+        )
+      )
+    )
+  );
+}
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 const TABS = [
   {id:'entreno', label:'ENTRENO', icon:'H'},
   {id:'nutri', label:'NUTRICION', icon:'N'},
   {id:'balance', label:'BALANCE', icon:'B'},
   {id:'logistica', label:'LOGISTICA', icon:'L'},
-  {id:'progreso', label:'PROGRESO', icon:'P'}
+  {id:'progreso', label:'PROGRESO', icon:'P'},
+  ...(ENABLE_TRUECOACH_HISTORY ? [{id:'historial-coach', label:'HIST COACH', icon:'X'}] : [])
 ];
 
 function UserSelector({onSelect}) {
@@ -5969,7 +6058,8 @@ function App() {
         tab==='nutri' && React.createElement(TabNutricion, {user:user, cfg:cfg}),
         tab==='balance' && React.createElement(TabBalance, {user:user, cfg:cfg}),
         tab==='logistica' && React.createElement(TabLogistica, {user:user, cfg:cfg}),
-        tab==='progreso' && React.createElement(TabProgreso, {user:user})
+        tab==='progreso' && React.createElement(TabProgreso, {user:user}),
+        tab==='historial-coach' && ENABLE_TRUECOACH_HISTORY && React.createElement(TabHistorial, {user:user})
       )
     )
   );
